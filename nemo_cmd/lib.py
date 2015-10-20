@@ -15,8 +15,6 @@
 
 """Utility functions for use by SalishSeaCmd command plug-ins.
 """
-from __future__ import absolute_import
-
 import subprocess
 
 import yaml
@@ -53,6 +51,9 @@ def add_combine_gather_options(parser):
         'results_dir', metavar='RESULTS_DIR',
         help='directory to store results into')
     parser.add_argument(
+        '--compress', action='store_true',
+        help="compress results files")
+    parser.add_argument(
         '--keep-proc-results', action='store_true',
         help="don't delete per-processor results files")
     parser.add_argument(
@@ -61,6 +62,20 @@ def add_combine_gather_options(parser):
     parser.add_argument(
         '--delete-restart', action='store_true',
         help="delete restart file(s)")
+
+
+def get_n_processors(run_desc):
+    """Return the total number of processors required for the run as
+    specified by the MPI decomposition key in the run description.
+
+    :arg run_desc: Run description dictionary.
+    :type run_desc: dict
+
+    :returns: Number of processors required for the run.
+    :rtype: int
+    """
+    jpni, jpnj = map(int, run_desc['MPI decomposition'].split('x'))
+    return jpni * jpnj
 
 
 def netcdf4_deflate(filename, dfl_lvl=4):

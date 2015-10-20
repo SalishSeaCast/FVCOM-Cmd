@@ -21,8 +21,6 @@ Provides Python function interfaces to command processor sub-commands
 for use in other sub-command processor modules,
 and by other software.
 """
-from __future__ import absolute_import
-
 import logging
 import os
 import subprocess
@@ -30,7 +28,7 @@ import subprocess
 import cliff.commandmanager
 import yaml
 
-from salishsea_cmd import prepare as prepare_plug_in
+from . import prepare as prepare_plug_in
 
 
 __all__ = ['combine', 'prepare', 'run_description', 'run_in_subprocess']
@@ -104,7 +102,7 @@ def combine(
     return result
 
 
-def prepare(run_desc_file, iodefs_file):
+def prepare(run_desc_file, iodefs_file, nemo34=False):
     """Prepare a Salish Sea NEMO run.
 
     A UUID named temporary run directory is created and symbolic links
@@ -121,10 +119,14 @@ def prepare(run_desc_file, iodefs_file):
                        for the run.
     :type iodefs_file: str
 
+    :arg nemo34: Prepare a NEMO-3.4 run;
+                 the default is to prepare a NEMO-3.6 run
+    :type nemo34: boolean
+
     :returns: Path of the temporary run directory
     :rtype: str
     """
-    return prepare_plug_in.prepare(run_desc_file, iodefs_file)
+    return prepare_plug_in.prepare(run_desc_file, iodefs_file, nemo34)
 
 
 def run_description(
