@@ -18,8 +18,6 @@
 Combine per-processor files from an MPI Salish Sea NEMO run into single
 files with the same name-root and move them to a specified directory.
 """
-from __future__ import absolute_import
-
 import glob
 import gzip
 import logging
@@ -47,15 +45,11 @@ class Combine(cliff.command.Command):
         parser.description = '''
             Combine the per-processor results files from an MPI
             Salish Sea NEMO run described in DESC_FILE
-            into files in RESULTS_DIR
-            and compress them using gzip.
+            into files in RESULTS_DIR.
             Delete the per-processor files.
 
             If RESULTS_DIR does not exist it will be created.
         '''
-        parser.add_argument(
-            '--no-compress', action='store_true',
-            help="don't compress results files")
         lib.add_combine_gather_options(parser)
         return parser
 
@@ -70,9 +64,11 @@ class Combine(cliff.command.Command):
         The combined results files that `rebuild_nemo` produces are moved
         to the directory given by `parsed_args.results_dir`.
         """
+        run_desc = lib.load_run_desc(parsed_args.desc_file)
+        n_processors = lib.get_n_processors(run_desc)
         rebuild_nemo_script = _find_rebuild_nemo_script()
-        name_roots, ncores = _get_results_files(parsed_args)
-        _combine_results_files(rebuild_nemo_script, name_roots, ncores)
+        name_roots = _get_results_files(parsed_args)
+        _combine_results_files(rebuild_nemo_script, name_roots, n_processors)
         os.remove('nam_rebuild')
         _netcdf4_deflate_results(name_roots)
         _move_results(name_roots, parsed_args.results_dir)
@@ -107,17 +103,23 @@ def _get_results_files(args):
             'no files found that match the {} pattern'
             .format(result_pattern))
         sys.exit(2)
-    ncores = len(glob.glob(name_roots[0] + '_[0-9][0-9][0-9][0-9].nc'))
-    return name_roots, ncores
+    return name_roots
 
 
-def _combine_results_files(rebuild_nemo_script, name_roots, ncores):
+def _combine_results_files(rebuild_nemo_script, name_roots, n_processors):
     for fn in name_roots:
-        result = subprocess.check_output(
-            [rebuild_nemo_script, fn, str(ncores)],
-            stderr=subprocess.STDOUT,
-            universal_newlines=True)
-        log.info(result)
+        nfiles = len(glob.glob('{fn}_[0-9][0-9][0-9][0-9].nc'.format(fn=fn)))
+        if nfiles == 1:
+            shutil.move('{fn}_0000.nc'.format(fn=fn), '{fn}.nc'.format(fn=fn))
+            log.info('{fn}_0000.nc renamed to {fn}.nc'.format(fn=fn))
+        elif nfiles < n_processors:
+            log.info('{fn}_*.nc not combined'.format(fn=fn))
+        else:
+            result = subprocess.check_output(
+                [rebuild_nemo_script, fn, str(n_processors)],
+                stderr=subprocess.STDOUT,
+                universal_newlines=True)
+            log.info(result)
 
 
 def _netcdf4_deflate_results(name_roots):
@@ -149,7 +151,7 @@ def _results_files(name_roots):
 
 
 def _compress_results(name_roots, args):
-    if args.no_compress:
+    if not args.compress:
         return
     log.info('Starting compression...')
     for fn in _results_files(name_roots):

@@ -15,13 +15,12 @@
 
 """SalishSeaCmd combine sub-command plug-in unit tests
 """
-from __future__ import absolute_import
-
-import cliff.app
-from mock import (
+from unittest.mock import (
     Mock,
     patch,
 )
+
+import cliff.app
 import pytest
 
 from salishsea_cmd import combine
@@ -70,9 +69,8 @@ def test_get_results_files(mock_glob):
         ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'],
     )
     args = Mock(delete_restart=False)
-    name_roots, ncores = combine._get_results_files(args)
+    name_roots = combine._get_results_files(args)
     assert name_roots == ['foo', 'bar']
-    assert ncores == 3
 
 
 @patch('salishsea_cmd.combine.log.error')
@@ -100,12 +98,17 @@ def test_get_results_files_delete_restart(mock_rm, mock_glob):
     assert mock_rm.call_count == 2
 
 
+@patch('salishsea_cmd.combine.glob.glob')
 @patch('salishsea_cmd.combine.subprocess.check_output')
-def test_combine_results_files(mock_chk_out):
+def test_combine_results_files(mock_chk_out, mock_glob):
     """_combine_results_files calls subprocess.check_output for each name-root
     """
+    mock_glob.side_effect = (
+        ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'],
+        ['bar_0000.nc', 'bar_0001.nc', 'bar_0002.nc'],
+    )
     combine._combine_results_files(
-        'rebuild_nemo', ['foo', 'bar'], 16)
+        'rebuild_nemo', ['foo', 'bar'], 3)
     assert mock_chk_out.call_count == 2
 
 
@@ -152,8 +155,8 @@ def test_result_files():
 
 @patch('salishsea_cmd.combine._results_files')
 def test_compress_results_no_compress(mock_res_files):
-    """_compress_results does nothing when args.no_compress is False
+    """_compress_results does nothing when args.compress is False
     """
-    args = Mock(no_compress=True)
+    args = Mock(compress=False)
     combine._compress_results(['foo', 'bar'], args)
     assert not mock_res_files.called

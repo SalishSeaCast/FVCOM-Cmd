@@ -15,15 +15,14 @@
 
 """SalishSeaCmd get_cgrf sub-command plug-in unit tests
 """
-from __future__ import absolute_import
-
-import arrow
-import cliff.app
-from mock import (
+from unittest.mock import (
     call,
     Mock,
     patch,
 )
+
+import arrow
+import cliff.app
 import pytest
 
 
