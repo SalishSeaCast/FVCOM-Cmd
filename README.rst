@@ -1,21 +1,37 @@
-*********************************
-Salish Sea NEMO Command Processor
-*********************************
+**********************
+NEMO Command Processor
+**********************
 
-The Salish Sea NEMO command processor, ``salishsea``, is a command line tool for doing various operations associated with the Salish Sea NEMO model.
+The NEMO command processor, ``nemo``, is a command line tool for doing various operations associated with running the `NEMO`_ ocean model.
 
-Use ``salishsea --help`` to get a list of the sub-commands available for doing things with and related to Salish Sea NEMO.
-Use ``salishsea help <sub-command>`` to get a synopsis of what a sub-command does,
+.. _NEMO: http://www.nemo-ocean.eu/
+
+Use ``nemo --help`` to get a list of the sub-commands available.
+Use ``nemo help <sub-command>`` to get a synopsis of what a sub-command does,
 what its required arguments are,
 and what options are available to control it.
 
-Documentation for the command processor is in the ``docs/`` directory and is rendered at http://salishsea-meopar-tools.readthedocs.io/en/latest/SalishSeaCmd/index.html.
+Documentation for the command processor is in the ``docs/`` directory and is rendered at http://nemo-cmd.readthedocs.io/en/latest/.
+
+.. image:: https://readthedocs.org/projects/nemo-cmd/badge/?version=latest
+    :target: http://nemo-cmd.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+This an extensible tool built on the OpenStack ``cliff``
+(`Command Line Interface Formulation Framework`_)
+package.
+As such,
+it can be used as the basis for a NEMO domain-specific command processor tool.
+
+.. _Command Line Interface Formulation Framework: http://docs.openstack.org/developer/cliff/
+
+The ``NEMO-Cmd`` is based on v2.2 of the Salish Sea MEOPAR NEMO model project's ``tools/SalishSeaCmd`` package.
 
 
 License
 =======
 
-The Salish Sea NEMO command processor and documentation are copyright 2013-2016 by the Salish Sea MEOPAR Project Contributors and The University of British Columbia.
+The NEMO command processor and documentation are copyright 2013-2016 by the Salish Sea MEOPAR Project Contributors and The University of British Columbia.
 
 They are licensed under the Apache License, Version 2.0.
 http://www.apache.org/licenses/LICENSE-2.0
