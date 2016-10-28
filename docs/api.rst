@@ -14,22 +14,22 @@
 .. limitations under the License.
 
 
-.. _SalishSeaCmdAPI:
+.. _NEMO-CmdAPI:
 
-***********************
-:kbd:`SalishSeaCmd` API
-***********************
+*******************
+:kbd:`NEMO-Cmd` API
+*******************
 
-This section documents the Salish Sea Nemo command processor Application Programming Interface (API).
+This section documents the NEMO command processor Application Programming Interface (API).
 The API provides Python function interfaces to command processor sub-commands for use in other sub-command processor modules,
 and by other software.
 
-.. autofunction:: salishsea_cmd.api.combine
+.. autofunction:: nemo_cmd.api.combine
 
-.. autofunction:: salishsea_cmd.api.prepare
+.. autofunction:: nemo_cmd.api.prepare
 
-.. autofunction:: salishsea_cmd.api.run_description
+.. autofunction:: nemo_cmd.api.run_description
 
-.. autofunction:: salishsea_cmd.api.run_in_subprocess
+.. autofunction:: nemo_cmd.api.run_in_subprocess
 
-.. autofunction:: salishsea_cmd.api.pbs_common
+.. autofunction:: nemo_cmd.api.pbs_common

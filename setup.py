@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""SalishSeaCmd -- Salish Sea NEMO command processor
+"""NEMO-Cmd -- NEMO command processor
 """
 from setuptools import (
     find_packages,
@@ -44,11 +44,11 @@ try:
 except IOError:
     long_description = ''
 install_requires = [
-    # see environment.yaml for versions most recently used in development
+    # see environment-dev.yaml for conda environment dev installation
+    # see requirements.txt for package versions used during recent development
     'arrow',
     'cliff',
     'PyYAML',
-    # 'SalishSeaTools',  # use cd tools; pip install -e SalishSeaTools
 ]
 
 setup(
@@ -57,27 +57,24 @@ setup(
     description=__pkg_metadata__.DESCRIPTION,
     long_description=long_description,
     author='Doug Latornell',
-    author_email='djl@douglatornell.ca',
-    url=(
-        'http://salishsea-meopar-tools.readthedocs.org/en/latest/'
-        'SalishSeaCmd/'),
+    author_email='dlatornell@eoas.ubc.ca',
+    url='http://nemo-cmd.readthedocs.io/en/latest/',
     license='Apache License, Version 2.0',
     classifiers=python_classifiers + other_classifiers,
     platforms=['MacOS X', 'Linux'],
     install_requires=install_requires,
     packages=find_packages(),
     entry_points={
-        # The salishsea command:
+        # The nemo command:
         'console_scripts': [
-            'salishsea = salishsea_cmd.main:main',
+            'nemo = nemo_cmd.main:main',
         ],
         # Sub-command plug-ins:
-        'salishsea.app': [
-            'combine = salishsea_cmd.combine:Combine',
-            'gather = salishsea_cmd.gather:Gather',
-            'get_cgrf = salishsea_cmd.get_cgrf:GetCGRF',
-            'prepare = salishsea_cmd.prepare:Prepare',
-            'run = salishsea_cmd.run:Run',
+        'nemo.app': [
+            'combine = nemo_cmd.combine:Combine',
+            'gather = nemo_cmd.gather:Gather',
+            'prepare = nemo_cmd.prepare:Prepare',
+            'run = nemo_cmd.run:Run',
         ],
     },
 )

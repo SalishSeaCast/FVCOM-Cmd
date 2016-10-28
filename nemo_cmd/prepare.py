@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""SalishSeaCmd command plug-in for prepare sub-command.
+"""NEMO-Cmd command plug-in for prepare sub-command.
 
-Sets up the necesaary symbolic links for a Salish Sea NEMO run
+Sets up the necessary symbolic links for a NEMO run
 in a specified directory and changes the pwd to that directory.
 """
 import logging
@@ -31,22 +31,19 @@ import cliff.command
 import salishsea_tools.hg_commands as hg
 from salishsea_tools.namelist import namelist2dict
 
-from salishsea_cmd import lib
-
-
-__all__ = ['Prepare', 'prepare']
+from nemo_cmd import lib
 
 
 log = logging.getLogger(__name__)
 
 
 class Prepare(cliff.command.Command):
-    """Prepare a Salish Sea NEMO run
+    """Prepare a NEMO run
     """
     def get_parser(self, prog_name):
         parser = super(Prepare, self).get_parser(prog_name)
         parser.description = '''
-            Set up the Salish Sea NEMO described in DESC_FILE
+            Set up the NEMO described in DESC_FILE
             and print the path to the run directory.
         '''
         parser.add_argument(
@@ -70,7 +67,7 @@ class Prepare(cliff.command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        """Execute the `salishsea prepare` sub-command.
+        """Execute the `nemo prepare` sub-command.
 
         A UUID named directory is created and symbolic links are created
         in the directory to the files and directories specifed to run NEMO.

@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""SalishSeaCmd command plug-in for run sub-command.
+"""NEMO-Cmd command plug-in for run sub-command.
 
-Prepare for, execute, and gather the results of a run of the
-Salish Sea NEMO model.
+Prepare for, execute, and gather the results of a run of the NEMO model.
 """
 from __future__ import division
 
@@ -30,25 +29,22 @@ import subprocess
 import cliff.command
 import pathlib
 
-from salishsea_cmd import (
+from nemo_cmd import (
     api,
     lib,
 )
-
-
-__all__ = ['Run', 'run', 'td2hms']
 
 
 log = logging.getLogger(__name__)
 
 
 class Run(cliff.command.Command):
-    """Prepare, execute, and gather results from a Salish Sea NEMO model run.
+    """Prepare, execute, and gather results from a NEMO model run.
     """
     def get_parser(self, prog_name):
         parser = super(Run, self).get_parser(prog_name)
         parser.description = '''
-            Prepare, execute, and gather the results from a Salish Sea NEMO-3.6
+            Prepare, execute, and gather the results from a NEMO
             run described in DESC_FILE and IO_DEFS.
             The results files from the run are gathered in RESULTS_DIR.
 
@@ -76,8 +72,8 @@ class Run(cliff.command.Command):
             '--waitjob', type=int,
             default=0,
             help='''
-            use -W waitjob in call to qsub, to make current job
-            wait for on waitjob.  Waitjob is the queue job number
+            use -W WAITJOB in call to qsub, to make current job
+            wait for on WAITJOB.  WAITJOB is the queue job number
             ''')
         parser.add_argument(
             '-q', '--quiet', action='store_true',

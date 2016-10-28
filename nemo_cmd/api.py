@@ -29,14 +29,7 @@ import subprocess
 import cliff.commandmanager
 import yaml
 
-from salishsea_cmd import prepare as prepare_plugin
-
-
-__all__ = [
-    'combine', 'prepare',
-    'run_description', 'run_in_subprocess',
-    'pbs_common', 'td2hms',
-]
+from nemo_cmd import prepare as prepare_plugin
 
 
 log = logging.getLogger(__name__)
@@ -108,7 +101,7 @@ def combine(
 
 
 def prepare(run_desc_file, nemo34=False, nocheck_init=False):
-    """Prepare a Salish Sea NEMO run.
+    """Prepare a NEMO run.
 
     A UUID named temporary run directory is created and symbolic links
     are created in the directory to the files and directories specifed
@@ -145,7 +138,7 @@ def run_description(
     namelists=None,
     nemo34=False,
 ):
-    """Return a Salish Sea NEMO run description dict template.
+    """Return a NEMO run description dict template.
 
     Value may be passed for the keyword arguments to set the value of the
     corresponding items.
@@ -291,7 +284,7 @@ def run_description(
 
 
 def run_in_subprocess(run_id, run_desc, results_dir, nemo34=False):
-    """Execute `salishsea run` in a subprocess.
+    """Execute `nemo run` in a subprocess.
 
     :arg str run_id: Job identifier that appears in the :command:`qstat`
                      listing.

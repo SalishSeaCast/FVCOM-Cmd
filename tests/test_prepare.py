@@ -32,12 +32,12 @@ except ImportError:
 import cliff.app
 import pytest
 
-import salishsea_cmd.prepare
+import nemo_cmd.prepare
 
 
 @pytest.fixture
 def prepare_cmd():
-    return salishsea_cmd.prepare.Prepare(Mock(spec=cliff.app.App), [])
+    return nemo_cmd.prepare.Prepare(Mock(spec=cliff.app.App), [])
 
 
 class TestGetParser:
@@ -65,16 +65,16 @@ class TestGetParser:
         assert getattr(parsed_args, attr)
 
 
-@patch('salishsea_cmd.prepare.lib.load_run_desc')
-@patch('salishsea_cmd.prepare._check_nemo_exec')
-@patch('salishsea_cmd.prepare._check_xios_exec')
-@patch('salishsea_cmd.prepare.os.path.dirname')
-@patch('salishsea_cmd.prepare._make_run_dir')
-@patch('salishsea_cmd.prepare._make_namelists')
-@patch('salishsea_cmd.prepare._copy_run_set_files')
-@patch('salishsea_cmd.prepare._make_executable_links')
-@patch('salishsea_cmd.prepare._make_grid_links')
-@patch('salishsea_cmd.prepare._make_forcing_links')
+@patch('nemo_cmd.prepare.lib.load_run_desc')
+@patch('nemo_cmd.prepare._check_nemo_exec')
+@patch('nemo_cmd.prepare._check_xios_exec')
+@patch('nemo_cmd.prepare.os.path.dirname')
+@patch('nemo_cmd.prepare._make_run_dir')
+@patch('nemo_cmd.prepare._make_namelists')
+@patch('nemo_cmd.prepare._copy_run_set_files')
+@patch('nemo_cmd.prepare._make_executable_links')
+@patch('nemo_cmd.prepare._make_grid_links')
+@patch('nemo_cmd.prepare._make_forcing_links')
 class TestPrepare:
     """Unit tests for `salishsea prepare` prepare() function.
     """
@@ -88,7 +88,7 @@ class TestPrepare:
     ):
         m_cne.return_value = m_cne_return
         m_cxe.return_value = m_cxe_return
-        run_dir = salishsea_cmd.prepare.prepare(
+        run_dir = nemo_cmd.prepare.prepare(
             'SalishSea.yaml', nemo34, nocheck_init=False)
         m_lrd.assert_called_once_with('SalishSea.yaml')
         m_cne.assert_called_once_with(m_lrd(), nemo34)
@@ -121,7 +121,7 @@ class TestCheckNemoExec:
             'config_name': 'SalishSea',
             'paths': {'NEMO-code': str(p_code)},
         }
-        nemo_code_repo, nemo_bin_dir = salishsea_cmd.prepare._check_nemo_exec(
+        nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
             run_desc, nemo34=False)
         assert nemo_code_repo == p_code
 
@@ -134,7 +134,7 @@ class TestCheckNemoExec:
         p_bin_dir = p_code.ensure_dir(
             'NEMOGCM', 'CONFIG', 'SalishSea', 'BLD', 'bin')
         p_bin_dir.ensure('nemo.exe')
-        nemo_code_repo, nemo_bin_dir = salishsea_cmd.prepare._check_nemo_exec(
+        nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
             run_desc, nemo34=False)
         assert nemo_bin_dir == p_bin_dir
 
@@ -145,9 +145,9 @@ class TestCheckNemoExec:
             'paths': {'NEMO-code': str(p_code)},
         }
         with pytest.raises(SystemExit):
-            salishsea_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
+            nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
 
-    @patch('salishsea_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.log')
     def test_iom_server_exec_not_found(self, m_log, tmpdir):
         p_code = tmpdir.ensure_dir('NEMO-3.6-code')
         run_desc = {
@@ -157,9 +157,9 @@ class TestCheckNemoExec:
         p_bin_dir = p_code.ensure_dir(
             'NEMOGCM', 'CONFIG', 'SalishSea', 'BLD', 'bin')
         p_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', side_effect=[True, False])
+            'nemo_cmd.prepare.os.path.exists', side_effect=[True, False])
         with p_exists:
-            salishsea_cmd.prepare._check_nemo_exec(run_desc, nemo34=True)
+            nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=True)
         m_log.warn.assert_called_once_with(
             '{}/server.exe not found - are you running without key_iomput?'
             .format(p_bin_dir))
@@ -172,8 +172,8 @@ class TestCheckNemoExec:
         }
         p_code.ensure_dir(
             'NEMOGCM', 'CONFIG', 'SalishSea', 'BLD', 'bin')
-        with patch('salishsea_cmd.prepare.os.path.exists') as m_exists:
-            salishsea_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
+        with patch('nemo_cmd.prepare.os.path.exists') as m_exists:
+            nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
         assert m_exists.call_count == 1
 
 
@@ -187,7 +187,7 @@ class TestCheckXiosExec:
         }
         p_bin_dir = p_xios.ensure_dir('bin')
         p_bin_dir.ensure('xios_server.exe')
-        xios_code_repo, xios_bin_dir = salishsea_cmd.prepare._check_xios_exec(
+        xios_code_repo, xios_bin_dir = nemo_cmd.prepare._check_xios_exec(
             run_desc)
         assert xios_code_repo == p_xios
         assert xios_bin_dir == p_bin_dir
@@ -198,13 +198,13 @@ class TestCheckXiosExec:
             'paths': {'XIOS': str(p_xios)},
         }
         with pytest.raises(SystemExit):
-            salishsea_cmd.prepare._check_xios_exec(run_desc)
+            nemo_cmd.prepare._check_xios_exec(run_desc)
 
 
 class TestMakeRunDir:
     """Unit test for `salishsea prepare` _make_run_dir() function.
     """
-    @patch('salishsea_cmd.prepare.uuid.uuid1', return_value='uuid')
+    @patch('nemo_cmd.prepare.uuid.uuid1', return_value='uuid')
     def test_make_run_dir(self, m_uuid1, tmpdir):
         """_make_run_dir() creates directory w/ UUID v1 name
         """
@@ -212,7 +212,7 @@ class TestMakeRunDir:
         run_desc = {
             'paths': {'runs directory': str(p_runs_dir)},
         }
-        run_dir = salishsea_cmd.prepare._make_run_dir(run_desc)
+        run_dir = nemo_cmd.prepare._make_run_dir(run_desc)
         assert run_dir == os.path.join(str(p_runs_dir), m_uuid1())
 
 
@@ -221,19 +221,19 @@ class TestRemoveRunDir:
     """
     def test_remove_run_dir(self, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        salishsea_cmd.prepare._remove_run_dir(str(p_run_dir))
+        nemo_cmd.prepare._remove_run_dir(str(p_run_dir))
         assert not p_run_dir.check()
 
     def test_remove_run_dir_file(self, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
         p_run_dir.ensure('namelist')
-        salishsea_cmd.prepare._remove_run_dir(str(p_run_dir))
+        nemo_cmd.prepare._remove_run_dir(str(p_run_dir))
         assert not p_run_dir.join('namelist').check()
         assert not p_run_dir.check()
 
-    @patch('salishsea_cmd.prepare.os.rmdir')
+    @patch('nemo_cmd.prepare.os.rmdir')
     def test_remove_run_dir_no_run_dir(self, m_rmdir):
-        salishsea_cmd.prepare._remove_run_dir('run_dir')
+        nemo_cmd.prepare._remove_run_dir('run_dir')
         assert not m_rmdir.called
 
 
@@ -241,15 +241,15 @@ class TestMakeNamelists:
     """Unit tests for `salishsea prepare` _make_namelists() function.
     """
     def test_nemo34(self):
-        with patch('salishsea_cmd.prepare._make_namelist_nemo34') as m_mn34:
-            salishsea_cmd.prepare._make_namelists(
+        with patch('nemo_cmd.prepare._make_namelist_nemo34') as m_mn34:
+            nemo_cmd.prepare._make_namelists(
                 'run_set_dir', 'run_desc', 'run_dir', 'nemo_code_repo',
                 nemo34=True)
         m_mn34.assert_called_once_with('run_set_dir', 'run_desc', 'run_dir')
 
     def test_nemo36(self):
-        with patch('salishsea_cmd.prepare._make_namelists_nemo36') as m_mn36:
-            salishsea_cmd.prepare._make_namelists(
+        with patch('nemo_cmd.prepare._make_namelists_nemo36') as m_mn36:
+            nemo_cmd.prepare._make_namelists(
                 'run_set_dir', 'run_desc', 'run_dir', 'nemo_code_repo',
                 nemo34=False)
         m_mn36.assert_called_once_with(
@@ -268,8 +268,8 @@ class TestMakeNamelistNEMO34:
             ],
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare._set_mpi_decomposition'):
-            salishsea_cmd.prepare._make_namelist_nemo34(
+        with patch('nemo_cmd.prepare._set_mpi_decomposition'):
+            nemo_cmd.prepare._make_namelist_nemo34(
                 str(p_run_set_dir), run_desc, str(p_run_dir))
         assert p_run_dir.join('namelist').check()
 
@@ -282,7 +282,7 @@ class TestMakeNamelistNEMO34:
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
-            salishsea_cmd.prepare._make_namelist_nemo34(
+            nemo_cmd.prepare._make_namelist_nemo34(
                 str(p_run_set_dir), run_desc, str(p_run_dir))
 
     def test_namelist_ends_with_empty_namelists(
@@ -296,11 +296,11 @@ class TestMakeNamelistNEMO34:
             ],
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare._set_mpi_decomposition'):
-            salishsea_cmd.prepare._make_namelist_nemo34(
+        with patch('nemo_cmd.prepare._set_mpi_decomposition'):
+            nemo_cmd.prepare._make_namelist_nemo34(
                 str(p_run_set_dir), run_desc, str(p_run_dir))
         namelist = p_run_dir.join('namelist').read()
-        assert namelist.endswith(salishsea_cmd.prepare.EMPTY_NAMELISTS)
+        assert namelist.endswith(nemo_cmd.prepare.EMPTY_NAMELISTS)
 
 
 class TestMakeNamelistNEMO36:
@@ -325,8 +325,8 @@ class TestMakeNamelistNEMO36:
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare._set_mpi_decomposition'):
-            salishsea_cmd.prepare._make_namelists_nemo36(
+        with patch('nemo_cmd.prepare._set_mpi_decomposition'):
+            nemo_cmd.prepare._make_namelists_nemo36(
                 str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
         assert p_run_dir.join('namelist_cfg').check()
         assert p_run_dir.join('namelist_top_cfg').check()
@@ -343,7 +343,7 @@ class TestMakeNamelistNEMO36:
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
-            salishsea_cmd.prepare._make_namelists_nemo36(
+            nemo_cmd.prepare._make_namelists_nemo36(
                 str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
 
     def test_namelist_ref_symlinks(self, tmpdir):
@@ -369,8 +369,8 @@ class TestMakeNamelistNEMO36:
         p_code.ensure('NEMOGCM/CONFIG/SHARED/namelist_ref')
         p_code.ensure('NEMOGCM/CONFIG/SHARED/namelist_top_ref')
         p_code.ensure('NEMOGCM/CONFIG/SHARED/namelist_pisces_ref')
-        with patch('salishsea_cmd.prepare._set_mpi_decomposition'):
-            salishsea_cmd.prepare._make_namelists_nemo36(
+        with patch('nemo_cmd.prepare._set_mpi_decomposition'):
+            nemo_cmd.prepare._make_namelists_nemo36(
                 str(p_run_set_dir), run_desc, str(p_run_dir), str(p_code))
         assert p_run_dir.join('namelist_ref').check(file=True, link=True)
         assert p_run_dir.join('namelist_top_ref').check(file=True, link=True)
@@ -392,8 +392,8 @@ class TestMakeNamelistNEMO36:
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare._set_mpi_decomposition') as m_smd:
-            salishsea_cmd.prepare._make_namelists_nemo36(
+        with patch('nemo_cmd.prepare._set_mpi_decomposition') as m_smd:
+            nemo_cmd.prepare._make_namelists_nemo36(
                 str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
         m_smd.assert_called_once_with('namelist_cfg', run_desc, str(p_run_dir))
 
@@ -409,15 +409,15 @@ class TestMakeNamelistNEMO36:
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
-            salishsea_cmd.prepare._make_namelists_nemo36(
+            nemo_cmd.prepare._make_namelists_nemo36(
                 str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
 
 
 class TestCopyRunSetFiles:
     """Unit tests for `salishsea prepare` _copy_run_set_files() function.
     """
-    @patch('salishsea_cmd.prepare.shutil.copy2')
-    @patch('salishsea_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    @patch('nemo_cmd.prepare._set_xios_server_mode')
     def test_nemo34_copy_run_set_files_no_path(
         self, m_sxsm, m_copy,
     ):
@@ -426,8 +426,8 @@ class TestCopyRunSetFiles:
         run_desc = {'output': {'files': 'iodef.xml'}}
         desc_file = 'foo.yaml'
         pwd = os.getcwd()
-        with patch('salishsea_cmd.prepare.os.chdir'):
-            salishsea_cmd.prepare._copy_run_set_files(
+        with patch('nemo_cmd.prepare.os.chdir'):
+            nemo_cmd.prepare._copy_run_set_files(
                 run_desc, desc_file, pwd, 'run_dir', nemo34=True)
         expected = [
             call(os.path.join(pwd, 'iodef.xml'), 'iodef.xml'),
@@ -436,8 +436,8 @@ class TestCopyRunSetFiles:
         ]
         assert m_copy.call_args_list == expected
 
-    @patch('salishsea_cmd.prepare.shutil.copy2')
-    @patch('salishsea_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    @patch('nemo_cmd.prepare._set_xios_server_mode')
     def test_nemo36_copy_run_set_files_no_path(
         self, m_sxsm, m_copy,
     ):
@@ -452,8 +452,8 @@ class TestCopyRunSetFiles:
         }
         desc_file = 'foo.yaml'
         pwd = os.getcwd()
-        with patch('salishsea_cmd.prepare.os.chdir'):
-            salishsea_cmd.prepare._copy_run_set_files(
+        with patch('nemo_cmd.prepare.os.chdir'):
+            nemo_cmd.prepare._copy_run_set_files(
                 run_desc, desc_file, pwd, 'run_dir', nemo34=False)
         expected = [
             call(os.path.join(pwd, 'iodef.xml'), 'iodef.xml'),
@@ -463,8 +463,8 @@ class TestCopyRunSetFiles:
         ]
         assert m_copy.call_args_list == expected
 
-    @patch('salishsea_cmd.prepare.shutil.copy2')
-    @patch('salishsea_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    @patch('nemo_cmd.prepare._set_xios_server_mode')
     def test_nemo34_copy_run_set_files_relative_path(
         self, m_sxsm, m_copy,
     ):
@@ -473,8 +473,8 @@ class TestCopyRunSetFiles:
         run_desc = {'output': {'files': '../iodef.xml'}}
         desc_file = 'foo.yaml'
         pwd = os.getcwd()
-        with patch('salishsea_cmd.prepare.os.chdir'):
-            salishsea_cmd.prepare._copy_run_set_files(
+        with patch('nemo_cmd.prepare.os.chdir'):
+            nemo_cmd.prepare._copy_run_set_files(
                 run_desc, desc_file, pwd, 'run_dir', nemo34=True)
         expected = [
             call(os.path.join(os.path.dirname(pwd), 'iodef.xml'), 'iodef.xml'),
@@ -483,8 +483,8 @@ class TestCopyRunSetFiles:
         ]
         assert m_copy.call_args_list == expected
 
-    @patch('salishsea_cmd.prepare.shutil.copy2')
-    @patch('salishsea_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    @patch('nemo_cmd.prepare._set_xios_server_mode')
     def test_nemo36_copy_run_set_files_relative_path(
         self, m_sxsm, m_copy,
     ):
@@ -499,8 +499,8 @@ class TestCopyRunSetFiles:
         }
         desc_file = 'foo.yaml'
         pwd = os.getcwd()
-        with patch('salishsea_cmd.prepare.os.chdir'):
-            salishsea_cmd.prepare._copy_run_set_files(
+        with patch('nemo_cmd.prepare.os.chdir'):
+            nemo_cmd.prepare._copy_run_set_files(
                 run_desc, desc_file, pwd, 'run_dir', nemo34=False)
         expected = [
             call(os.path.join(os.path.dirname(pwd), 'iodef.xml'), 'iodef.xml'),
@@ -525,8 +525,8 @@ class TestMakeExecutableLinks:
         p_nemo_bin_dir.ensure('nemo.exe')
         p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare.hg.parents'):
-            salishsea_cmd.prepare._make_executable_links(
+        with patch('nemo_cmd.prepare.hg.parents'):
+            nemo_cmd.prepare._make_executable_links(
                 'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
                 nemo34, 'xios_code_repo', str(p_xios_bin_dir))
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
@@ -540,8 +540,8 @@ class TestMakeExecutableLinks:
         if nemo34:
             p_nemo_bin_dir.ensure('server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare.hg.parents'):
-            salishsea_cmd.prepare._make_executable_links(
+        with patch('nemo_cmd.prepare.hg.parents'):
+            nemo_cmd.prepare._make_executable_links(
                 'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
                 nemo34, 'xios_code_repo', str(p_xios_bin_dir))
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
@@ -564,8 +564,8 @@ class TestMakeExecutableLinks:
         if not nemo34:
             p_xios_bin_dir.ensure('xios_server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare.hg.parents'):
-            salishsea_cmd.prepare._make_executable_links(
+        with patch('nemo_cmd.prepare.hg.parents'):
+            nemo_cmd.prepare._make_executable_links(
                 'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
                 nemo34, xios_code_repo, str(p_xios_bin_dir))
         if nemo34:
@@ -582,8 +582,8 @@ class TestMakeExecutableLinks:
         p_nemo_bin_dir.ensure('nemo.exe')
         p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare.hg.parents'):
-            salishsea_cmd.prepare._make_executable_links(
+        with patch('nemo_cmd.prepare.hg.parents'):
+            nemo_cmd.prepare._make_executable_links(
                 'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
                 nemo34, 'xios_code_repo', str(p_xios_bin_dir))
         assert p_run_dir.join('NEMO-code_rev.txt').check(file=True)
@@ -602,8 +602,8 @@ class TestMakeExecutableLinks:
         if not nemo34:
             p_xios_bin_dir.ensure('xios_server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('salishsea_cmd.prepare.hg.parents'):
-            salishsea_cmd.prepare._make_executable_links(
+        with patch('nemo_cmd.prepare.hg.parents'):
+            nemo_cmd.prepare._make_executable_links(
                 'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
                 nemo34, xios_code_repo, str(p_xios_bin_dir))
         if nemo34:
@@ -613,26 +613,26 @@ class TestMakeExecutableLinks:
 
 
 class TestMakeGridLinks:
-    @patch('salishsea_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.log')
     def test_no_forcing_dir(self, m_log):
         run_desc = {
             'paths': {
                 'forcing': 'foo',
             },
         }
-        salishsea_cmd.prepare._remove_run_dir = Mock()
+        nemo_cmd.prepare._remove_run_dir = Mock()
         p_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', return_value=False)
+            'nemo_cmd.prepare.os.path.exists', return_value=False)
         p_abspath = patch(
-            'salishsea_cmd.prepare.os.path.abspath', side_effect=lambda path: path)
+            'nemo_cmd.prepare.os.path.abspath', side_effect=lambda path: path)
         with pytest.raises(SystemExit), p_exists, p_abspath:
-            salishsea_cmd.prepare._make_grid_links(run_desc, 'run_dir')
+            nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
         m_log.error.assert_called_once_with(
             'foo not found; cannot create symlinks - '
             'please check the forcing path in your run description file')
-        salishsea_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+        nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
 
-    @patch('salishsea_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.log')
     def test_no_link_path(self, m_log):
         run_desc = {
             'paths': {
@@ -643,20 +643,20 @@ class TestMakeGridLinks:
                 'bathymetry': 'bathy.nc',
             },
         }
-        salishsea_cmd.prepare._remove_run_dir = Mock()
+        nemo_cmd.prepare._remove_run_dir = Mock()
         p_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', side_effect=[True, False])
+            'nemo_cmd.prepare.os.path.exists', side_effect=[True, False])
         p_abspath = patch(
-            'salishsea_cmd.prepare.os.path.abspath',
+            'nemo_cmd.prepare.os.path.abspath',
             side_effect=lambda path: path)
-        p_chdir = patch('salishsea_cmd.prepare.os.chdir')
+        p_chdir = patch('nemo_cmd.prepare.os.chdir')
         with pytest.raises(SystemExit), p_exists, p_abspath, p_chdir:
-            salishsea_cmd.prepare._make_grid_links(run_desc, 'run_dir')
+            nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
         m_log.error.assert_called_once_with(
             'foo/grid/coordinates.nc not found; cannot create symlink - '
             'please check the forcing path and grid file names '
             'in your run description file')
-        salishsea_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+        nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
 
 
 class TestMakeForcingLinks:
@@ -666,12 +666,12 @@ class TestMakeForcingLinks:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         run_desc = {'paths': {'forcing': 'nemo_forcing_dir'}}
         patch_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', return_value=True)
+            'nemo_cmd.prepare.os.path.exists', return_value=True)
         patch_mfl34 = patch(
-            'salishsea_cmd.prepare._make_forcing_links_nemo34')
-        patch_hgp = patch('salishsea_cmd.prepare.hg.parents')
+            'nemo_cmd.prepare._make_forcing_links_nemo34')
+        patch_hgp = patch('nemo_cmd.prepare.hg.parents')
         with patch_exists, patch_hgp, patch_mfl34 as m_mfl34:
-            salishsea_cmd.prepare._make_forcing_links(
+            nemo_cmd.prepare._make_forcing_links(
                 run_desc, str(p_run_dir), nemo34=True, nocheck_init=False)
         m_mfl34.assert_called_once_with(run_desc, str(p_run_dir), False)
 
@@ -679,17 +679,17 @@ class TestMakeForcingLinks:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         run_desc = {'paths': {'forcing': 'nemo_forcing_dir'}}
         patch_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', return_value=True)
+            'nemo_cmd.prepare.os.path.exists', return_value=True)
         patch_mfl36 = patch(
-            'salishsea_cmd.prepare._make_forcing_links_nemo36')
-        patch_hgp = patch('salishsea_cmd.prepare.hg.parents')
+            'nemo_cmd.prepare._make_forcing_links_nemo36')
+        patch_hgp = patch('nemo_cmd.prepare.hg.parents')
         with patch_exists, patch_hgp, patch_mfl36 as m_mfl36:
-            salishsea_cmd.prepare._make_forcing_links(
+            nemo_cmd.prepare._make_forcing_links(
                 run_desc, str(p_run_dir), nemo34=False, nocheck_init=False)
         m_mfl36.assert_called_once_with(run_desc, str(p_run_dir), False)
 
     @pytest.mark.parametrize('nemo34', [True, False])
-    @patch('salishsea_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.log')
     def test_make_forcing_links_no_forcing_dir(
         self, m_log, nemo34, tmpdir,
     ):
@@ -699,19 +699,19 @@ class TestMakeForcingLinks:
                 'forcing': 'foo',
             },
         }
-        salishsea_cmd.prepare._remove_run_dir = Mock()
+        nemo_cmd.prepare._remove_run_dir = Mock()
         p_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', return_value=False)
+            'nemo_cmd.prepare.os.path.exists', return_value=False)
         p_abspath = patch(
-            'salishsea_cmd.prepare.os.path.abspath',
+            'nemo_cmd.prepare.os.path.abspath',
             side_effect=lambda path: path)
         with pytest.raises(SystemExit), p_exists, p_abspath:
-            salishsea_cmd.prepare._make_forcing_links(
+            nemo_cmd.prepare._make_forcing_links(
                 run_desc, str(p_run_dir), nemo34, nocheck_init=False)
         m_log.error.assert_called_once_with(
             'foo not found; cannot create symlinks - '
             'please check the forcing path in your run description file')
-        salishsea_cmd.prepare._remove_run_dir.assert_called_once_with(
+        nemo_cmd.prepare._remove_run_dir.assert_called_once_with(
             str(p_run_dir))
 
 
@@ -725,8 +725,8 @@ class TestMakeForcingLinksNEMO34:
             ('initial_strat/', 'foo/initial_strat/'),
         ],
     )
-    @patch('salishsea_cmd.prepare._check_atmos_files')
-    @patch('salishsea_cmd.prepare.log')
+    @patch('nemo_cmd.prepare._check_atmos_files')
+    @patch('nemo_cmd.prepare.log')
     def test_make_forcing_links_no_restart_path(
         self, m_log, m_caf, link_path, expected,
     ):
@@ -741,24 +741,24 @@ class TestMakeForcingLinksNEMO34:
                 'rivers': 'rivers/',
             },
         }
-        salishsea_cmd.prepare._remove_run_dir = Mock()
+        nemo_cmd.prepare._remove_run_dir = Mock()
         p_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', return_value=False)
+            'nemo_cmd.prepare.os.path.exists', return_value=False)
         p_abspath = patch(
-            'salishsea_cmd.prepare.os.path.abspath',
+            'nemo_cmd.prepare.os.path.abspath',
             side_effect=lambda path: path)
-        p_chdir = patch('salishsea_cmd.prepare.os.chdir')
+        p_chdir = patch('nemo_cmd.prepare.os.chdir')
         with pytest.raises(SystemExit), p_exists, p_abspath, p_chdir:
-            salishsea_cmd.prepare._make_forcing_links_nemo34(
+            nemo_cmd.prepare._make_forcing_links_nemo34(
                 run_desc, 'run_dir', nocheck_init=False)
         m_log.error.assert_called_once_with(
             '{} not found; cannot create symlink - '
             'please check the forcing path and initial conditions file names '
             'in your run description file'.format(expected))
-        salishsea_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+        nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
 
-    @patch('salishsea_cmd.prepare._check_atmos_files')
-    @patch('salishsea_cmd.prepare.log')
+    @patch('nemo_cmd.prepare._check_atmos_files')
+    @patch('nemo_cmd.prepare.log')
     def test_make_forcing_links_no_forcing_path(
         self, m_log, m_caf,
     ):
@@ -773,23 +773,23 @@ class TestMakeForcingLinksNEMO34:
                 'rivers': 'rivers/',
             },
         }
-        salishsea_cmd.prepare._remove_run_dir = Mock()
+        nemo_cmd.prepare._remove_run_dir = Mock()
         p_exists = patch(
-            'salishsea_cmd.prepare.os.path.exists', side_effect=[True, False])
+            'nemo_cmd.prepare.os.path.exists', side_effect=[True, False])
         p_abspath = patch(
-            'salishsea_cmd.prepare.os.path.abspath',
+            'nemo_cmd.prepare.os.path.abspath',
             side_effect=lambda path: path)
-        p_chdir = patch('salishsea_cmd.prepare.os.chdir')
-        p_symlink = patch('salishsea_cmd.prepare.os.symlink')
+        p_chdir = patch('nemo_cmd.prepare.os.chdir')
+        p_symlink = patch('nemo_cmd.prepare.os.symlink')
         with pytest.raises(SystemExit), p_exists, p_abspath, p_chdir:
             with p_symlink:
-                salishsea_cmd.prepare._make_forcing_links_nemo34(
+                nemo_cmd.prepare._make_forcing_links_nemo34(
                     run_desc, 'run_dir', nocheck_init=False)
         m_log.error.assert_called_once_with(
             'foo/bar not found; cannot create symlink - '
             'please check the forcing paths and file names '
             'in your run description file')
-        salishsea_cmd.prepare._remove_run_dir.assert_called_once_with(
+        nemo_cmd.prepare._remove_run_dir.assert_called_once_with(
             'run_dir')
 
 
@@ -808,9 +808,9 @@ class TestMakeForcingLinksNEMO36:
                 'NEMO-atmos': {
                     'link to': str(p_atmos_ops),
                 }}}
-        patch_symlink = patch('salishsea_cmd.prepare.os.symlink')
+        patch_symlink = patch('nemo_cmd.prepare.os.symlink')
         with patch_symlink as m_symlink:
-            salishsea_cmd.prepare._make_forcing_links_nemo36(
+            nemo_cmd.prepare._make_forcing_links_nemo36(
                 run_desc, 'run_dir', nocheck_init=False)
         m_symlink.assert_called_once_with(p_atmos_ops, 'run_dir/NEMO-atmos')
 
@@ -825,14 +825,14 @@ class TestMakeForcingLinksNEMO36:
                 'rivers': {
                     'link to': 'rivers',
                 }}}
-        patch_symlink = patch('salishsea_cmd.prepare.os.symlink')
+        patch_symlink = patch('nemo_cmd.prepare.os.symlink')
         with patch_symlink as m_symlink:
-            salishsea_cmd.prepare._make_forcing_links_nemo36(
+            nemo_cmd.prepare._make_forcing_links_nemo36(
                 run_desc, 'run_dir', nocheck_init=False)
         m_symlink.assert_called_once_with(
             p_nemo_forcing.join('rivers'), 'run_dir/rivers')
 
-    @patch('salishsea_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.log')
     def test_no_link_path(self, m_log, tmpdir):
         p_nemo_forcing = tmpdir.ensure_dir('NEMO-forcing')
         run_desc = {
@@ -843,14 +843,14 @@ class TestMakeForcingLinksNEMO36:
                 'rivers': {
                     'link to': 'rivers',
                 }}}
-        salishsea_cmd.prepare._remove_run_dir = Mock()
+        nemo_cmd.prepare._remove_run_dir = Mock()
         with pytest.raises(SystemExit):
-            salishsea_cmd.prepare._make_forcing_links_nemo36(
+            nemo_cmd.prepare._make_forcing_links_nemo36(
                 run_desc, 'run_dir', nocheck_init=False)
         m_log.error.assert_called_once_with(
             '{} not found; cannot create symlink - '
             'please check the forcing paths and file names '
             'in your run description file'
             .format(p_nemo_forcing.join('rivers')))
-        salishsea_cmd.prepare._remove_run_dir.assert_called_once_with(
+        nemo_cmd.prepare._remove_run_dir.assert_called_once_with(
             'run_dir')

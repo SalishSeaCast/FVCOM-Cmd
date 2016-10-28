@@ -14,29 +14,52 @@
 .. limitations under the License.
 
 
-.. _SalishSeaCmdProcessor:
+.. _NEMO-CommandProcessor:
 
-*********************************
-Salish Sea NEMO Command Processor
-*********************************
+**********************
+NEMO Command Processor
+**********************
 
-The Salish Sea NEMO command processor,
-:program:`salishsea`,
-is a command-line tool for doing various operations associated with the :ref:`SalishSeaNEMO` model.
-It is provided by the :kbd:`SalishSeaCmd` package in the :ref:`tools-repo` repository.
+The NEMO command processor,
+:program:`nemo`,
+is a command-line tool for doing various operations associated with running the `NEMO`_ ocean model.
+It is provided by the `NEMO-Cmd package`_.
 
-The :kbd:`SalishSeaCmd` package is a Python 3 package.
-It is developed and tested under Python 3.5 and should work with that and later versions of Python.
+.. _NEMO: http://www.nemo-ocean.eu/
+.. _NEMO-Cmd package: https://bitbucket.org/salishsea/nemo-cmd
+
+The :kbd:`NEMO-Cmd` package is a Python 2/3 package.
+It is developed with Python 3.5 and tested under Python 2.7 and 3.5.
 
 
-Contents:
+Contents
+========
 
 .. toctree::
    :maxdepth: 2
 
    installation
-   breaking_changes
    subcommands
    run_description_file
    api
    development
+
+
+Indices and Tables
+------------------
+
+* :ref:`genindex`
+* :ref:`modindex`
+
+
+License
+=======
+
+The NEMO command processor code and documentation are copyright 2013-2016 by the `Salish Sea MEOPAR Project Contributors`_ and The University of British Columbia.
+
+.. _Salish Sea MEOPAR Project Contributors: https://bitbucket.org/salishsea/docs/src/tip/CONTRIBUTORS.rst
+
+They are licensed under the Apache License, Version 2.0.
+http://www.apache.org/licenses/LICENSE-2.0
+Please see the LICENSE file for details of the license.
+
