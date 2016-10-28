@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""SalishSeaCmd application
+"""NEMO_Cmd application
 
-Salish Sea NEMO Command Processor
+NEMO Command Processor
 
-This module is connected to the `salishsea` command via a console_scripts
+This module is connected to the `nemo` command via a console_scripts
 entry point in setup.py.
 """
 import sys
@@ -25,27 +25,24 @@ import sys
 import cliff.app
 import cliff.commandmanager
 
-from salishsea_cmd import __pkg_metadata__
+from nemo_cmd import __pkg_metadata__
 
 
-__all__ = ['main', 'SalishSeaApp']
-
-
-class SalishSeaApp(cliff.app.App):
+class NEMO_App(cliff.app.App):
     CONSOLE_MESSAGE_FORMAT = '%(name)s %(levelname)s: %(message)s'
 
     def __init__(self):
-        super(SalishSeaApp, self).__init__(
+        super(NEMO_App, self).__init__(
             description=__pkg_metadata__.DESCRIPTION,
             version=__pkg_metadata__.VERSION,
             command_manager=cliff.commandmanager.CommandManager(
-                'salishsea.app', convert_underscores=False),
+                'nemo.app', convert_underscores=False),
             stderr=sys.stdout,
         )
 
 
 def main(argv=sys.argv[1:]):
-    app = SalishSeaApp()
+    app = NEMO_App()
     return app.run(argv)
 
 

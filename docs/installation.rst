@@ -14,41 +14,47 @@
 .. limitations under the License.
 
 
-.. _SalishSeaCmdPackageInstallation:
+.. _NEMO-CmdPackageInstallation:
 
-****************************************
-:kbd:`SalishSeaCmd` Package Installation
-****************************************
+************************************
+:kbd:`NEMO-Cmd` Package Installation
+************************************
 
-:kbd:`SalishSeaCmd` is a Python 3 package that provides the :program:`salishsea` command-line tool for doing various operations associated with the :ref:`SalishSeaNEMO` model.
+:kbd:`NEMO-Cmd` is a Python package that provides the :program:`nemo` command-line tool for doing various operations associated running with the `NEMO`_ ocean model.
+
+.. _NEMO: http://www.nemo-ocean.eu/
 
 These instructions assume that:
 
-* You have an up to date clone of the :ref:`tools-repo` repo
-* You have the Python 3 version of :ref:`AnacondaPythonDistro` or `Miniconda`_ installed
-* :file:`$HOME/anaconda3/bin` is included in your :envvar:`PATH` environment variable if your are using the :ref:`AnacondaPythonDistro`,
-  or :file:`$HOME/miniconda3/bin` is included in your :envvar:`PATH` environment variable if your are using `Miniconda`_
+* You have an up to date clone of the `NEMO-Cmd package`_ repository.
 
+.. _NEMO-Cmd package: https://bitbucket.org/salishsea/nemo-cmd
+
+* You have the Python 3 version of the `Anaconda Python Distribution`_ or `Miniconda`_ installed
+
+.. _Anaconda Python Distribution: http://www.continuum.io/downloads
 .. _Miniconda: http://conda.pydata.org/miniconda.html
 
-To install the :kbd:`SalishSeaCmd` package in your :kbd:`root` Anaconda or Miniconda environment use:
+* :file:`$HOME/anaconda3/bin` is included in your :envvar:`PATH` environment variable if you are using the Anaconda,
+  or :file:`$HOME/miniconda3/bin` is included in your :envvar:`PATH` environment variable if you are using Miniconda
+
+To install the :kbd:`NEMO-Cmd` package in your :kbd:`root` Anaconda or Miniconda environment use:
 
 .. code-block:: bash
 
-    $ cd tools
-    $ pip install --editable SalishSeaTools
-    $ pip install --editable SalishSeaCmd
+    $ cd NEMO-Cmd
+    $ pip install --editable .
 
-The :kbd:`--editable` option in the :command:`pip install` commands installs the packages via symlinks so that :program:`salishsea` will be automatically updated as the repo evolves.
+The :kbd:`--editable` option in the :command:`pip install` commands installs the packages via symlinks so that :program:`nemo` will be automatically updated as the repo evolves.
 
-The :kbd:`SalishSeaCmd` package can also be installed in an isolated :program:`conda` environment.
+The :kbd:`Nemo-Cmd` package can also be installed in an isolated :program:`conda` environment.
 The common use case for doing so it development,
 testing,
 and documentation of the package;
-please see the :ref:`SalishSeaCmdPackageDevelopment` section for details.
+please see the :ref:`NEMO-CmdPackageDevelopment` section for details.
 
 
-.. _salishseaTabCompletion:
+.. _nemoTabCompletion:
 
 :kbd:`<TAB>` Completion
 =======================
@@ -58,17 +64,17 @@ please see the :ref:`SalishSeaCmdPackageDevelopment` section for details.
     :kbd:`<TAB>` completion is only available in recent versions of :command:`bash`.
     The instructions below are only useful if you are working on Ubuntu 14.04 or later.
 
-The :program:`salishsea` command line interface includes a sub-command that enables it to hook into the :program:`bash` :kbd:`<TAB>` completion machinery.
+The :program:`nemo` command line interface includes a sub-command that enables it to hook into the :program:`bash` :kbd:`<TAB>` completion machinery.
 (:kbd:`<TAB>` completion or `command-line completion`_ is a shell feature whereby partially typed commands are filled out by the shell when the user presses the :kbd:`<TAB>` key.)
-The :command:`salishsea complete` command prints a blob of :program:`bash` code that does the job,
+The :command:`nemo complete` command prints a blob of :program:`bash` code that does the job,
 so,
-capturing that code and executing it with the :command:`eval` command will enable completion for :program:`salishsea` in your current shell session.
+capturing that code and executing it with the :command:`eval` command will enable completion for :program:`nemo` in your current shell session.
 You can do that with the compound command:
 
 .. code-block:: bash
 
-    eval "$(salishsea complete)"
+    eval "$(nemo complete)"
 
-Including that line in your :file:`~/.bashrc` file will ensure that completion for :program:`salishsea` is available in every shell you launch.
+Including that line in your :file:`~/.bashrc` file will ensure that completion for :program:`nemo` is available in every shell you launch.
 
 .. _command-line completion: http://en.wikipedia.org/wiki/Command-line_completion

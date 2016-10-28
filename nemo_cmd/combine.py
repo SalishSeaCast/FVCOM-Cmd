@@ -28,10 +28,7 @@ import sys
 
 import cliff.command
 
-from salishsea_cmd import lib
-
-
-__all__ = ['Combine']
+from nemo_cmd import lib
 
 
 log = logging.getLogger(__name__)

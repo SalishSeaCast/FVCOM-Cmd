@@ -1,7 +1,7 @@
 [run]
 branch = True
 source =
-    salishsea_cmd
+    nemo_cmd
     tests
 
 [report]

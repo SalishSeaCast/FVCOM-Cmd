@@ -32,61 +32,61 @@ import cliff.command
 import pytest
 import yaml
 
-import salishsea_cmd.api
+import nemo_cmd.api
 
 
 class TestCombine(object):
-    @patch('salishsea_cmd.api._run_subcommand')
+    @patch('nemo_cmd.api._run_subcommand')
     def test_combine_default_args(self, m_run_subcommand):
         app, app_args = Mock(spec=cliff.app.App), []
-        salishsea_cmd.api.combine(app, app_args, 'run_desc_file', 'results_dir')
+        nemo_cmd.api.combine(app, app_args, 'run_desc_file', 'results_dir')
         m_run_subcommand.assert_called_once_with(
             app, app_args, ['combine', 'run_desc_file', 'results_dir'])
 
-    @patch('salishsea_cmd.api._run_subcommand')
+    @patch('nemo_cmd.api._run_subcommand')
     def test_combine_keep_proc_results_arg(self, m_run_subcommand):
         app, app_args = Mock(spec=cliff.app.App), []
-        salishsea_cmd.api.combine(
+        nemo_cmd.api.combine(
             app, app_args, 'run_desc_file', 'results_dir',
             keep_proc_results=True)
         m_run_subcommand.assert_called_once_with(
             app, app_args,
             ['combine', 'run_desc_file', 'results_dir', '--keep-proc-results'])
 
-    @patch('salishsea_cmd.api._run_subcommand')
+    @patch('nemo_cmd.api._run_subcommand')
     def test_combine_no_compress_arg(self, m_run_subcommand):
         app, app_args = Mock(spec=cliff.app.App), []
-        salishsea_cmd.api.combine(
+        nemo_cmd.api.combine(
             app, app_args, 'run_desc_file', 'results_dir',
             no_compress=True)
         m_run_subcommand.assert_called_once_with(
             app, app_args,
             ['combine', 'run_desc_file', 'results_dir', '--no-compress'])
 
-    @patch('salishsea_cmd.api._run_subcommand')
+    @patch('nemo_cmd.api._run_subcommand')
     def test_combine_compress_restart_arg(self, m_run_subcommand):
         app, app_args = Mock(spec=cliff.app.App), []
-        salishsea_cmd.api.combine(
+        nemo_cmd.api.combine(
             app, app_args, 'run_desc_file', 'results_dir',
             compress_restart=True)
         m_run_subcommand.assert_called_once_with(
             app, app_args,
             ['combine', 'run_desc_file', 'results_dir', '--compress-restart'])
 
-    @patch('salishsea_cmd.api._run_subcommand')
+    @patch('nemo_cmd.api._run_subcommand')
     def test_combine_delete_restart_arg(self, m_run_subcommand):
         app, app_args = Mock(spec=cliff.app.App), []
-        salishsea_cmd.api.combine(
+        nemo_cmd.api.combine(
             app, app_args, 'run_desc_file', 'results_dir',
             delete_restart=True)
         m_run_subcommand.assert_called_once_with(
             app, app_args,
             ['combine', 'run_desc_file', 'results_dir', '--delete-restart'])
 
-    @patch('salishsea_cmd.api._run_subcommand')
+    @patch('nemo_cmd.api._run_subcommand')
     def test_combine_all_args(self, m_run_subcommand):
         app, app_args = Mock(spec=cliff.app.App), []
-        salishsea_cmd.api.combine(
+        nemo_cmd.api.combine(
             app, app_args, 'run_desc_file', 'results_dir',
             keep_proc_results=True, no_compress=True, compress_restart=True,
             delete_restart=True)
@@ -99,7 +99,7 @@ class TestCombine(object):
 class TestRunDescription(object):
     @pytest.mark.parametrize('nemo34', [True, False])
     def test_no_arguments(self, nemo34):
-        run_desc = salishsea_cmd.api.run_description(nemo34=nemo34)
+        run_desc = nemo_cmd.api.run_description(nemo34=nemo34)
         expected = {
             'config_name': 'SalishSea',
             'run_id': None,
@@ -172,7 +172,7 @@ class TestRunDescription(object):
     ])
     def test_all_arguments(self, nemo34, namelists):
         XIOS_code = None if nemo34 else '../../XIOS/'
-        run_desc = salishsea_cmd.api.run_description(
+        run_desc = nemo_cmd.api.run_description(
             config_name='SOG',
             run_id='foo',
             walltime='1:00:00',
@@ -224,37 +224,37 @@ class TestRunSubcommand(object):
         app = Mock(spec=cliff.app.App)
         app_args = Mock(debug=True)
         with pytest.raises(ValueError):
-            return_code = salishsea_cmd.api._run_subcommand(app, app_args, [])
+            return_code = nemo_cmd.api._run_subcommand(app, app_args, [])
             assert return_code == 2
 
-    @patch('salishsea_cmd.api.log.error')
+    @patch('nemo_cmd.api.log.error')
     def test_command_not_found_logged(self, m_log):
         app = Mock(spec=cliff.app.App)
         app_args = Mock(debug=False)
-        return_code = salishsea_cmd.api._run_subcommand(app, app_args, [])
+        return_code = nemo_cmd.api._run_subcommand(app, app_args, [])
         assert m_log.called
         assert return_code == 2
 
-    @patch('salishsea_cmd.api.cliff.commandmanager.CommandManager')
-    @patch('salishsea_cmd.api.log.exception')
+    @patch('nemo_cmd.api.cliff.commandmanager.CommandManager')
+    @patch('nemo_cmd.api.log.exception')
     def test_command_exception_logged(self, m_log, m_cmd_mgr):
         app = Mock(spec=cliff.app.App)
         app_args = Mock(debug=True)
         cmd_factory = Mock(spec=cliff.command.Command)
         cmd_factory().take_action.side_effect = Exception
         m_cmd_mgr().find_command.return_value = (cmd_factory, 'bar', 'baz')
-        salishsea_cmd.api._run_subcommand(app, app_args, ['foo'])
+        nemo_cmd.api._run_subcommand(app, app_args, ['foo'])
         assert m_log.called
 
-    @patch('salishsea_cmd.api.cliff.commandmanager.CommandManager')
-    @patch('salishsea_cmd.api.log.error')
+    @patch('nemo_cmd.api.cliff.commandmanager.CommandManager')
+    @patch('nemo_cmd.api.log.error')
     def test_command_exception_logged_as_error(self, m_log, m_cmd_mgr):
         app = Mock(spec=cliff.app.App)
         app_args = Mock(debug=False)
         cmd_factory = Mock(spec=cliff.command.Command)
         cmd_factory().take_action.side_effect = Exception
         m_cmd_mgr().find_command.return_value = (cmd_factory, 'bar', 'baz')
-        salishsea_cmd.api._run_subcommand(app, app_args, ['foo'])
+        nemo_cmd.api._run_subcommand(app, app_args, ['foo'])
         assert m_log.called
 
 
@@ -270,7 +270,7 @@ class TestPbsCommon:
             u'run_id: foo\n'
             u'walltime: 01:02:03\n')
         run_desc = yaml.load(desc_file)
-        pbs_directives = salishsea_cmd.api.pbs_common(
+        pbs_directives = nemo_cmd.api.pbs_common(
             run_desc, 42, 'me@example.com', 'foo/')
         assert 'walltime=1:02:03' in pbs_directives
 
@@ -283,6 +283,6 @@ class TestPbsCommon:
             u'run_id: foo\n'
             u'walltime: 1:02:03\n')
         run_desc = yaml.load(desc_file)
-        pbs_directives = salishsea_cmd.api.pbs_common(
+        pbs_directives = nemo_cmd.api.pbs_common(
             run_desc, 42, 'me@example.com', 'foo/')
         assert 'walltime=1:02:03' in pbs_directives

@@ -15,7 +15,7 @@
 
 """SalishSeaCmd -- Salish Sea NEMO command processor
 """
-PROJECT = 'SalishSeaCmd'
-DESCRIPTION = 'Salish Sea NEMO Command Processor'
-VERSION = '2.2.dev0'
-DEV_STATUS = '5 - Production'
+PROJECT = 'NEMO-Cmd'
+DESCRIPTION = 'NEMO Command Processor'
+VERSION = '1.0.dev0'
+DEV_STATUS = '3 - Alpha'

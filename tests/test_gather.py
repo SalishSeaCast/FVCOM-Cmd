@@ -26,8 +26,8 @@ import pytest
 
 @pytest.fixture
 def gather_cmd():
-    import salishsea_cmd.gather
-    return salishsea_cmd.gather.Gather(Mock(spec=cliff.app.App), [])
+    import nemo_cmd.gather
+    return nemo_cmd.gather.Gather(Mock(spec=cliff.app.App), [])
 
 
 def test_get_parser(gather_cmd):

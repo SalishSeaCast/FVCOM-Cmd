@@ -20,13 +20,6 @@ import subprocess
 import yaml
 
 
-__all__ = [
-    'add_combine_gather_options',
-    'load_run_desc',
-    'netcdf4_deflate',
-]
-
-
 def load_run_desc(desc_file):
     """Load the run description file contents into a data structure.
 

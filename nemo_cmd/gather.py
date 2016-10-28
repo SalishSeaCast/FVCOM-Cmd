@@ -23,13 +23,10 @@ import shutil
 
 import cliff.command
 
-from salishsea_cmd import (
+from nemo_cmd import (
     api,
     lib,
 )
-
-
-__all__ = ['Gather']
 
 
 log = logging.getLogger(__name__)
