@@ -27,7 +27,7 @@ import xml.etree.ElementTree
 import arrow
 import cliff.command
 import salishsea_tools.hg_commands as hg
-from salishsea_tools.namelist import namelist2dict
+from nemo_cmd.namelist import namelist2dict
 
 from nemo_cmd import lib
 
