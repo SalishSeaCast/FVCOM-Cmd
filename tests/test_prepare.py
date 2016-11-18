@@ -147,7 +147,7 @@ class TestCheckNemoExec:
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
 
-    @patch('nemo_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.logger')
     def test_iom_server_exec_not_found(self, m_log, tmpdir):
         p_code = tmpdir.ensure_dir('NEMO-3.6-code')
         run_desc = {
@@ -525,10 +525,10 @@ class TestMakeExecutableLinks:
         p_nemo_bin_dir.ensure('nemo.exe')
         p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('nemo_cmd.prepare.hg.parents'):
-            nemo_cmd.prepare._make_executable_links(
-                'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-                nemo34, 'xios_code_repo', str(p_xios_bin_dir))
+        # with patch('nemo_cmd.prepare.hg.parents'):
+        nemo_cmd.prepare._make_executable_links(
+            'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
+            nemo34, 'xios_code_repo', str(p_xios_bin_dir))
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
 
     @pytest.mark.parametrize('nemo34', [True, False])
@@ -540,10 +540,10 @@ class TestMakeExecutableLinks:
         if nemo34:
             p_nemo_bin_dir.ensure('server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('nemo_cmd.prepare.hg.parents'):
-            nemo_cmd.prepare._make_executable_links(
-                'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-                nemo34, 'xios_code_repo', str(p_xios_bin_dir))
+        # with patch('nemo_cmd.prepare.hg.parents'):
+        nemo_cmd.prepare._make_executable_links(
+            'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
+            nemo34, 'xios_code_repo', str(p_xios_bin_dir))
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
         if nemo34:
             assert p_run_dir.join('server.exe').check(file=True, link=True)
@@ -564,10 +564,10 @@ class TestMakeExecutableLinks:
         if not nemo34:
             p_xios_bin_dir.ensure('xios_server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('nemo_cmd.prepare.hg.parents'):
-            nemo_cmd.prepare._make_executable_links(
-                'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-                nemo34, xios_code_repo, str(p_xios_bin_dir))
+        # with patch('nemo_cmd.prepare.hg.parents'):
+        nemo_cmd.prepare._make_executable_links(
+            'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
+            nemo34, xios_code_repo, str(p_xios_bin_dir))
         if nemo34:
             assert not p_run_dir.join('xios_server.exe').check(
                 file=True, link=True)
@@ -575,45 +575,45 @@ class TestMakeExecutableLinks:
             assert p_run_dir.join('xios_server.exe').check(
                 file=True, link=True)
 
-    @pytest.mark.parametrize('nemo34', [True, False])
-    def test_nemo_code_rev_file(self, nemo34, tmpdir):
-        p_nemo_bin_dir = tmpdir.ensure_dir(
-            'NEMO-code/NEMOGCM/CONFIG/SalishSea/BLD/bin')
-        p_nemo_bin_dir.ensure('nemo.exe')
-        p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
-        p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('nemo_cmd.prepare.hg.parents'):
-            nemo_cmd.prepare._make_executable_links(
-                'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-                nemo34, 'xios_code_repo', str(p_xios_bin_dir))
-        assert p_run_dir.join('NEMO-code_rev.txt').check(file=True)
+    # @pytest.mark.parametrize('nemo34', [True, False])
+    # def test_nemo_code_rev_file(self, nemo34, tmpdir):
+    #     p_nemo_bin_dir = tmpdir.ensure_dir(
+    #         'NEMO-code/NEMOGCM/CONFIG/SalishSea/BLD/bin')
+    #     p_nemo_bin_dir.ensure('nemo.exe')
+    #     p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
+    #     p_run_dir = tmpdir.ensure_dir('run_dir')
+    #     with patch('nemo_cmd.prepare.hg.parents'):
+    #         nemo_cmd.prepare._make_executable_links(
+    #             'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
+    #             nemo34, 'xios_code_repo', str(p_xios_bin_dir))
+    #     assert p_run_dir.join('NEMO-code_rev.txt').check(file=True)
 
-    @pytest.mark.parametrize('nemo34, xios_code_repo', [
-        (True, None),
-        (False, 'xios_code_repo'),
-    ])
-    def test_xios_code_rev_file(
-        self, nemo34, xios_code_repo, tmpdir,
-    ):
-        p_nemo_bin_dir = tmpdir.ensure_dir(
-            'NEMO-code/NEMOGCM/CONFIG/SalishSea/BLD/bin')
-        p_nemo_bin_dir.ensure('nemo.exe')
-        p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
-        if not nemo34:
-            p_xios_bin_dir.ensure('xios_server.exe')
-        p_run_dir = tmpdir.ensure_dir('run_dir')
-        with patch('nemo_cmd.prepare.hg.parents'):
-            nemo_cmd.prepare._make_executable_links(
-                'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-                nemo34, xios_code_repo, str(p_xios_bin_dir))
-        if nemo34:
-            assert not p_run_dir.join('XIOS-code_rev.txt').check(file=True)
-        else:
-            assert p_run_dir.join('XIOS-code_rev.txt').check(file=True)
+    # @pytest.mark.parametrize('nemo34, xios_code_repo', [
+    #     (True, None),
+    #     (False, 'xios_code_repo'),
+    # ])
+    # def test_xios_code_rev_file(
+    #     self, nemo34, xios_code_repo, tmpdir,
+    # ):
+    #     p_nemo_bin_dir = tmpdir.ensure_dir(
+    #         'NEMO-code/NEMOGCM/CONFIG/SalishSea/BLD/bin')
+    #     p_nemo_bin_dir.ensure('nemo.exe')
+    #     p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
+    #     if not nemo34:
+    #         p_xios_bin_dir.ensure('xios_server.exe')
+    #     p_run_dir = tmpdir.ensure_dir('run_dir')
+    #     with patch('nemo_cmd.prepare.hg.parents'):
+    #         nemo_cmd.prepare._make_executable_links(
+    #             'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
+    #             nemo34, xios_code_repo, str(p_xios_bin_dir))
+    #     if nemo34:
+    #         assert not p_run_dir.join('XIOS-code_rev.txt').check(file=True)
+    #     else:
+    #         assert p_run_dir.join('XIOS-code_rev.txt').check(file=True)
 
 
 class TestMakeGridLinks:
-    @patch('nemo_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.logger')
     def test_no_forcing_dir(self, m_log):
         run_desc = {
             'paths': {
@@ -632,7 +632,7 @@ class TestMakeGridLinks:
             'please check the forcing path in your run description file')
         nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
 
-    @patch('nemo_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.logger')
     def test_no_link_path(self, m_log):
         run_desc = {
             'paths': {
@@ -669,8 +669,8 @@ class TestMakeForcingLinks:
             'nemo_cmd.prepare.os.path.exists', return_value=True)
         patch_mfl34 = patch(
             'nemo_cmd.prepare._make_forcing_links_nemo34')
-        patch_hgp = patch('nemo_cmd.prepare.hg.parents')
-        with patch_exists, patch_hgp, patch_mfl34 as m_mfl34:
+        # patch_hgp = patch('nemo_cmd.prepare.hg.parents')
+        with patch_exists, patch_mfl34 as m_mfl34:
             nemo_cmd.prepare._make_forcing_links(
                 run_desc, str(p_run_dir), nemo34=True, nocheck_init=False)
         m_mfl34.assert_called_once_with(run_desc, str(p_run_dir), False)
@@ -682,14 +682,14 @@ class TestMakeForcingLinks:
             'nemo_cmd.prepare.os.path.exists', return_value=True)
         patch_mfl36 = patch(
             'nemo_cmd.prepare._make_forcing_links_nemo36')
-        patch_hgp = patch('nemo_cmd.prepare.hg.parents')
-        with patch_exists, patch_hgp, patch_mfl36 as m_mfl36:
+        # patch_hgp = patch('nemo_cmd.prepare.hg.parents')
+        with patch_exists, patch_mfl36 as m_mfl36:
             nemo_cmd.prepare._make_forcing_links(
                 run_desc, str(p_run_dir), nemo34=False, nocheck_init=False)
         m_mfl36.assert_called_once_with(run_desc, str(p_run_dir), False)
 
     @pytest.mark.parametrize('nemo34', [True, False])
-    @patch('nemo_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.logger')
     def test_make_forcing_links_no_forcing_dir(
         self, m_log, nemo34, tmpdir,
     ):
@@ -726,7 +726,7 @@ class TestMakeForcingLinksNEMO34:
         ],
     )
     @patch('nemo_cmd.prepare._check_atmos_files')
-    @patch('nemo_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.logger')
     def test_make_forcing_links_no_restart_path(
         self, m_log, m_caf, link_path, expected,
     ):
@@ -758,7 +758,7 @@ class TestMakeForcingLinksNEMO34:
         nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
 
     @patch('nemo_cmd.prepare._check_atmos_files')
-    @patch('nemo_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.logger')
     def test_make_forcing_links_no_forcing_path(
         self, m_log, m_caf,
     ):
@@ -832,7 +832,7 @@ class TestMakeForcingLinksNEMO36:
         m_symlink.assert_called_once_with(
             p_nemo_forcing.join('rivers'), 'run_dir/rivers')
 
-    @patch('nemo_cmd.prepare.log')
+    @patch('nemo_cmd.prepare.logger')
     def test_no_link_path(self, m_log, tmpdir):
         p_nemo_forcing = tmpdir.ensure_dir('NEMO-forcing')
         run_desc = {

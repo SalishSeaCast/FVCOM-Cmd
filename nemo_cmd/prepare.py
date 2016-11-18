@@ -26,7 +26,6 @@ import xml.etree.ElementTree
 
 import arrow
 import cliff.command
-import salishsea_tools.hg_commands as hg
 from nemo_cmd.namelist import namelist2dict
 
 from nemo_cmd import lib
@@ -476,14 +475,6 @@ def _make_executable_links(nemo_code_repo, nemo_bin_dir, run_dir, nemo34,
     """Create symlinks in run_dir to the NEMO and I/O server executables
     and record the code repository revision(s) used for the run.
 
-    The NEMO code revision record is the output of the
-    :command:`hg parents` in the NEMO code repo.
-    It is stored in the :file:`NEMO-code_rev.txt` file in run_dir.
-
-    For NEMO-3.6 runs the XIOS code revision record is the output of the
-    :command:`hg parents` in the XIOS code repo.
-    It is stored in the :file:`XIOS-code_rev.txt` file in run_dir.
-
     :param str nemo_code_repo: Absolute path of NEMO code repo.
 
     :param str nemo_bin_dir: Absolute path of directory containing NEMO
@@ -504,16 +495,12 @@ def _make_executable_links(nemo_code_repo, nemo_bin_dir, run_dir, nemo34,
     saved_cwd = os.getcwd()
     os.chdir(run_dir)
     os.symlink(nemo_exec, 'nemo.exe')
-    with open('NEMO-code_rev.txt', 'wt') as f:
-        f.writelines(hg.parents(nemo_code_repo, verbose=True))
     iom_server_exec = os.path.join(nemo_bin_dir, 'server.exe')
     if nemo34 and os.path.exists(iom_server_exec):
         os.symlink(iom_server_exec, 'server.exe')
     if not nemo34:
         xios_server_exec = os.path.join(xios_bin_dir, 'xios_server.exe')
         os.symlink(xios_server_exec, 'xios_server.exe')
-        with open('XIOS-code_rev.txt', 'wt') as f:
-            f.writelines(hg.parents(xios_code_repo, verbose=True))
     os.chdir(saved_cwd)
 
 
@@ -557,10 +544,6 @@ def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
     """Create symlinks in run_dir to the forcing directory/file names,
     and record the NEMO-forcing repo revision used for the run.
 
-    The NEMO-forcing revision record is the output of the
-    :command:`hg parents` in the NEMO-forcing repo.
-    It is stored in the :file:`NEMO-forcing_rev.txt` file in run_dir.
-
     :param dict run_desc: Run description dictionary.
 
     :param str run_dir: Path of the temporary run directory.
@@ -588,8 +571,6 @@ def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
         _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init)
     else:
         _make_forcing_links_nemo36(run_desc, run_dir, nocheck_init)
-    with open(os.path.join(run_dir, 'NEMO-forcing_rev.txt'), 'wt') as f:
-        f.writelines(hg.parents(nemo_forcing_dir, verbose=True))
 
 
 def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
