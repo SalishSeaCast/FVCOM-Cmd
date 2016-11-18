@@ -12,7 +12,7 @@ Based on tests class from https://gist.github.com/krischer/4943658.
 import unittest
 from cStringIO import StringIO
 
-from salishsea_tools.namelist import namelist2dict
+from nemo_cmd.namelist import namelist2dict
 
 
 class NameListTestCase(unittest.TestCase):
