@@ -78,8 +78,11 @@ The meanings of the key-value pairs are:
 The :kbd:`paths` section of the run description file is a collection of directory paths that :program:`salishsea` uses to find files in other repos that it needs.
 The paths may be either absolute or relative.
 
-:kbd:`NEMO-code`
-  The path to the :ref:`NEMO-3.6-code-repo` clone where the NEMO executable for the run is to be found.
+:kbd:`NEMO-code-config`
+  The path to the :file:`CONFIG/` directory in the :kbd:`NEMO-3.6` code tree
+  (typically a version control system clone/checkout)
+  where the NEMO where the configuration files for the run are to be found;
+  e.g. :file:`NEMO-3.6/CONFIG/`.
 
 :kbd:`XIOS`
   The path to the :ref:`XIOS-repo` clone where the XIOS executable for the run is to be found.
@@ -352,8 +355,11 @@ The meanings of the key-value pairs are:
 The :kbd:`paths` section of the run description file is a collection of directory paths that :program:`salishsea` uses to find files in other repos that it needs.
 The paths may be either absolute or relative.
 
-:kbd:`NEMO-code`
-  The path to the :ref:`NEMO-code-repo` clone where the NEMO executable for the run is to be found.
+:kbd:`NEMO-code-config`
+  The path to the :file:`CONFIG/` directory in the :kbd:`NEMO-3.4` code tree
+  (typically a version control system clone/checkout)
+  where the NEMO where the configuration files for the run are to be found;
+  e.g. :file:`NEMO-3.4/NEMOGCM/CONFIG/`.
 
 :kbd:`forcing`
   The path to the :ref:`NEMO-forcing-repo` clone where the netCDF files for the grid coordinates,

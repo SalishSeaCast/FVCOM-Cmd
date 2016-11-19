@@ -103,8 +103,7 @@ class TestPrepare:
         m_crsf.assert_called_once_with(
             m_lrd(), 'SalishSea.yaml', m_dirname(), m_mrd(), nemo34)
         m_mel.assert_called_once_with(
-            m_cne_return[0], m_cne_return[1], m_mrd(), nemo34,
-            m_cxe_return[0], m_cxe_return[1])
+            m_cne_return[1], m_mrd(), nemo34, m_cxe_return[1])
         m_mgl.assert_called_once_with(m_lrd(), m_mrd())
         m_mfl.assert_called_once_with(m_lrd(), m_mrd(), nemo34, False)
         assert run_dir == m_mrd()
@@ -113,49 +112,58 @@ class TestPrepare:
 class TestCheckNemoExec:
     """Unit tests for `salishsea prepare` _check_nemo_exec() function.
     """
-    def test_nemo_code_repo_path(self, tmpdir):
-        p_code = tmpdir.ensure_dir('NEMO-3.6-code')
-        p_code.ensure(
-            'NEMOGCM', 'CONFIG', 'SalishSea', 'BLD', 'bin', 'nemo.exe')
+    @pytest.mark.parametrize('nemo_code_config, config_name', [
+        ('NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
+        ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
+    ])
+    def test_nemo_config_dir_path(self, nemo_code_config, config_name, tmpdir):
+        p_code_config = tmpdir.ensure_dir(nemo_code_config)
+        p_code_config.ensure(config_name, 'BLD', 'bin', 'nemo.exe')
         run_desc = {
-            'config_name': 'SalishSea',
-            'paths': {'NEMO-code': str(p_code)},
+            'config_name': config_name,
+            'paths': {'NEMO-code-config': str(p_code_config)},
         }
-        nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
+        nemo_config_dir, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
             run_desc, nemo34=False)
-        assert nemo_code_repo == p_code
+        assert nemo_config_dir == p_code_config
 
-    def test_nemo_bin_dir_path(self, tmpdir):
-        p_code = tmpdir.ensure_dir('NEMO-3.6-code')
+    @pytest.mark.parametrize('nemo_code_config, config_name', [
+        ('NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
+        ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
+    ])
+    def test_nemo_bin_dir_path(self, nemo_code_config, config_name, tmpdir):
+        p_code_config = tmpdir.ensure_dir(nemo_code_config)
         run_desc = {
-            'config_name': 'SalishSea',
-            'paths': {'NEMO-code': str(p_code)},
+            'config_name': config_name,
+            'paths': {'NEMO-code-config': str(p_code_config)},
         }
-        p_bin_dir = p_code.ensure_dir(
-            'NEMOGCM', 'CONFIG', 'SalishSea', 'BLD', 'bin')
+        p_bin_dir = p_code_config.ensure_dir(config_name, 'BLD', 'bin')
         p_bin_dir.ensure('nemo.exe')
         nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
             run_desc, nemo34=False)
         assert nemo_bin_dir == p_bin_dir
 
-    def test_nemo_exec_not_found(self, tmpdir):
-        p_code = tmpdir.ensure_dir('NEMO-3.6-code')
+    @pytest.mark.parametrize('nemo_code_config, config_name', [
+        ('NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
+        ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
+    ])
+    def test_nemo_exec_not_found(self, nemo_code_config, config_name, tmpdir):
+        p_code_config = tmpdir.ensure_dir(nemo_code_config)
         run_desc = {
-            'config_name': 'SalishSea',
-            'paths': {'NEMO-code': str(p_code)},
+            'config_name': config_name,
+            'paths': {'NEMO-code-config': str(p_code_config)},
         }
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
 
     @patch('nemo_cmd.prepare.logger')
     def test_iom_server_exec_not_found(self, m_log, tmpdir):
-        p_code = tmpdir.ensure_dir('NEMO-3.6-code')
+        p_code_config = tmpdir.ensure_dir('NEMO-3.4-code')
         run_desc = {
             'config_name': 'SalishSea',
-            'paths': {'NEMO-code': str(p_code)},
+            'paths': {'NEMO-code-config': str(p_code_config)},
         }
-        p_bin_dir = p_code.ensure_dir(
-            'NEMOGCM', 'CONFIG', 'SalishSea', 'BLD', 'bin')
+        p_bin_dir = p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
         p_exists = patch(
             'nemo_cmd.prepare.os.path.exists', side_effect=[True, False])
         with p_exists:
@@ -165,13 +173,12 @@ class TestCheckNemoExec:
             .format(p_bin_dir))
 
     def test_nemo36_no_iom_server_check(self, tmpdir):
-        p_code = tmpdir.ensure_dir('NEMO-3.6-code')
+        p_code_config = tmpdir.ensure_dir('NEMO-3.6-code')
         run_desc = {
             'config_name': 'SalishSea',
-            'paths': {'NEMO-code': str(p_code)},
+            'paths': {'NEMO-code-config': str(p_code_config)},
         }
-        p_code.ensure_dir(
-            'NEMOGCM', 'CONFIG', 'SalishSea', 'BLD', 'bin')
+        p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
         with patch('nemo_cmd.prepare.os.path.exists') as m_exists:
             nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
         assert m_exists.call_count == 1
@@ -242,16 +249,14 @@ class TestMakeNamelists:
     """
     def test_nemo34(self):
         with patch('nemo_cmd.prepare._make_namelist_nemo34') as m_mn34:
-            nemo_cmd.prepare._make_namelists(
-                'run_set_dir', 'run_desc', 'run_dir', 'nemo_code_repo',
-                nemo34=True)
+            nemo_cmd.prepare._make_namelists('run_set_dir', 'run_desc',
+                'run_dir', 'nemo_code_repo', nemo34=True)
         m_mn34.assert_called_once_with('run_set_dir', 'run_desc', 'run_dir')
 
     def test_nemo36(self):
         with patch('nemo_cmd.prepare._make_namelists_nemo36') as m_mn36:
-            nemo_cmd.prepare._make_namelists(
-                'run_set_dir', 'run_desc', 'run_dir', 'nemo_code_repo',
-                nemo34=False)
+            nemo_cmd.prepare._make_namelists('run_set_dir', 'run_desc',
+                'run_dir', 'nemo_code_repo', nemo34=False)
         m_mn36.assert_called_once_with(
             'run_set_dir', 'run_desc', 'run_dir', 'nemo_code_repo')
 
@@ -326,8 +331,8 @@ class TestMakeNamelistNEMO36:
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
-            nemo_cmd.prepare._make_namelists_nemo36(
-                str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
+            nemo_cmd.prepare._make_namelists_nemo36(str(p_run_set_dir),
+                run_desc, str(p_run_dir), 'NEMO-code')
         assert p_run_dir.join('namelist_cfg').check()
         assert p_run_dir.join('namelist_top_cfg').check()
         assert p_run_dir.join('namelist_pisces_cfg').check()
@@ -343,10 +348,14 @@ class TestMakeNamelistNEMO36:
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_namelists_nemo36(
-                str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
+            nemo_cmd.prepare._make_namelists_nemo36(str(p_run_set_dir),
+                run_desc, str(p_run_dir), 'NEMO-code')
 
-    def test_namelist_ref_symlinks(self, tmpdir):
+    @pytest.mark.parametrize('nemo_code_config, config_name', [
+        ('NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
+        ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
+    ])
+    def test_namelist_ref_symlinks(self, nemo_code_config, config_name, tmpdir):
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
         p_run_set_dir.join('namelist.time').write('&namrun\n&end\n')
         p_run_set_dir.join('namelist_top').write('&namtrc\n&end\n')
@@ -365,13 +374,13 @@ class TestMakeNamelistNEMO36:
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        p_code = tmpdir.ensure_dir('NEMO-3.6-code')
-        p_code.ensure('NEMOGCM/CONFIG/SHARED/namelist_ref')
-        p_code.ensure('NEMOGCM/CONFIG/SHARED/namelist_top_ref')
-        p_code.ensure('NEMOGCM/CONFIG/SHARED/namelist_pisces_ref')
+        p_code_config = tmpdir.ensure_dir(nemo_code_config)
+        p_code_config.ensure('SHARED/namelist_ref')
+        p_code_config.ensure('SHARED/namelist_top_ref')
+        p_code_config.ensure('SHARED/namelist_pisces_ref')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
-            nemo_cmd.prepare._make_namelists_nemo36(
-                str(p_run_set_dir), run_desc, str(p_run_dir), str(p_code))
+            nemo_cmd.prepare._make_namelists_nemo36(str(p_run_set_dir),
+                run_desc, str(p_run_dir), str(p_code_config))
         assert p_run_dir.join('namelist_ref').check(file=True, link=True)
         assert p_run_dir.join('namelist_top_ref').check(file=True, link=True)
         assert p_run_dir.join('namelist_pisces_ref').check(
@@ -393,8 +402,8 @@ class TestMakeNamelistNEMO36:
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with patch('nemo_cmd.prepare._set_mpi_decomposition') as m_smd:
-            nemo_cmd.prepare._make_namelists_nemo36(
-                str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
+            nemo_cmd.prepare._make_namelists_nemo36(str(p_run_set_dir),
+                run_desc, str(p_run_dir), 'NEMO-code')
         m_smd.assert_called_once_with('namelist_cfg', run_desc, str(p_run_dir))
 
     def test_no_namelist_cfg_error(self, tmpdir):
@@ -409,8 +418,8 @@ class TestMakeNamelistNEMO36:
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_namelists_nemo36(
-                str(p_run_set_dir), run_desc, str(p_run_dir), 'NEMO-code')
+            nemo_cmd.prepare._make_namelists_nemo36(str(p_run_set_dir),
+                run_desc, str(p_run_dir), 'NEMO-code')
 
 
 class TestCopyRunSetFiles:
@@ -527,8 +536,7 @@ class TestMakeExecutableLinks:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         # with patch('nemo_cmd.prepare.hg.parents'):
         nemo_cmd.prepare._make_executable_links(
-            'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-            nemo34, 'xios_code_repo', str(p_xios_bin_dir))
+            str(p_nemo_bin_dir), str(p_run_dir), nemo34, str(p_xios_bin_dir))
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
 
     @pytest.mark.parametrize('nemo34', [True, False])
@@ -542,8 +550,7 @@ class TestMakeExecutableLinks:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         # with patch('nemo_cmd.prepare.hg.parents'):
         nemo_cmd.prepare._make_executable_links(
-            'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-            nemo34, 'xios_code_repo', str(p_xios_bin_dir))
+            str(p_nemo_bin_dir), str(p_run_dir), nemo34, str(p_xios_bin_dir))
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
         if nemo34:
             assert p_run_dir.join('server.exe').check(file=True, link=True)
@@ -566,8 +573,7 @@ class TestMakeExecutableLinks:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         # with patch('nemo_cmd.prepare.hg.parents'):
         nemo_cmd.prepare._make_executable_links(
-            'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-            nemo34, xios_code_repo, str(p_xios_bin_dir))
+            str(p_nemo_bin_dir), str(p_run_dir), nemo34, str(p_xios_bin_dir))
         if nemo34:
             assert not p_run_dir.join('xios_server.exe').check(
                 file=True, link=True)

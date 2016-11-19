@@ -104,15 +104,14 @@ def prepare(desc_file, nemo34, nocheck_init):
     :rtype: str
     """
     run_desc = lib.load_run_desc(desc_file)
-    nemo_code_repo, nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
+    nemo_config_dir, nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
     xios_code_repo, xios_bin_dir = (_check_xios_exec(run_desc)
                                     if not nemo34 else (None, None))
     run_set_dir = os.path.dirname(os.path.abspath(desc_file))
     run_dir = _make_run_dir(run_desc)
-    _make_namelists(run_set_dir, run_desc, run_dir, nemo_code_repo, nemo34)
+    _make_namelists(run_set_dir, run_desc, run_dir, nemo_config_dir, nemo34)
     _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34)
-    _make_executable_links(nemo_code_repo, nemo_bin_dir, run_dir, nemo34,
-                           xios_code_repo, xios_bin_dir)
+    _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir)
     _make_grid_links(run_desc, run_dir)
     _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init)
     return run_dir
@@ -133,16 +132,15 @@ def _check_nemo_exec(run_desc, nemo34):
     :param boolean nemo34: Prepare a NEMO-3.4 run;
                            the default is to prepare a NEMO-3.6 run
 
-    :returns: Absolute paths of NEMO code repo & NEMO executable's
+    :returns: Absolute paths of NEMO code CONFIG directory & NEMO executable's
               directory.
     :rtype: 2-tuple
 
     :raises: SystemExit
     """
-    nemo_code_repo = os.path.abspath(run_desc['paths']['NEMO-code'])
-    config_dir = os.path.join(nemo_code_repo, 'NEMOGCM', 'CONFIG',
-                              run_desc['config_name'])
-    nemo_bin_dir = os.path.join(nemo_code_repo, config_dir, 'BLD', 'bin')
+    nemo_config_dir = os.path.abspath(run_desc['paths']['NEMO-code-config'])
+    config_dir = os.path.join(nemo_config_dir, run_desc['config_name'])
+    nemo_bin_dir = os.path.join(config_dir, 'BLD', 'bin')
     nemo_exec = os.path.join(nemo_bin_dir, 'nemo.exe')
     if not os.path.exists(nemo_exec):
         logger.error('{} not found - did you forget to build it?'.format(
@@ -153,7 +151,7 @@ def _check_nemo_exec(run_desc, nemo34):
         if not os.path.exists(iom_server_exec):
             logger.warn('{} not found - are you running without key_iomput?'
                         .format(iom_server_exec))
-    return nemo_code_repo, nemo_bin_dir
+    return nemo_config_dir, nemo_bin_dir
 
 
 def _check_xios_exec(run_desc):
@@ -213,7 +211,7 @@ def _remove_run_dir(run_dir):
         pass
 
 
-def _make_namelists(run_set_dir, run_desc, run_dir, nemo_code_repo, nemo34):
+def _make_namelists(run_set_dir, run_desc, run_dir, nemo_config_dir, nemo34):
     """Build the namelist file(s) for the run in run_dir by concatenating
     the list(s) of namelist section files provided in run_desc.
 
@@ -228,7 +226,7 @@ def _make_namelists(run_set_dir, run_desc, run_dir, nemo_code_repo, nemo34):
 
     :param str run_dir: Path of the temporary run directory.
 
-    :param str nemo_code_repo: Absolute path of NEMO code repo.
+    :param str nemo_config_dir: Absolute paths of NEMO code CONFIG directory.
 
     :param boolean nemo34: Prepare a NEMO-3.4 run;
                            the default is to prepare a NEMO-3.6 run
@@ -238,7 +236,7 @@ def _make_namelists(run_set_dir, run_desc, run_dir, nemo_code_repo, nemo34):
     if nemo34:
         _make_namelist_nemo34(run_set_dir, run_desc, run_dir)
     else:
-        _make_namelists_nemo36(run_set_dir, run_desc, run_dir, nemo_code_repo)
+        _make_namelists_nemo36(run_set_dir, run_desc, run_dir, nemo_config_dir)
 
 
 def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
@@ -274,7 +272,7 @@ def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
     _set_mpi_decomposition(namelist_filename, run_desc, run_dir)
 
 
-def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, nemo_code_repo):
+def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, nemo_config_dir):
     """Build the namelist files for the NEMO-3.6 run in run_dir by
     concatenating the lists of namelist section files provided in run_desc.
 
@@ -289,7 +287,7 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, nemo_code_repo):
 
     :param str run_dir: Path of the temporary run directory.
 
-    :param str nemo_code_repo: Absolute path of NEMO code repo.
+    :param str nemo_config_dir: Absolute paths of NEMO code CONFIG directory.
 
     :raises: SystemExit
     """
@@ -305,8 +303,8 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, nemo_code_repo):
                     _remove_run_dir(run_dir)
                     raise SystemExit(2)
         ref_namelist = namelist_filename.replace('_cfg', '_ref')
-        ref_namelist_path = os.path.join(nemo_code_repo, 'NEMOGCM', 'CONFIG',
-                                         'SHARED', ref_namelist)
+        ref_namelist_path = os.path.join(nemo_config_dir, 'SHARED',
+                                         ref_namelist)
         saved_cwd = os.getcwd()
         os.chdir(run_dir)
         os.symlink(ref_namelist_path, ref_namelist)
@@ -470,12 +468,9 @@ def _set_xios_server_mode(run_desc, run_dir):
         f.writelines(lines)
 
 
-def _make_executable_links(nemo_code_repo, nemo_bin_dir, run_dir, nemo34,
-                           xios_code_repo, xios_bin_dir):
+def _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir):
     """Create symlinks in run_dir to the NEMO and I/O server executables
     and record the code repository revision(s) used for the run.
-
-    :param str nemo_code_repo: Absolute path of NEMO code repo.
 
     :param str nemo_bin_dir: Absolute path of directory containing NEMO
                              executable.
@@ -485,8 +480,6 @@ def _make_executable_links(nemo_code_repo, nemo_bin_dir, run_dir, nemo34,
     :param boolean nemo34: Make executable links for a NEMO-3.4 run
                            if :py:obj:`True`,
                            otherwise make links for a NEMO-3.6 run.
-
-    :param str xios_code_repo: Absolute path of XIOS code repo.
 
     :param str xios_bin_dir: Absolute path of directory containing XIOS
                              executable.
