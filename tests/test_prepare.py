@@ -293,9 +293,7 @@ class TestMakeNamelistNEMO34:
             nemo_cmd.prepare._make_namelist_nemo34(
                 str(p_run_set_dir), run_desc, str(p_run_dir))
 
-    def test_namelist_ends_with_empty_namelists(
-            self,
-            tmpdir, ):
+    def test_namelist_ends_with_empty_namelists(self, tmpdir):
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
         p_run_set_dir.join('namelist.time').write('&namrun\n&end\n')
         run_desc = {'namelists': [str(p_run_set_dir.join('namelist.time'))]}
@@ -679,7 +677,7 @@ class TestMakeForcingLinks:
     @patch('nemo_cmd.prepare.logger')
     def test_make_forcing_links_no_forcing_dir(self, m_log, nemo34, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        run_desc = {'paths': {'forcing': 'foo', }, }
+        run_desc = {'paths': {'forcing': 'foo'}}
         nemo_cmd.prepare._remove_run_dir = Mock()
         p_exists = patch('nemo_cmd.prepare.os.path.exists', return_value=False)
         p_abspath = patch(
@@ -698,12 +696,10 @@ class TestMakeForcingLinksNEMO34:
     """Unit tests for `salishsea prepare` _make_forcing_links_nemo34() function.
     """
 
-    @pytest.mark.parametrize(
-        'link_path, expected',
-        [
-            ('SalishSea_00475200_restart.nc', 'SalishSea_00475200_restart.nc'),
-            ('initial_strat/', 'foo/initial_strat/'),
-        ], )
+    @pytest.mark.parametrize('link_path, expected', [
+        ('SalishSea_00475200_restart.nc', 'SalishSea_00475200_restart.nc'),
+        ('initial_strat/', 'foo/initial_strat/'),
+    ])
     @patch('nemo_cmd.prepare._check_atmos_files')
     @patch('nemo_cmd.prepare.logger')
     def test_make_forcing_links_no_restart_path(self, m_log, m_caf, link_path,
