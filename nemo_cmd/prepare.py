@@ -138,7 +138,9 @@ def _check_nemo_exec(run_desc, nemo34):
 
     :raises: SystemExit
     """
-    nemo_config_dir = os.path.abspath(run_desc['paths']['NEMO-code-config'])
+    nemo_config_dir = os.path.abspath(
+        os.path.expandvars(
+            os.path.expanduser(run_desc['paths']['NEMO-code-config'])))
     config_dir = os.path.join(nemo_config_dir, run_desc['config_name'])
     nemo_bin_dir = os.path.join(config_dir, 'BLD', 'bin')
     nemo_exec = os.path.join(nemo_bin_dir, 'nemo.exe')
@@ -516,9 +518,8 @@ def _make_grid_links(run_desc, run_dir):
         _remove_run_dir(run_dir)
         raise SystemExit(2)
     grid_dir = os.path.join(nemo_forcing_dir, 'grid')
-    grid_files = (
-        (run_desc['grid']['coordinates'], 'coordinates.nc'),
-        (run_desc['grid']['bathymetry'], 'bathy_meter.nc'), )
+    grid_files = ((run_desc['grid']['coordinates'], 'coordinates.nc'),
+                  (run_desc['grid']['bathymetry'], 'bathy_meter.nc'))
     saved_cwd = os.getcwd()
     os.chdir(run_dir)
     for source, link_name in grid_files:
