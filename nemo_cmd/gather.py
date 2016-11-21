@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """SalishSeaCmd command plug-in for gather sub-command.
 
 Gather results files from a Salish Sea NEMO run into a specified directory.
@@ -25,9 +24,7 @@ import cliff.command
 
 from nemo_cmd import (
     api,
-    lib,
-)
-
+    lib,)
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +32,7 @@ log = logging.getLogger(__name__)
 class Gather(cliff.command.Command):
     """Gather results from a NEMO run; includes combining MPI results files
     """
+
     def get_parser(self, prog_name):
         parser = super(Gather, self).get_parser(prog_name)
         parser.description = '''
@@ -63,11 +61,10 @@ class Gather(cliff.command.Command):
         directory given by `parsed_args.results_dir`.
         """
         try:
-            api.combine(
-                self.app, self.app_args,
-                parsed_args.desc_file, parsed_args.results_dir,
-                parsed_args.keep_proc_results, parsed_args.compress,
-                parsed_args.compress_restart, parsed_args.delete_restart)
+            api.combine(self.app, self.app_args, parsed_args.desc_file,
+                        parsed_args.results_dir, parsed_args.keep_proc_results,
+                        parsed_args.compress, parsed_args.compress_restart,
+                        parsed_args.delete_restart)
         except Exception:
             raise
         symlinks = _find_symlinks()

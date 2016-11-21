@@ -33,6 +33,7 @@ class Token(object):
     """
     Base class for all token types.
     """
+
     def __str__(self):
         name = self.__class__.__name__
         if hasattr(self, "value"):
@@ -97,9 +98,8 @@ def auto_token(value):
     """
     value = value.strip()
     if value.startswith("&"):
-        return (
-            GroupEndToken() if value[1:] == 'end'
-            else GroupStartToken(value[1:]))
+        return (GroupEndToken()
+                if value[1:] == 'end' else GroupStartToken(value[1:]))
     elif value.lower() == ".true.":
         return BooleanToken(True)
     elif value.lower() == ".false.":
@@ -220,7 +220,7 @@ def group_generator(tokens):
         current_assignment.append(token)
 
 
-def parse_assignment(assignment,  group):
+def parse_assignment(assignment, group):
     """
     Parses all tokens for one assignment. Will write the result to the passed
     group dictionary.
@@ -234,11 +234,8 @@ def parse_assignment(assignment,  group):
     if isinstance(assignment[1], AssignmentToken):
         values = assignment[2:]
         array_assignment = False
-    elif all((
-        isinstance(assignment[1], ArrayIndexToken),
-        isinstance(assignment[2], AssignmentToken),
-
-    )):
+    elif all((isinstance(assignment[1], ArrayIndexToken),
+              isinstance(assignment[2], AssignmentToken))):
         array_index = assignment[1].value - 1
         values = assignment[3:]
         array_assignment = True
