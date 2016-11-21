@@ -12,19 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """SalishSeaCmd combine sub-command plug-in unit tests
 """
 try:
-    from unittest.mock import (
-        Mock,
-        patch,
-    )
+    from unittest.mock import Mock, patch
 except ImportError:
-    from mock import (
-        Mock,
-        patch,
-    )
+    from mock import Mock, patch
 
 import cliff.app
 import pytest
@@ -41,6 +34,7 @@ def combine_cmd():
 class TestGetParser:
     """Unit tests for `salishsea combine` sub-command command-line parser.
     """
+
     def test_get_parser(self, combine_cmd):
         parser = combine_cmd.get_parser('salishsea combine')
         assert parser.prog == 'salishsea combine'
@@ -53,7 +47,11 @@ class TestFindRebuildNemoScript:
     ])
     @patch('nemo_cmd.combine.os.path.abspath')
     def test_find_rebuild_nemo_script_found(
-        self, mock_abspath, mock_lexists, nemo_path, expected,
+            self,
+            mock_abspath,
+            mock_lexists,
+            nemo_path,
+            expected,
     ):
         """_find_rebuild_nemo_exec returns script name if executable exists
         """
@@ -81,8 +79,7 @@ class TestGetResultsFiles:
         """
         mock_glob.side_effect = (
             ['foo_0000.nc', 'bar_0000.nc'],
-            ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'],
-        )
+            ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'])
         args = Mock(delete_restart=False)
         name_roots = nemo_cmd.combine._get_results_files(args)
         assert name_roots == ['foo', 'bar']
@@ -103,8 +100,7 @@ class TestGetResultsFiles:
         mock_glob.side_effect = (
             ['baz_restart_0000.nc', 'baz_restart_0001.nc'],
             ['foo_0000.nc', 'bar_0000.nc'],
-            ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'],
-        )
+            ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'])
         args = Mock(delete_restart=True)
         nemo_cmd.combine._get_results_files(args)
         assert mock_rm.call_count == 2
@@ -118,10 +114,9 @@ class TestCombineResultsFiles:
         """
         mock_glob.side_effect = (
             ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'],
-            ['bar_0000.nc', 'bar_0001.nc', 'bar_0002.nc'],
-        )
-        nemo_cmd.combine._combine_results_files(
-            'rebuild_nemo', ['foo', 'bar'], 3)
+            ['bar_0000.nc', 'bar_0001.nc', 'bar_0002.nc'],)
+        nemo_cmd.combine._combine_results_files('rebuild_nemo',
+                                                ['foo', 'bar'], 3)
         assert mock_chk_out.call_count == 2
 
 

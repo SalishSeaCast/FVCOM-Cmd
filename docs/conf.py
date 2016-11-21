@@ -21,7 +21,6 @@ import sys
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 
-
 # -- General configuration ----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings.
@@ -35,9 +34,7 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/', None),
-}
+intersphinx_mapping = {'python': ('https://docs.python.org/', None)}
 
 todo_include_todos = True
 
@@ -52,12 +49,10 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'NEMO Command Processor'
-copyright = (
-    '2013-{:%Y}, '
-    'Salish Sea MEOPAR Project Contributors '
-    'and The University of British Columbia'
-    .format(datetime.date.today())
-)
+copyright = ('2013-{:%Y}, '
+             'Salish Sea MEOPAR Project Contributors '
+             'and The University of British Columbia'
+             .format(datetime.date.today()))
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -75,7 +70,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
-
 
 # -- Options for HTML output --------------------------------------------------
 

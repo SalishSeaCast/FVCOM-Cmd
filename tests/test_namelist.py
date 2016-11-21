@@ -19,79 +19,62 @@ class NameListTestCase(unittest.TestCase):
     """
     Some very basic test cases.
     """
+
     def test_simple_group(self):
         """
         Test simple namelist group with values of different types.
         """
-        group = (
-            "&group\n"
-            "    float = 0.75\n"
-            "    integer = 700\n"
-            "    string = 'test'\n"
-            "    true = .TRUE.\n"
-            "    false = .FALSE.\n"
-            "/")
+        group = ("&group\n"
+                 "    float = 0.75\n"
+                 "    integer = 700\n"
+                 "    string = 'test'\n"
+                 "    true = .TRUE.\n"
+                 "    false = .FALSE.\n"
+                 "/")
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict,
-            {"group": [{
+        self.assertEqual(namelist_dict, {
+            "group": [{
                 "float": 0.75,
                 "integer": 700,
                 "string": "test",
                 "true": True,
                 "false": False
-            }]})
+            }]
+        })
 
     def test_double_quote_string(self):
         """
         Test simple namelist group with string value enclosed in double quotes.
         """
-        group = (
-            "&group\n"
-            '    string = "test"\n'
-            "/")
+        group = ("&group\n" '    string = "test"\n' "/")
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict,
-            {"group": [{
-                "string": "test",
-            }]})
+        self.assertEqual(namelist_dict, {"group": [{"string": "test",}]})
 
     def test_empty_string(self):
         """
         Test simple namelist group with empty string value.
         """
-        group = (
-            "&group\n"
-            '    string1 = ""\n'
-            "    string2 = ''\n"
-            "/")
+        group = ("&group\n" '    string1 = ""\n' "    string2 = ''\n" "/")
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(namelist_dict,
-            {"group": [{
-                "string1": "",
-                "string2": "",
-            }]})
+                         {"group": [{
+                             "string1": "",
+                             "string2": "",
+                         }]})
 
     def test_group_ends_w_amp_end(self):
         """
         Test simple namelist group with &end as end token.
         """
-        group = (
-            "&group\n"
-            "    float = 0.75\n"
-            "&end")
+        group = ("&group\n" "    float = 0.75\n" "&end")
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict,
-            {"group": [{
-                "float": 0.75,
-            }]})
+        self.assertEqual(namelist_dict, {"group": [{"float": 0.75,}]})
 
     def test_ignore_empty_group(self):
         """
          Ignore empty namelist group.
         """
-        group = (
-            "&group\n"
-            "&end")
+        group = ("&group\n" "&end")
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(namelist_dict, {})
 
@@ -99,30 +82,23 @@ class NameListTestCase(unittest.TestCase):
         """
         Test list of heterogeneous values.
         """
-        group = (
-            "&group\n"
-            "    foo = 0.75, 700, 'test', .TRUE.\n"
-            "/")
+        group = ("&group\n" "    foo = 0.75, 700, 'test', .TRUE.\n" "/")
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(namelist_dict,
-            {"group": [{
-                "foo": [0.75, 700, "test", True]
-            }]})
+                         {"group": [{
+                             "foo": [0.75, 700, "test", True]
+                         }]})
 
     def test_array_element_assignment(self):
         """
         Test simple namelist group with assignment to array element.
         """
-        group = (
-            "&group\n"
-            "    float(1) = 0.75\n"
-            "    float(2) = 0.85\n"
-            "&end")
+        group = ("&group\n"
+                 "    float(1) = 0.75\n"
+                 "    float(2) = 0.85\n"
+                 "&end")
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict,
-            {"group": [{
-                "float": [0.75, 0.85],
-            }]})
+        self.assertEqual(namelist_dict, {"group": [{"float": [0.75, 0.85],}]})
 
     def test_complex_single_line_group(self):
         """
@@ -131,66 +107,63 @@ class NameListTestCase(unittest.TestCase):
         group = "&list a=1, b=1,2 c='12 / !' / "
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(namelist_dict,
-            {"list": [{
-                "a": 1,
-                "b": [1, 2],
-                "c": "12 / !"
-            }]})
+                         {"list": [{
+                             "a": 1,
+                             "b": [1, 2],
+                             "c": "12 / !"
+                         }]})
 
     def test_complex_multiple_group(self):
         """
         Same as test_complex_single_line_group() just split over lines.
         """
-        group = (
-            "&list a=1\n"
-            "b=1,2, c='12 / !' /")
+        group = ("&list a=1\n" "b=1,2, c='12 / !' /")
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(namelist_dict,
-            {"list": [{
-                "a": 1,
-                "b": [1, 2],
-                "c": "12 / !"
-            }]})
+                         {"list": [{
+                             "a": 1,
+                             "b": [1, 2],
+                             "c": "12 / !"
+                         }]})
 
     def test_complex_numbers(self):
         """
         Tests complex numbers. Complex number parsing is rather forgiving.
         """
-        group = (
-            "&complex_group\n"
-            "    number_a = (1,2)\n"
-            "    number_b = (1.2,3.4)\n"
-            "    number_c = (-1.2,0.0)\n"
-            "    number_d = (0.0, 1.0)\n"
-            "/")
+        group = ("&complex_group\n"
+                 "    number_a = (1,2)\n"
+                 "    number_b = (1.2,3.4)\n"
+                 "    number_c = (-1.2,0.0)\n"
+                 "    number_d = (0.0, 1.0)\n"
+                 "/")
 
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict,
-            {"complex_group": [{
+        self.assertEqual(namelist_dict, {
+            "complex_group": [{
                 "number_a": 1.0 + 2.0j,
                 "number_b": 1.2 + 3.4j,
                 "number_c": -1.2 + 0.0j,
                 "number_d": 0.0j + 1.0j
-            }]})
+            }]
+        })
 
     def test_group_mixed_and_lists(self):
         """
         Tests a real world example.
         """
-        group = (
-            "&receiver\n"
-            "    station ='XX02'\n"
-            "    location = 'a'\n"
-            "    lon = 12.51\n"
-            "    lat = -0.01\n"
-            "    depth = 1.0\n"
-            "    attributes = 'vx' 'vy' 'vz'\n"
-            "    file_name_prefix = './DATA/mess/'\n"
-            "    override = .TRUE.\n"
-            "/\n")
+        group = ("&receiver\n"
+                 "    station ='XX02'\n"
+                 "    location = 'a'\n"
+                 "    lon = 12.51\n"
+                 "    lat = -0.01\n"
+                 "    depth = 1.0\n"
+                 "    attributes = 'vx' 'vy' 'vz'\n"
+                 "    file_name_prefix = './DATA/mess/'\n"
+                 "    override = .TRUE.\n"
+                 "/\n")
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict,
-            {"receiver": [{
+        self.assertEqual(namelist_dict, {
+            "receiver": [{
                 "station": "XX02",
                 "location": "a",
                 "lon": 12.51,
@@ -199,38 +172,38 @@ class NameListTestCase(unittest.TestCase):
                 "attributes": ["vx", "vy", "vz"],
                 "file_name_prefix": "./DATA/mess/",
                 "override": True
-            }]})
+            }]
+        })
 
     def test_multiple_groups(self):
         """
         Mixes groups from some of the previous tests.
         """
-        group = (
-            "&group\n"
-            "    float = 0.75\n"
-            "    integer = 700\n"
-            "    string = 'test'\n"
-            "    true = .TRUE.\n"
-            "    false = .FALSE.\n"
-            "/\n"
-            "\n"
-            "&list a=1, b=1,2 c='12 / !' / \n"
-            "&list a=1\n"
-            "b=1,2, c='12 / !' /\n"
-            "&receiver\n"
-            "    station ='XX02'\n"
-            "    location = 'a'\n"
-            "    lon = 12.51\n"
-            "    lat = -0.01\n"
-            "    depth = 1.0\n"
-            "    attributes = 'vx' 'vy' 'vz'\n"
-            "    file_name_prefix = './DATA/mess/'\n"
-            "    override = .TRUE.\n"
-            "/\n")
+        group = ("&group\n"
+                 "    float = 0.75\n"
+                 "    integer = 700\n"
+                 "    string = 'test'\n"
+                 "    true = .TRUE.\n"
+                 "    false = .FALSE.\n"
+                 "/\n"
+                 "\n"
+                 "&list a=1, b=1,2 c='12 / !' / \n"
+                 "&list a=1\n"
+                 "b=1,2, c='12 / !' /\n"
+                 "&receiver\n"
+                 "    station ='XX02'\n"
+                 "    location = 'a'\n"
+                 "    lon = 12.51\n"
+                 "    lat = -0.01\n"
+                 "    depth = 1.0\n"
+                 "    attributes = 'vx' 'vy' 'vz'\n"
+                 "    file_name_prefix = './DATA/mess/'\n"
+                 "    override = .TRUE.\n"
+                 "/\n")
         namelist_dict = namelist2dict(StringIO(group))
 
-        self.assertEqual(namelist_dict,
-            {"group": [{
+        self.assertEqual(namelist_dict, {
+            "group": [{
                 "float": 0.75,
                 "integer": 700,
                 "string": "test",
@@ -241,7 +214,7 @@ class NameListTestCase(unittest.TestCase):
                 "a": 1,
                 "b": [1, 2],
                 "c": "12 / !"
-                }, {
+            }, {
                 "a": 1,
                 "b": [1, 2],
                 "c": "12 / !"
@@ -255,7 +228,8 @@ class NameListTestCase(unittest.TestCase):
                 "attributes": ["vx", "vy", "vz"],
                 "file_name_prefix": "./DATA/mess/",
                 "override": True
-            }]})
+            }]
+        })
 
     def test_real_world_example(self):
         """
@@ -292,18 +266,22 @@ class NameListTestCase(unittest.TestCase):
         namelist_dict = namelist2dict(StringIO(groups))
         self.assertEqual(namelist_dict, {
             "TTDATA": [{
-                "TTREAL":  1.0,
+                "TTREAL": 1.0,
                 "TTINTEGER": 2,
                 "TTCOMPLEX": 3.0 + 4.0j,
                 "TTCHAR": "namelist",
-                "TTBOOL": True}],
+                "TTBOOL": True
+            }],
             "AADATA": [{
                 "AAREAL": [1.0, 1.0, 2.0, 3.0],
                 "AAINTEGER": [2, 2, 3, 4],
                 "AACOMPLEX": [3.0 + 4.0j, 3.0 + 4.0j, 5.0 + 6.0j, 7.0 + 7.0j],
                 "AACHAR": ["namelist", "namelist", "array", " the lot"],
-                "AABOOL": [True, True, False, False]}],
+                "AABOOL": [True, True, False, False]
+            }],
             "XXDATA": [{
-                "XXREAL":  1.0,
+                "XXREAL": 1.0,
                 "XXINTEGER": 2,
-                "XXCOMPLEX": 3.0 + 4.0j}]})
+                "XXCOMPLEX": 3.0 + 4.0j
+            }]
+        })
