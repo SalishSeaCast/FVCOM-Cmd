@@ -26,7 +26,7 @@ import xml.etree.ElementTree
 
 import arrow
 import cliff.command
-from nemo_cmd.namelist import namelist2dict
+from nemo_cmd.namelist import namelist2dict, get_namelist_value
 
 from nemo_cmd import lib
 
@@ -348,32 +348,10 @@ def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
     with open(os.path.join(run_dir, namelist_filename), 'rt') as f:
         lines = f.readlines()
     for key, new_value in {'jpni': jpni, 'jpnj': jpnj}.items():
-        value, i = _get_namelist_value(key, lines)
+        value, i = get_namelist_value(key, lines)
         lines[i] = lines[i].replace(value, new_value)
     with open(os.path.join(run_dir, namelist_filename), 'wt') as f:
         f.writelines(lines)
-
-
-def _get_namelist_value(key, lines):
-    """Return the value corresponding to key in lines, and the index
-    at which key was found.
-
-    lines is expected to be a NEMO namelist in the form of a list of strings.
-
-    :param str key: The namelist key to find the value and line number of.
-
-    :param list lines: The namelist lines.
-
-    :returns: The value corresponding to key,
-              and the index in lines at check key was found.
-    :rtype: 2-tuple
-    """
-    line_index = [
-        i for i, line in enumerate(lines)
-        if line.strip() and line.split()[0] == key
-    ][-1]
-    value = lines[line_index].split()[2]
-    return value, line_index
 
 
 def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):

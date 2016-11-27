@@ -15,7 +15,7 @@ from six.moves import StringIO
 from nemo_cmd.namelist import namelist2dict
 
 
-class NameListTestCase(unittest.TestCase):
+class TestNameList(unittest.TestCase):
     """
     Some very basic test cases.
     """

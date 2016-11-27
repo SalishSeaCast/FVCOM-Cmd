@@ -261,8 +261,12 @@ def parse_assignment(assignment, group):
 
 
 def namelist2dict(file_or_file_object):
-    """
-    Thin wrapper to be able to deal with file-like objects and filenames.
+    """Return a Fortran namelist as a dict data structure.
+
+    :param file_or_file_object: File name or handle of the namelist to read.
+    :type file_or_file_object: :py:class:`str` or `file object`_
+
+    .. _file object: https://docs.python.org/3/glossary.html#term-file-object
     """
     if hasattr(file_or_file_object, "read"):
         return _namelist2dict(file_or_file_object)
@@ -272,10 +276,32 @@ def namelist2dict(file_or_file_object):
 
 def _namelist2dict(file_object):
     """
-    Converts a file_object containng a namelist to a dictionary.
+    Converts a file_object containing a namelist to a dictionary.
     """
     namelist_dict = {}
     for group_name, group_values in group_generator(tokenizer(file_object)):
         namelist_dict.setdefault(group_name, [])
         namelist_dict[group_name].append(group_values)
     return namelist_dict
+
+
+def get_namelist_value(key, lines):
+    """Return the value corresponding to key in lines, and the index
+    at which key was found.
+
+    lines is expected to be a NEMO namelist in the form of a list of strings.
+
+    :param str key: The namelist key to find the value and line number of.
+
+    :param list lines: The namelist lines.
+
+    :returns: The value corresponding to key,
+              and the index in lines at which key was found.
+    :rtype: 2-tuple
+    """
+    line_index = [
+        i for i, line in enumerate(lines)
+        if line.strip() and line.split()[0] == key
+    ][-1]
+    value = lines[line_index].split()[2]
+    return value, line_index
