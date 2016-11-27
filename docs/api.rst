@@ -33,3 +33,11 @@ and by other software.
 .. autofunction:: nemo_cmd.api.run_in_subprocess
 
 .. autofunction:: nemo_cmd.api.pbs_common
+
+
+Functions for Reading Fortran Namelists
+=======================================
+
+.. autofunction:: nemo_cmd.namelist.namelist2dict
+
+.. autofunction:: nemo_cmd.namelist.get_namelist_value
