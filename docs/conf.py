@@ -34,7 +34,7 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3/', None)}
 
 todo_include_todos = True
 
