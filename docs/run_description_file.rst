@@ -43,9 +43,11 @@ Example (from :file:`SS-run-sets/SalishSea/nemo3.6/SalishSea.yaml`):
 
 The meanings of the key-value pairs are:
 
-:kbd:`config_name`
+:kbd:`config name`
   The name of the NEMO configuration to use for runs.
   It is the name of a directory in :file:`NEMOGCM/CONFIG/` in the :kbd:`NEMO-3.6-code` code directory given by the :kbd:`NEMO` key in the :ref:`NEMO-3.6-Paths`.
+
+  This key may also be spelled :kbd:`config_name` for backward compatibility.
 
 :kbd:`MPI decomposition`
   Specify how the domain is to be distributed over the processors in the :kbd:`i` (longitude) and :kbd:`j` (latitude) directions;
@@ -77,7 +79,7 @@ The meanings of the key-value pairs are:
 
 The :kbd:`paths` section of the run description file is a collection of directory paths that :program:`salishsea` uses to find files in other repos that it needs.
 
-:kbd:`NEMO-code-config`
+:kbd:`NEMO code config`
   The path to the :file:`CONFIG/` directory in the :kbd:`NEMO-3.6` code tree
   (typically a version control system clone/checkout)
   where the NEMO where the configuration files for the run are to be found;
@@ -85,6 +87,8 @@ The :kbd:`paths` section of the run description file is a collection of director
   An absolute path is required because the path is used in both the current directory and the temporary run directory created in the :kbd:`runs directory`.
   You can use :kbd:`~` or :kbd:`$HOME` in the path,
   if you wish.
+
+  This key may also be spelled :kbd:`NEMO-code-config` for backward compatibility.
 
 :kbd:`XIOS`
   The path to the :ref:`XIOS-repo` clone where the XIOS executable for the run is to be found.
@@ -325,9 +329,11 @@ Example (from :file:`SS-run-sets/SalishSea/SalishSea.yaml`):
 
 The meanings of the key-value pairs are:
 
-:kbd:`config_name`
+:kbd:`config name`
   The name of the NEMO configuration to use for runs.
   It is the name of a directory in :file:`NEMOGCM/CONFIG/` in the :kbd:`NEMO-code` code directory given by the :kbd:`NEMO` key in the :ref:`NEMO-3.4-Paths`.
+
+  This key may also be spelled :kbd:`config_name` for backward compatibility.
 
 :kbd:`MPI decomposition`
   Specify how the domain is to be distributed over the processors in the :kbd:`i` (longitude) and :kbd:`j` (latitude) directions;
@@ -359,7 +365,7 @@ The meanings of the key-value pairs are:
 
 The :kbd:`paths` section of the run description file is a collection of directory paths that :program:`salishsea` uses to find files in other repos that it needs.
 
-:kbd:`NEMO-code-config`
+:kbd:`NEMO code config`
   The path to the :file:`CONFIG/` directory in the :kbd:`NEMO-3.4` code tree
   (typically a version control system clone/checkout)
   where the NEMO where the configuration files for the run are to be found;
@@ -367,6 +373,8 @@ The :kbd:`paths` section of the run description file is a collection of director
   An absolute path is required because the path is used in both the current directory and the temporary run directory created in the :kbd:`runs directory`.
   You can use :kbd:`~` or :kbd:`$HOME` in the path,
   if you wish.
+
+  This key may also be spelled :kbd:`NEMO-code-config` for backward compatibility.
 
 :kbd:`forcing`
   The path to the :ref:`NEMO-forcing-repo` clone where the netCDF files for the grid coordinates,

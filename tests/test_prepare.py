@@ -106,51 +106,72 @@ class TestCheckNemoExec:
     """Unit tests for `salishsea prepare` _check_nemo_exec() function.
     """
 
-    @pytest.mark.parametrize('nemo_code_config, config_name', [
-        ('NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
-        ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
-    ])
-    def test_nemo_config_dir_path(self, nemo_code_config, config_name, tmpdir):
+    @pytest.mark.parametrize(
+        'key, nemo_code_config, config_name', [
+            ('NEMO-code-config', 'NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
+            ('NEMO code config', 'NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
+        ]
+    )
+    def test_nemo_config_dir_path(
+        self, key, nemo_code_config, config_name, tmpdir
+    ):
         p_code_config = tmpdir.ensure_dir(nemo_code_config)
         p_code_config.ensure(config_name, 'BLD', 'bin', 'nemo.exe')
         run_desc = {
             'config_name': config_name,
             'paths': {
-                'NEMO-code-config': str(p_code_config)
-            },
+                key: str(p_code_config)
+            }
         }
         nemo_config_dir, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
-            run_desc, nemo34=False)
+            run_desc, nemo34=False
+        )
         assert nemo_config_dir == p_code_config
 
-    @pytest.mark.parametrize('nemo_code_config, config_name', [
-        ('NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
-        ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
-    ])
-    def test_nemo_bin_dir_path(self, nemo_code_config, config_name, tmpdir):
+    @pytest.mark.parametrize(
+        'key, nemo_code_config, config_name', [
+            ('NEMO-code-config', 'NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
+            ('NEMO code config', 'NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
+        ]
+    )
+    def test_nemo_bin_dir_path(
+        self, key, nemo_code_config, config_name, tmpdir
+    ):
         p_code_config = tmpdir.ensure_dir(nemo_code_config)
         run_desc = {
             'config_name': config_name,
             'paths': {
-                'NEMO-code-config': str(p_code_config)
+                key: str(p_code_config)
             },
         }
         p_bin_dir = p_code_config.ensure_dir(config_name, 'BLD', 'bin')
         p_bin_dir.ensure('nemo.exe')
         nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
-            run_desc, nemo34=False)
+            run_desc, nemo34=False
+        )
         assert nemo_bin_dir == p_bin_dir
 
-    @pytest.mark.parametrize('nemo_code_config, config_name', [
-        ('NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
-        ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
-    ])
-    def test_nemo_exec_not_found(self, nemo_code_config, config_name, tmpdir):
+    @pytest.mark.parametrize(
+        'code_config_key, nemo_code_config, config_name_key, config_name', [
+            (
+                'NEMO-code-config', 'NEMO-3.6-code/NEMOGCM/CONFIG',
+                'config_name', 'SalishSea'
+            ),
+            (
+                'NEMO code config', 'NEMO-3.6/CONFIG', 'config name',
+                'GoMSS_NOWCAST'
+            ),
+        ]
+    )
+    def test_nemo_exec_not_found(
+        self, code_config_key, nemo_code_config, config_name_key, config_name,
+        tmpdir
+    ):
         p_code_config = tmpdir.ensure_dir(nemo_code_config)
         run_desc = {
-            'config_name': config_name,
+            config_name_key: config_name,
             'paths': {
-                'NEMO-code-config': str(p_code_config)
+                code_config_key: str(p_code_config)
             },
         }
         with pytest.raises(SystemExit):
