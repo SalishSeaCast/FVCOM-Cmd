@@ -40,14 +40,14 @@ log.addHandler(handler)
 
 
 def combine(
-        app,
-        app_args,
-        run_desc_file,
-        results_dir,
-        keep_proc_results=False,
-        no_compress=False,
-        compress_restart=False,
-        delete_restart=False,
+    app,
+    app_args,
+    run_desc_file,
+    results_dir,
+    keep_proc_results=False,
+    no_compress=False,
+    compress_restart=False,
+    delete_restart=False,
 ):
     """Run the NEMO :program:`rebuild_nemo` tool for each set of
     per-processor results files.
@@ -125,18 +125,18 @@ def prepare(run_desc_file, nemo34=False, nocheck_init=False):
 
 
 def run_description(
-        config_name='SalishSea',
-        run_id=None,
-        walltime=None,
-        mpi_decomposition='8x18',
-        NEMO_code=None,
-        XIOS_code=None,
-        forcing_path=None,
-        runs_dir=None,
-        forcing=None,
-        init_conditions=None,
-        namelists=None,
-        nemo34=False,
+    config_name='SalishSea',
+    run_id=None,
+    walltime=None,
+    mpi_decomposition='8x18',
+    NEMO_code=None,
+    XIOS_code=None,
+    forcing_path=None,
+    runs_dir=None,
+    forcing=None,
+    init_conditions=None,
+    namelists=None,
+    nemo34=False,
 ):
     """Return a NEMO run description dict template.
 
@@ -280,7 +280,8 @@ def run_description(
         }
         if NEMO_code is not None:
             run_description['output']['fields'] = os.path.join(
-                NEMO_code, 'NEMOGCM/CONFIG/SHARED/field_def.xml')
+                NEMO_code, 'NEMOGCM/CONFIG/SHARED/field_def.xml'
+            )
     return run_description
 
 
@@ -310,13 +311,17 @@ def run_in_subprocess(run_id, run_desc, results_dir, nemo34=False):
     cmd.extend([yaml_file, results_dir])
     try:
         output = subprocess.check_output(
-            cmd, stderr=subprocess.STDOUT, universal_newlines=True)
+            cmd, stderr=subprocess.STDOUT, universal_newlines=True
+        )
         for line in output.splitlines():
             if line:
                 log.info(line)
     except subprocess.CalledProcessError as e:
-        log.error('subprocess {cmd} failed with return code {status}'.format(
-            cmd=cmd, status=e.returncode))
+        log.error(
+            'subprocess {cmd} failed with return code {status}'.format(
+                cmd=cmd, status=e.returncode
+            )
+        )
         for line in e.output.splitlines():
             if line:
                 log.error(line)
@@ -339,7 +344,8 @@ def _run_subcommand(app, app_args, argv):
     :type argv: list
     """
     command_manager = cliff.commandmanager.CommandManager(
-        'salishsea.app', convert_underscores=False)
+        'salishsea.app', convert_underscores=False
+    )
     try:
         subcommand = command_manager.find_command(argv)
     except ValueError as err:
@@ -364,11 +370,11 @@ def _run_subcommand(app, app_args, argv):
 
 
 def pbs_common(
-        run_description,
-        n_processors,
-        email,
-        results_dir,
-        pmem='2000mb',
+    run_description,
+    n_processors,
+    email,
+    results_dir,
+    pmem='2000mb',
 ):
     """Return the common PBS directives used to run NEMO in a TORQUE/PBS
     multiple processor context.
@@ -397,10 +403,12 @@ def pbs_common(
     try:
         td = datetime.timedelta(seconds=run_description['walltime'])
     except TypeError:
-        t = datetime.datetime.strptime(run_description['walltime'],
-                                       '%H:%M:%S').time()
+        t = datetime.datetime.strptime(
+            run_description['walltime'], '%H:%M:%S'
+        ).time()
         td = datetime.timedelta(
-            hours=t.hour, minutes=t.minute, seconds=t.second)
+            hours=t.hour, minutes=t.minute, seconds=t.second
+        )
     walltime = td2hms(td)
     pbs_directives = (
         u'#PBS -N {run_id}\n'
@@ -414,14 +422,15 @@ def pbs_common(
         u'#PBS -M {email}\n'
         u'# stdout and stderr file paths/names\n'
         u'#PBS -o {results_dir}/stdout\n'
-        u'#PBS -e {results_dir}/stderr\n').format(
-            run_id=run_description['run_id'],
-            procs=n_processors,
-            pmem=pmem,
-            walltime=walltime,
-            email=email,
-            results_dir=results_dir,
-        )
+        u'#PBS -e {results_dir}/stderr\n'
+    ).format(
+        run_id=run_description['run_id'],
+        procs=n_processors,
+        pmem=pmem,
+        walltime=walltime,
+        email=email,
+        results_dir=results_dir,
+    )
     return pbs_directives
 
 

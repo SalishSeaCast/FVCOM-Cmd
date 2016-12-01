@@ -42,16 +42,18 @@ class TestGetParser:
 
 @patch('nemo_cmd.combine.os.path.lexists')
 class TestFindRebuildNemoScript:
-    @pytest.mark.parametrize('nemo_path, expected', [
-        ('NEMO-code', 'NEMO-code/NEMOGCM/TOOLS/REBUILD_NEMO/rebuild_nemo'),
-    ])
+    @pytest.mark.parametrize(
+        'nemo_path, expected', [
+            ('NEMO-code', 'NEMO-code/NEMOGCM/TOOLS/REBUILD_NEMO/rebuild_nemo'),
+        ]
+    )
     @patch('nemo_cmd.combine.os.path.abspath')
     def test_find_rebuild_nemo_script_found(
-            self,
-            mock_abspath,
-            mock_lexists,
-            nemo_path,
-            expected,
+        self,
+        mock_abspath,
+        mock_lexists,
+        nemo_path,
+        expected,
     ):
         """_find_rebuild_nemo_exec returns script name if executable exists
         """
@@ -77,9 +79,8 @@ class TestGetResultsFiles:
     def test_get_results_files(self, mock_glob):
         """_get_results_files returns list of name-roots and count of files
         """
-        mock_glob.side_effect = (
-            ['foo_0000.nc', 'bar_0000.nc'],
-            ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'])
+        mock_glob.side_effect = (['foo_0000.nc', 'bar_0000.nc'],
+                                 ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'])
         args = Mock(delete_restart=False)
         name_roots = nemo_cmd.combine._get_results_files(args)
         assert name_roots == ['foo', 'bar']
@@ -100,7 +101,8 @@ class TestGetResultsFiles:
         mock_glob.side_effect = (
             ['baz_restart_0000.nc', 'baz_restart_0001.nc'],
             ['foo_0000.nc', 'bar_0000.nc'],
-            ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'])
+            ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc']
+        )
         args = Mock(delete_restart=True)
         nemo_cmd.combine._get_results_files(args)
         assert mock_rm.call_count == 2
@@ -114,9 +116,11 @@ class TestCombineResultsFiles:
         """
         mock_glob.side_effect = (
             ['foo_0000.nc', 'foo_0001.nc', 'foo_0002.nc'],
-            ['bar_0000.nc', 'bar_0001.nc', 'bar_0002.nc'],)
-        nemo_cmd.combine._combine_results_files('rebuild_nemo',
-                                                ['foo', 'bar'], 3)
+            ['bar_0000.nc', 'bar_0001.nc', 'bar_0002.nc'],
+        )
+        nemo_cmd.combine._combine_results_files(
+            'rebuild_nemo', ['foo', 'bar'], 3
+        )
         assert mock_chk_out.call_count == 2
 
 

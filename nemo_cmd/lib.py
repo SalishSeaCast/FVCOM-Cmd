@@ -39,23 +39,29 @@ def add_combine_gather_options(parser):
     parser.add_argument(
         'desc_file',
         metavar='DESC_FILE',
-        help='file path/name of run description YAML file')
+        help='file path/name of run description YAML file'
+    )
     parser.add_argument(
         'results_dir',
         metavar='RESULTS_DIR',
-        help='directory to store results into')
+        help='directory to store results into'
+    )
     parser.add_argument(
-        '--compress', action='store_true', help="compress results files")
+        '--compress', action='store_true', help="compress results files"
+    )
     parser.add_argument(
         '--keep-proc-results',
         action='store_true',
-        help="don't delete per-processor results files")
+        help="don't delete per-processor results files"
+    )
     parser.add_argument(
         '--compress-restart',
         action='store_true',
-        help="compress restart file(s)")
+        help="compress restart file(s)"
+    )
     parser.add_argument(
-        '--delete-restart', action='store_true', help="delete restart file(s)")
+        '--delete-restart', action='store_true', help="delete restart file(s)"
+    )
 
 
 def get_n_processors(run_desc):

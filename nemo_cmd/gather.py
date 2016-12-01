@@ -24,7 +24,8 @@ import cliff.command
 
 from nemo_cmd import (
     api,
-    lib,)
+    lib,
+)
 
 log = logging.getLogger(__name__)
 
@@ -61,10 +62,12 @@ class Gather(cliff.command.Command):
         directory given by `parsed_args.results_dir`.
         """
         try:
-            api.combine(self.app, self.app_args, parsed_args.desc_file,
-                        parsed_args.results_dir, parsed_args.keep_proc_results,
-                        parsed_args.compress, parsed_args.compress_restart,
-                        parsed_args.delete_restart)
+            api.combine(
+                self.app, self.app_args, parsed_args.desc_file,
+                parsed_args.results_dir, parsed_args.keep_proc_results,
+                parsed_args.compress, parsed_args.compress_restart,
+                parsed_args.delete_restart
+            )
         except Exception:
             raise
         symlinks = _find_symlinks()
@@ -95,4 +98,5 @@ def _move_results(results_dir, symlinks):
         if fn not in symlinks:
             log.info('moving {} to {}{}'.format(fn, results_dir, postfix))
             shutil.move(
-                os.path.join('.', fn), os.path.join(abs_results_dir, fn))
+                os.path.join('.', fn), os.path.join(abs_results_dir, fn)
+            )

@@ -54,7 +54,7 @@ CONTINUATION_INDENT_WIDTH=4
 #       start_ts=now()-timedelta(days=3),
 #       end_ts=now(),
 #   )        # <--- this bracket is dedented and on a separate line
-DEDENT_CLOSING_BRACKETS=False
+DEDENT_CLOSING_BRACKETS=True
 
 # The regex for an i18n comment. The presence of this comment stops
 # reformatting of that line, because the comments are required to be
@@ -98,7 +98,7 @@ SPACE_BETWEEN_ENDING_COMMA_AND_CLOSING_BRACKET=False
 
 # Split before arguments if the argument list is terminated by a
 # comma.
-SPLIT_ARGUMENTS_WHEN_COMMA_TERMINATED=True
+SPLIT_ARGUMENTS_WHEN_COMMA_TERMINATED=False
 
 # Set to True to prefer splitting before '&', '|' or '^' rather than
 # after.
