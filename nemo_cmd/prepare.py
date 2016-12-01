@@ -328,10 +328,7 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, nemo_config_dir):
         ref_namelist_path = os.path.join(
             nemo_config_dir, 'SHARED', ref_namelist
         )
-        saved_cwd = os.getcwd()
-        os.chdir(run_dir)
-        os.symlink(ref_namelist_path, ref_namelist)
-        os.chdir(saved_cwd)
+        os.symlink(ref_namelist_path, os.path.join(run_dir, ref_namelist))
     if 'namelist_cfg' in run_desc['namelists']:
         _set_mpi_decomposition('namelist_cfg', run_desc, run_dir)
     else:
@@ -526,8 +523,6 @@ def _make_grid_links(run_desc, run_dir):
     grid_dir = os.path.join(nemo_forcing_dir, 'grid')
     grid_files = ((run_desc['grid']['coordinates'], 'coordinates.nc'),
                   (run_desc['grid']['bathymetry'], 'bathy_meter.nc'))
-    saved_cwd = os.getcwd()
-    os.chdir(run_dir)
     for source, link_name in grid_files:
         link_path = os.path.join(grid_dir, source)
         if not os.path.exists(link_path):
@@ -538,8 +533,7 @@ def _make_grid_links(run_desc, run_dir):
             )
             _remove_run_dir(run_dir)
             raise SystemExit(2)
-        os.symlink(link_path, link_name)
-    os.chdir(saved_cwd)
+        os.symlink(link_path, os.path.join(run_dir, link_name))
 
 
 def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
