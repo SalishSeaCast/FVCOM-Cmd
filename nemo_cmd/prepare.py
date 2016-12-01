@@ -138,10 +138,19 @@ def _check_nemo_exec(run_desc, nemo34):
 
     :raises: SystemExit
     """
+    try:
+        nemo_code_config = run_desc['paths']['NEMO code config']
+    except KeyError:
+        # Alternate key spelling for backward compatibility
+        nemo_code_config = run_desc['paths']['NEMO-code-config']
     nemo_config_dir = os.path.abspath(
-        os.path.expandvars(
-            os.path.expanduser(run_desc['paths']['NEMO-code-config'])))
-    config_dir = os.path.join(nemo_config_dir, run_desc['config_name'])
+        os.path.expandvars(os.path.expanduser(nemo_code_config))
+    )
+    try:
+        config_dir = os.path.join(nemo_config_dir, run_desc['config name'])
+    except KeyError:
+        # Alternate key spelling for backward compatibility
+        config_dir = os.path.join(nemo_config_dir, run_desc['config_name'])
     nemo_bin_dir = os.path.join(config_dir, 'BLD', 'bin')
     nemo_exec = os.path.join(nemo_bin_dir, 'nemo.exe')
     if not os.path.exists(nemo_exec):
