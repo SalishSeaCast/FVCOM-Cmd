@@ -49,11 +49,13 @@ class Run(cliff.command.Command):
         parser.add_argument(
             'desc_file',
             metavar='DESC_FILE',
-            help='File path/name of run description YAML file')
+            help='File path/name of run description YAML file'
+        )
         parser.add_argument(
             'results_dir',
             metavar='RESULTS_DIR',
-            help='directory to store results into')
+            help='directory to store results into'
+        )
         parser.add_argument(
             '--nocheck-initial-conditions',
             dest='nocheck_init',
@@ -61,14 +63,16 @@ class Run(cliff.command.Command):
             help='''
             Suppress checking of the initial conditions link.
             Useful if you are submitting a job to wait on a
-            previous job''')
+            previous job'''
+        )
         parser.add_argument(
             '--nemo3.4',
             dest='nemo34',
             action='store_true',
             help='''
             Do a NEMO-3.4 run;
-            the default is to do a NEMO-3.6 run''')
+            the default is to do a NEMO-3.6 run'''
+        )
         parser.add_argument(
             '--waitjob',
             type=int,
@@ -76,26 +80,32 @@ class Run(cliff.command.Command):
             help='''
             use -W WAITJOB in call to qsub, to make current job
             wait for on WAITJOB.  WAITJOB is the queue job number
-            ''')
+            '''
+        )
         parser.add_argument(
             '-q',
             '--quiet',
             action='store_true',
-            help="don't show the run directory path or job submission message")
+            help="don't show the run directory path or job submission message"
+        )
         parser.add_argument(
-            '--compress', action='store_true', help='compress results files')
+            '--compress', action='store_true', help='compress results files'
+        )
         parser.add_argument(
             '--keep-proc-results',
             action='store_true',
-            help="don't delete per-processor results files")
+            help="don't delete per-processor results files"
+        )
         parser.add_argument(
             '--compress-restart',
             action='store_true',
-            help="compress restart file(s)")
+            help="compress restart file(s)"
+        )
         parser.add_argument(
             '--delete-restart',
             action='store_true',
-            help="delete restart file(s)")
+            help="delete restart file(s)"
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -111,22 +121,23 @@ class Run(cliff.command.Command):
             parsed_args.desc_file, parsed_args.results_dir, parsed_args.nemo34,
             parsed_args.nocheck_init, parsed_args.waitjob, parsed_args.quiet,
             parsed_args.keep_proc_results, parsed_args.compress,
-            parsed_args.compress_restart, parsed_args.delete_restart)
+            parsed_args.compress_restart, parsed_args.delete_restart
+        )
         if not parsed_args.quiet:
             log.info(qsub_msg)
 
 
 def run(
-        desc_file,
-        results_dir,
-        nemo34=False,
-        nocheck_init=False,
-        waitjob=0,
-        quiet=False,
-        keep_proc_results=False,
-        compress=False,
-        compress_restart=False,
-        delete_restart=False,
+    desc_file,
+    results_dir,
+    nemo34=False,
+    nocheck_init=False,
+    waitjob=0,
+    quiet=False,
+    keep_proc_results=False,
+    compress=False,
+    compress_restart=False,
+    delete_restart=False,
 ):
     """Create and populate a temporary run directory, and a run script,
     and submit the run to the queue manager.
@@ -227,8 +238,10 @@ def run(
     return qsub_msg
 
 
-def _build_batch_script(run_desc, desc_file, nemo_processors, xios_processors,
-                        results_dir, run_dir, gather_opts, system, nemo34):
+def _build_batch_script(
+    run_desc, desc_file, nemo_processors, xios_processors, results_dir,
+    run_dir, gather_opts, system, nemo34
+):
     """Build the Bash script that will execute the run.
 
     :arg dict run_desc: Run description dictionary.
@@ -265,27 +278,33 @@ def _build_batch_script(run_desc, desc_file, nemo_processors, xios_processors,
             email = run_desc['email']
         except KeyError:
             email = u'{user}@eos.ubc.ca'.format(user=os.getenv('USER'))
-        script = u'\n'.join(
-            (script, u'{pbs_common}'
-             u'{pbs_features}\n'.format(
-                 pbs_common=api.pbs_common(run_desc,
-                                           nemo_processors + xios_processors,
-                                           email, results_dir),
-                 pbs_features=_pbs_features(nemo_processors + xios_processors,
-                                            system))))
-    script = u'\n'.join(
-        (script, u'{defns}\n'
-         u'{modules}\n'
-         u'{execute}\n'
-         u'{fix_permissions}\n'
-         u'{cleanup}'.format(
-             defns=_definitions(run_desc, desc_file, run_dir, results_dir,
-                                gather_opts, system),
-             modules=_modules(system, nemo34),
-             execute=_execute(nemo_processors, xios_processors),
-             fix_permissions=_fix_permissions(),
-             cleanup=_cleanup(),
-         )))
+        script = u'\n'.join((
+            script, u'{pbs_common}'
+            u'{pbs_features}\n'.format(
+                pbs_common=api.pbs_common(
+                    run_desc, nemo_processors + xios_processors, email,
+                    results_dir
+                ),
+                pbs_features=_pbs_features(
+                    nemo_processors + xios_processors, system
+                )
+            )
+        ))
+    script = u'\n'.join((
+        script, u'{defns}\n'
+        u'{modules}\n'
+        u'{execute}\n'
+        u'{fix_permissions}\n'
+        u'{cleanup}'.format(
+            defns=_definitions(
+                run_desc, desc_file, run_dir, results_dir, gather_opts, system
+            ),
+            modules=_modules(system, nemo34),
+            execute=_execute(nemo_processors, xios_processors),
+            fix_permissions=_fix_permissions(),
+            cleanup=_cleanup(),
+        )
+    ))
     return script
 
 
@@ -294,83 +313,100 @@ def _pbs_features(n_processors, system):
     if system == 'jasper':
         ppn = 12
         nodes = math.ceil(n_processors / ppn)
-        pbs_features = (u'#PBS -l feature=X5675\n'
-                        u'#PBS -l nodes={}:ppn={}\n'.format(int(nodes), ppn))
+        pbs_features = (
+            u'#PBS -l feature=X5675\n'
+            u'#PBS -l nodes={}:ppn={}\n'.format(int(nodes), ppn)
+        )
     elif system == 'orcinus':
         pbs_features = (u'#PBS -l partition=QDR\n')
     return pbs_features
 
 
 def _definitions(
-        run_desc,
-        run_desc_file,
-        run_dir,
-        results_dir,
-        gather_opts,
-        system,
+    run_desc,
+    run_desc_file,
+    run_dir,
+    results_dir,
+    gather_opts,
+    system,
 ):
     home = u'${HOME}' if system == 'salish' else u'${PBS_O_HOME}'
-    defns = (u'RUN_ID="{run_id}"\n'
-             u'RUN_DESC="{run_desc_file}"\n'
-             u'WORK_DIR="{run_dir}"\n'
-             u'RESULTS_DIR="{results_dir}"\n'
-             u'GATHER="{salishsea_cmd} gather"\n'
-             u'GATHER_OPTS="{gather_opts}"\n').format(
-                 run_id=run_desc['run_id'],
-                 run_desc_file=run_desc_file,
-                 run_dir=run_dir,
-                 results_dir=results_dir,
-                 salishsea_cmd=os.path.join(home, '.local/bin/salishsea'),
-                 gather_opts=gather_opts,
-             )
+    defns = (
+        u'RUN_ID="{run_id}"\n'
+        u'RUN_DESC="{run_desc_file}"\n'
+        u'WORK_DIR="{run_dir}"\n'
+        u'RESULTS_DIR="{results_dir}"\n'
+        u'GATHER="{salishsea_cmd} gather"\n'
+        u'GATHER_OPTS="{gather_opts}"\n'
+    ).format(
+        run_id=run_desc['run_id'],
+        run_desc_file=run_desc_file,
+        run_dir=run_dir,
+        results_dir=results_dir,
+        salishsea_cmd=os.path.join(home, '.local/bin/salishsea'),
+        gather_opts=gather_opts,
+    )
     return defns
 
 
 def _modules(system, nemo34):
     modules = u''
     if system == 'jasper':
-        modules = (u'module load application/python/2.7.3\n'
-                   u'module load library/netcdf/4.1.3\n'
-                   u'module load library/szip/2.1\n'
-                   u'module load application/nco/4.3.9\n')
+        modules = (
+            u'module load application/python/2.7.3\n'
+            u'module load library/netcdf/4.1.3\n'
+            u'module load library/szip/2.1\n'
+            u'module load application/nco/4.3.9\n'
+        )
     elif system == 'orcinus':
         if nemo34:
-            modules = (u'module load intel\n'
-                       u'module load intel/14.0/netcdf_hdf5\n'
-                       u'module load python\n')
+            modules = (
+                u'module load intel\n'
+                u'module load intel/14.0/netcdf_hdf5\n'
+                u'module load python\n'
+            )
         else:
-            modules = (u'module load intel\n'
-                       u'module load intel/14.0/netcdf-4.3.3.1_mpi\n'
-                       u'module load intel/14.0/netcdf-fortran-4.4.0_mpi\n'
-                       u'module load intel/14.0/hdf5-1.8.15p1_mpi\n'
-                       u'module load intel/14.0/nco-4.5.2\n'
-                       u'module load python\n')
+            modules = (
+                u'module load intel\n'
+                u'module load intel/14.0/netcdf-4.3.3.1_mpi\n'
+                u'module load intel/14.0/netcdf-fortran-4.4.0_mpi\n'
+                u'module load intel/14.0/hdf5-1.8.15p1_mpi\n'
+                u'module load intel/14.0/nco-4.5.2\n'
+                u'module load python\n'
+            )
     return modules
 
 
 def _execute(nemo_processors, xios_processors):
     mpirun = u'mpirun -np {procs} ./nemo.exe'.format(procs=nemo_processors)
     if xios_processors:
-        mpirun = u' '.join((mpirun, ':', '-np', str(xios_processors),
-                            './xios_server.exe'))
-    script = (u'cd ${WORK_DIR}\n'
-              u'echo "working dir: $(pwd)"\n'
-              u'\n'
-              u'echo "Starting run at $(date)"\n'
-              u'mkdir -p ${RESULTS_DIR}\n')
+        mpirun = u' '.join(
+            (mpirun, ':', '-np', str(xios_processors), './xios_server.exe')
+        )
+    script = (
+        u'cd ${WORK_DIR}\n'
+        u'echo "working dir: $(pwd)"\n'
+        u'\n'
+        u'echo "Starting run at $(date)"\n'
+        u'mkdir -p ${RESULTS_DIR}\n'
+    )
     script += u'{mpirun}\n'.format(mpirun=mpirun)
-    script += (u'echo "Ended run at $(date)"\n'
-               u'\n'
-               u'echo "Results gathering started at $(date)"\n'
-               u'${GATHER} ${GATHER_OPTS} ${RUN_DESC} ${RESULTS_DIR}\n'
-               u'echo "Results gathering ended at $(date)"\n')
+    script += (
+        u'echo "Ended run at $(date)"\n'
+        u'\n'
+        u'echo "Results gathering started at $(date)"\n'
+        u'${GATHER} ${GATHER_OPTS} ${RUN_DESC} ${RESULTS_DIR}\n'
+        u'echo "Results gathering ended at $(date)"\n'
+    )
     return script
 
 
 def _fix_permissions():
-    script = (u'chmod go+rx ${RESULTS_DIR}\n'
-              u'chmod g+rw ${RESULTS_DIR}/*\n'
-              u'chmod o+r ${RESULTS_DIR}/*\n')
+    script = (
+        u'chmod go+rx ${RESULTS_DIR}\n'
+        u'chmod g+rw ${RESULTS_DIR}/*\n'
+        u'chmod o+r ${RESULTS_DIR}/*\n'
+    )
     return script
 
 

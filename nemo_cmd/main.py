@@ -35,7 +35,8 @@ class NEMO_App(cliff.app.App):
             description=__pkg_metadata__.DESCRIPTION,
             version=__pkg_metadata__.VERSION,
             command_manager=cliff.commandmanager.CommandManager(
-                'nemo.app', convert_underscores=False),
+                'nemo.app', convert_underscores=False
+            ),
             stderr=sys.stdout,
         )
 
