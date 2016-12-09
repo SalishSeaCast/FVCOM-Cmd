@@ -121,13 +121,11 @@ they are appended to the :file:`grid/` directory of the :kbd:`forcing` path.
   The name of the coordinates file to use for the run.
   It is symlinked in the run directory as :file:`coordinates.nc`
   (the file name required by NEMO).
-  The value is typically :file:`coordinates_seagrid_SalishSea.nc`.
 
 :kbd:`bathymetry`
   The name of the bathymetry file to use for the run
   It is symlinked in the run directory as :file:`bathy_meter.nc`
   (the file name required by NEMO).
-  The value is typically :file:`bathy_meter_SalishSea2.nc`.
 
 
 .. _NEMO-3.6-Forcing:
@@ -135,7 +133,7 @@ they are appended to the :file:`grid/` directory of the :kbd:`forcing` path.
 :kbd:`forcing` Section
 ----------------------
 
-The :kbd:`forcing` section of the run description file contains sub-sections that provide the names of directories and file that are to be symlinked in the run directory for NEMO to use to read initial conditions and forcing values from.
+The :kbd:`forcing` section of the run description file contains sub-sections that provide the names of directories and files that are to be symlinked in the run directory for NEMO to use to read initial conditions and forcing values from.
 
 An example :kbd:`forcing` section:
 

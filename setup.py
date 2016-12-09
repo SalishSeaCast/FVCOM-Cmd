@@ -14,6 +14,7 @@
 # limitations under the License.
 """NEMO-Cmd -- NEMO command processor
 """
+import sys
 from setuptools import find_packages, setup
 
 import __pkg_metadata__
@@ -46,6 +47,8 @@ install_requires = [
     'cliff',
     'PyYAML',
 ]
+if sys.version_info[0] == 2:
+    install_requires.append('pathlib')
 
 setup(
     name=__pkg_metadata__.PROJECT,
@@ -65,10 +68,8 @@ setup(
         'console_scripts': ['nemo = nemo_cmd.main:main'],
         # Sub-command plug-ins:
         'nemo.app': [
-            'combine = nemo_cmd.combine:Combine',
             'gather = nemo_cmd.gather:Gather',
             'prepare = nemo_cmd.prepare:Prepare',
-            'run = nemo_cmd.run:Run',
         ],
     },
 )

@@ -14,21 +14,46 @@
 # limitations under the License.
 """SalishSeaCmd gather sub-command plug-in unit tests
 """
+from pathlib import Path
+from types import SimpleNamespace
+
 try:
-    from unittest.mock import Mock
+    from unittest.mock import Mock, patch
 except ImportError:
-    from mock import Mock
+    # Python 2.7
+    from mock import Mock, patch
 
 import cliff.app
 import pytest
 
+import nemo_cmd.gather
+
 
 @pytest.fixture
 def gather_cmd():
-    import nemo_cmd.gather
     return nemo_cmd.gather.Gather(Mock(spec=cliff.app.App), [])
 
 
-def test_get_parser(gather_cmd):
-    parser = gather_cmd.get_parser('salishsea gather')
-    assert parser.prog == 'salishsea gather'
+class TestGetParser:
+    """Unit tests for `nemo gather` sub-command command-line parser.
+    """
+
+    def test_get_parser(self, gather_cmd):
+        parser = gather_cmd.get_parser('nemo gather')
+        assert parser.prog == 'nemo gather'
+
+    def test_parsed_args_defaults(self, gather_cmd):
+        parser = gather_cmd.get_parser('nemo gather')
+        parsed_args = parser.parse_args(['/results/'])
+        assert parsed_args.results_dir == Path('/results/')
+
+
+class TestTakeAction:
+    """Unit test for `nemo gather` sub-command take_action() method.
+    """
+
+    @patch('nemo_cmd.gather.gather')
+    def test_take_action(self, m_gather, gather_cmd):
+        parsed_args = SimpleNamespace(results_dir=Path('/results/'))
+        gather_cmd.take_action(parsed_args)
+        m_gather.assert_called_once_with(Path('/results/'))
