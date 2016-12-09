@@ -32,17 +32,17 @@ def prepare_cmd():
 
 
 class TestGetParser:
-    """Unit tests for `salishsea prepare` sub-command command-line parser.
+    """Unit tests for `nemo prepare` sub-command command-line parser.
     """
 
     def test_get_parser(self, prepare_cmd):
-        parser = prepare_cmd.get_parser('salishsea prepare')
-        assert parser.prog == 'salishsea prepare'
+        parser = prepare_cmd.get_parser('nemo prepare')
+        assert parser.prog == 'nemo prepare'
 
     def test_parsed_args_defaults(self, prepare_cmd):
-        parser = prepare_cmd.get_parser('salishsea prepare')
-        parsed_args = parser.parse_args(['foo'])
-        assert parsed_args.desc_file == 'foo'
+        parser = prepare_cmd.get_parser('nemo prepare')
+        parsed_args = parser.parse_args(['run_desc.yaml'])
+        assert parsed_args.desc_file == 'run_desc.yaml'
         assert not parsed_args.nemo34
         assert not parsed_args.quiet
 
@@ -54,8 +54,8 @@ class TestGetParser:
         ]
     )
     def test_parsed_args_flags(self, flag, attr, prepare_cmd):
-        parser = prepare_cmd.get_parser('salishsea prepare')
-        parsed_args = parser.parse_args(['foo', flag])
+        parser = prepare_cmd.get_parser('nemo prepare')
+        parsed_args = parser.parse_args(['run_desc.yaml', flag])
         assert getattr(parsed_args, attr)
 
 
@@ -70,7 +70,7 @@ class TestGetParser:
 @patch('nemo_cmd.prepare._make_grid_links')
 @patch('nemo_cmd.prepare._make_forcing_links')
 class TestPrepare:
-    """Unit tests for `salishsea prepare` prepare() function.
+    """Unit tests for `nemo prepare` prepare() function.
     """
 
     @pytest.mark.parametrize(
@@ -114,7 +114,7 @@ class TestPrepare:
 
 
 class TestCheckNemoExec:
-    """Unit tests for `salishsea prepare` _check_nemo_exec() function.
+    """Unit tests for `nemo prepare` _check_nemo_exec() function.
     """
 
     @pytest.mark.parametrize(
@@ -223,7 +223,7 @@ class TestCheckNemoExec:
 
 
 class TestCheckXiosExec:
-    """Unit tests for `salishsea prepare` _check_xios_exec() function.
+    """Unit tests for `nemo prepare` _check_xios_exec() function.
     """
 
     def test_xios_bin_dir_path(self, tmpdir):
@@ -245,7 +245,7 @@ class TestCheckXiosExec:
 
 
 class TestMakeRunDir:
-    """Unit test for `salishsea prepare` _make_run_dir() function.
+    """Unit test for `nemo prepare` _make_run_dir() function.
     """
 
     @patch('nemo_cmd.prepare.uuid.uuid1', return_value='uuid')
@@ -259,7 +259,7 @@ class TestMakeRunDir:
 
 
 class TestRemoveRunDir:
-    """Unit tests for `salishsea prepare` _remove_run_dir() function.
+    """Unit tests for `nemo prepare` _remove_run_dir() function.
     """
 
     def test_remove_run_dir(self, tmpdir):
@@ -281,7 +281,7 @@ class TestRemoveRunDir:
 
 
 class TestMakeNamelists:
-    """Unit tests for `salishsea prepare` _make_namelists() function.
+    """Unit tests for `nemo prepare` _make_namelists() function.
     """
 
     def test_nemo34(self):
@@ -310,7 +310,7 @@ class TestMakeNamelists:
 
 
 class TestMakeNamelistNEMO34:
-    """Unit tests for `salishsea prepare` _make_namelist_nemo34() function.
+    """Unit tests for `nemo prepare` _make_namelist_nemo34() function.
     """
 
     def test_make_namelist_nemo34(self, tmpdir):
@@ -347,7 +347,7 @@ class TestMakeNamelistNEMO34:
 
 
 class TestMakeNamelistNEMO36:
-    """Unit tests for `salishsea prepare` _make_namelist_nemo36() function.
+    """Unit tests for `nemo prepare` _make_namelist_nemo36() function.
     """
 
     def test_make_namelists_nemo36(self, tmpdir):
@@ -457,7 +457,7 @@ class TestMakeNamelistNEMO36:
 
 
 class TestCopyRunSetFiles:
-    """Unit tests for `salishsea prepare` _copy_run_set_files() function.
+    """Unit tests for `nemo prepare` _copy_run_set_files() function.
     """
 
     @patch('nemo_cmd.prepare.shutil.copy2')
@@ -558,7 +558,7 @@ class TestCopyRunSetFiles:
 
 
 class TestMakeExecutableLinks:
-    """Unit tests for `salishsea prepare` _make_executable_links() function.
+    """Unit tests for `nemo prepare` _make_executable_links() function.
     """
 
     @pytest.mark.parametrize('nemo34', [True, False])
@@ -707,7 +707,7 @@ class TestMakeGridLinks:
 
 
 class TestMakeForcingLinks:
-    """Unit tests for `salishsea prepare` _make_forcing_links() function.
+    """Unit tests for `nemo prepare` _make_forcing_links() function.
     """
 
     def test_nemo34(self, tmpdir):
@@ -762,7 +762,7 @@ class TestMakeForcingLinks:
 
 
 class TestMakeForcingLinksNEMO34:
-    """Unit tests for `salishsea prepare` _make_forcing_links_nemo34() function.
+    """Unit tests for `nemo prepare` _make_forcing_links_nemo34() function.
     """
 
     @pytest.mark.parametrize(
@@ -841,7 +841,7 @@ class TestMakeForcingLinksNEMO34:
 
 
 class TestMakeForcingLinksNEMO36:
-    """Unit tests for `salishsea prepare` _make_forcing_links_nemo36() function.
+    """Unit tests for `nemo prepare` _make_forcing_links_nemo36() function.
     """
 
     def test_abs_path_link(self, tmpdir):
