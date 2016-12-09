@@ -15,7 +15,14 @@
 """SalishSeaCmd gather sub-command plug-in unit tests
 """
 from pathlib import Path
-from types import SimpleNamespace
+try:
+    from types import SimpleNamespace
+except ImportError:
+    # Python 2.7
+    class SimpleNamespace:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
 
 try:
     from unittest.mock import Mock, patch

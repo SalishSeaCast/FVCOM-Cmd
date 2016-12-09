@@ -17,7 +17,7 @@
 import sys
 from setuptools import find_packages, setup
 
-import __pkg_metadata__
+from nemo_cmd import __pkg_metadata__
 
 python_classifiers = [
     'Programming Language :: Python :: {0}'.format(py_version)
