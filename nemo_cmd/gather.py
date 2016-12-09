@@ -12,91 +12,94 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""SalishSeaCmd command plug-in for gather sub-command.
+"""NEMO-Cmd command plug-in for gather sub-command.
 
-Gather results files from a Salish Sea NEMO run into a specified directory.
+Gather results files from a NEMO run into a specified directory.
 """
 import logging
-import os
 import shutil
+from pathlib import Path
 
 import cliff.command
 
-from nemo_cmd import (
-    api,
-    lib,
-)
-
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Gather(cliff.command.Command):
-    """Gather results from a NEMO run; includes combining MPI results files
+    """Gather results from a NEMO run.
     """
 
     def get_parser(self, prog_name):
         parser = super(Gather, self).get_parser(prog_name)
         parser.description = '''
-            Gather the results files from a Salish Sea NEMO run
-            described in DESC_FILE into files in RESULTS_DIR.
-            The gathering process includes combining
-            the per-processor results files,
-            and deleting the per-processor files.
+            Gather the results files from the NEMO run in the present working
+            directory into files in RESULTS_DIR.
+            The run description file,
+            namelist(s),
+            and other files that define the run are also gathered into
+            RESULTS_DIR.
 
             If RESULTS_DIR does not exist it will be created.
         '''
-        lib.add_combine_gather_options(parser)
+        parser.add_argument(
+            'results_dir',
+            type=Path,
+            metavar='RESULTS_DIR',
+            help='directory to store results into'
+        )
         return parser
 
     def take_action(self, parsed_args):
-        """Execute the `salishsea gather` sub-command.
+        """Execute the `nemo gather` sub-command.
 
-        Gather the results files from a Salish Sea NEMO run into
-        a results directory.
+        Gather the results files from a NEMO run into a results directory.
 
-        The per-processor results files from an MPI run are combined via
-        the `salishsea combine` command.
         The run description file,
-        namelist,
+        namelist(s),
         and other files that define the run are also gathered into the
         directory given by `parsed_args.results_dir`.
         """
-        try:
-            api.combine(
-                self.app, self.app_args, parsed_args.desc_file,
-                parsed_args.results_dir, parsed_args.keep_proc_results,
-                parsed_args.compress, parsed_args.compress_restart,
-                parsed_args.delete_restart
-            )
-        except Exception:
-            raise
-        symlinks = _find_symlinks()
-        try:
-            _move_results(parsed_args.results_dir, symlinks)
-        except Exception:
-            raise
-        _delete_symlinks(symlinks)
+        gather(parsed_args.results_dir)
 
 
-def _find_symlinks():
-    return {fn for fn in os.listdir('.') if os.path.islink(fn)}
+def gather(results_dir):
+    """Move all of the files and directories from the present working directory
+    into results_dir.
 
+    If results_dir doesn't exist, create it.
 
-def _delete_symlinks(symlinks):
-    log.info('Deleting symbolic links...')
-    for fn in symlinks:
-        os.remove(fn)
+    Delete any symbolic links so that the present working directory is empty.
+
+    :param results_dir: Path of the directory into which to store the run
+                        results.
+    :type results_dir: :py:class:`pathlib.Path`
+    """
+    results_dir.mkdir(parents=True, exist_ok=True)
+    symlinks = {p for p in Path.cwd().rglob('*') if p.is_symlink()}
+    try:
+        _move_results(results_dir, symlinks)
+    except Exception:
+        raise
+    _delete_symlinks(symlinks)
 
 
 def _move_results(results_dir, symlinks):
-    abs_results_dir = os.path.abspath(results_dir)
-    if os.path.samefile(os.getcwd(), abs_results_dir):
+    cwd = Path.cwd()
+    abs_results_dir = results_dir.resolve()
+    if cwd.samefile(abs_results_dir):
         return
-    log.info('Moving run definition and results files...')
-    postfix = '' if results_dir.endswith('/') else '/'
-    for fn in os.listdir('.'):
-        if fn not in symlinks:
-            log.info('moving {} to {}{}'.format(fn, results_dir, postfix))
-            shutil.move(
-                os.path.join('.', fn), os.path.join(abs_results_dir, fn)
+    logger.info('Moving run definition and results files...')
+    for p in cwd.rglob('*'):
+        if p not in symlinks:
+            src = p.relative_to(cwd)
+            suffix = '/' if src.is_dir() else ''
+            logger.info(
+                'Moving {}{} to {}/'.format(src, suffix, abs_results_dir)
             )
+            shutil.move(str(src), str(abs_results_dir / src))
+
+
+def _delete_symlinks(symlinks):
+    logger.info('Deleting symbolic links...')
+    for ln in symlinks:
+        ln.unlink()
