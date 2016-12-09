@@ -49,6 +49,8 @@ For example:
 
     $ nemo help prepare
 
+::
+
     usage: nemo prepare [-h] [--nocheck-initial-conditions] [--nemo3.4] [-q]
                         DESC_FILE
 
