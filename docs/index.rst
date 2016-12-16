@@ -43,6 +43,7 @@ Contents
    run_description_file
    api
    development
+   CHANGES
 
 
 Indices and Tables
