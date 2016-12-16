@@ -12,9 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""SalishSeaCmd -- Salish Sea NEMO command processor
+"""NEMO-Cmd -- NEMO command processor
 """
 PROJECT = 'NEMO-Cmd'
 DESCRIPTION = 'NEMO Command Processor'
-VERSION = '1.0.dev0'
+VERSION = '0.9'
 DEV_STATUS = '3 - Alpha'
