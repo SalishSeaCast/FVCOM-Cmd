@@ -39,3 +39,6 @@ dependencies:
 
     # For documentation
     - sphinx-rtd-theme
+
+    # For unit and packaging testing under Python 2 and 3
+    - tox
