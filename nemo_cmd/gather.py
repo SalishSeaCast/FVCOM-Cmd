@@ -96,7 +96,10 @@ def _move_results(results_dir, symlinks):
             logger.info(
                 'Moving {}{} to {}/'.format(src, suffix, abs_results_dir)
             )
-            shutil.move(str(src), str(abs_results_dir / src))
+            if src.is_dir():
+                shutil.move(str(src), str(abs_results_dir))
+            else:
+                shutil.move(str(src), str(abs_results_dir / src))
 
 
 def _delete_symlinks(symlinks):
