@@ -2,6 +2,15 @@
 Change Log
 **********
 
+Next Release
+============
+
+* Fix a bug whereby results directories were gathered with a redundant directory
+  layer;
+  e.g. the files in ``runs/9e5958d4-cb95-11e6-a99b-00259059edac/restart/``
+  were gathered to ``results/25dec16/restart/restart/`` instead of
+  ``results/25dec16/restart/``.
+
 0.9
 ===
 
