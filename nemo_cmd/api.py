@@ -12,10 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Salish Sea NEMO command processor API
+"""NEMO command processor API
 
-Application programming interface for the Salish Sea NEMO command
-processor.
+Application programming interface for the NEMO command processor.
 Provides Python function interfaces to command processor sub-commands
 for use in other sub-command processor modules,
 and by other software.
@@ -28,6 +27,7 @@ import subprocess
 import cliff.commandmanager
 import yaml
 
+from nemo_cmd import deflate as deflate_plugin
 from nemo_cmd import prepare as prepare_plugin
 
 log = logging.getLogger(__name__)
@@ -96,6 +96,18 @@ def combine(
         argv.append('--delete-restart')
     result = _run_subcommand(app, app_args, argv)
     return result
+
+
+def deflate(filenames):
+    """Deflate variables in each of the netCDF files in filenames using
+    Lempel-Ziv compression.
+
+    Converts files to netCDF-4 format.
+    The deflated file replaces the original file.
+
+    :param list filenames: Paths/names of files to be deflated.
+    """
+    return deflate_plugin.deflate(filenames)
 
 
 def prepare(run_desc_file, nemo34=False, nocheck_init=False):
