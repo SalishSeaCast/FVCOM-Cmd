@@ -68,6 +68,7 @@ setup(
         'console_scripts': ['nemo = nemo_cmd.main:main'],
         # Sub-command plug-ins:
         'nemo.app': [
+            'deflate = nemo_cmd.deflate:Deflate',
             'gather = nemo_cmd.gather:Gather',
             'prepare = nemo_cmd.prepare:Prepare',
         ],

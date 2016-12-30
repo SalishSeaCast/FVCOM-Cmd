@@ -36,6 +36,7 @@ The command :kbd:`nemo --help` produces a list of the available :program:`nemo` 
 
   Commands:
     complete       print bash completion command
+    deflate        Deflate variables in netCDF files using Lempel-Ziv compression.
     gather         Gather results from a NEMO run.
     help           print detailed help for another command
     prepare        Prepare a NEMO run
@@ -259,4 +260,44 @@ The :command:`nemo gather` command moves results from a NEMO run into a results 
     -h, --help   show this help message and exit
 
 If the :command:`nemo gather` command prints an error message,
+you can get a Python traceback containing more information about the error by re-running the command with the :kbd:`--debug` flag.
+
+
+.. _nemo-deflate:
+
+:kbd:`deflate` Sub-command
+==========================
+
+The :command:`nemo deflate` command deflates the variables in netCDF files using the Lempel-Ziv compression algorithm to reduce the size of the file on disk::
+
+  usage: nemo deflate [-h] FILEPATH [FILEPATH ...]
+
+  Deflate variables in netCDF files using Lempel-Ziv compression. Converts files
+  to netCDF-4 format. The deflated file replaces the original file. This command
+  is effectively the same as: ncks -4 -L -O filename filename
+
+  positional arguments:
+    FILEPATH    Path/name of file to be deflated.
+
+  optional arguments:
+    -h, --help  show this help message and exit
+
+You can give the command as many file names as you wish,
+with or without paths.
+You can also use shell wildcards and/or regular expressions to produce the list of file paths/names to deflate.
+
+Storage savings can be as much as 80%.
+Files processed by :command:`nemo deflate` are converted to netCDF-4 format.
+The deflated file replaces the original file,
+but the deflation process uses temporary storage to prevent data loss.
+
+:command:`nemo deflate` is equivalent to running:
+
+.. code-block:: bash
+
+    $ncks -4 -L4 -O filename filename
+
+on each :kbd:`FILEPATH`.
+
+If the :command:`nemo deflate` command prints an error message,
 you can get a Python traceback containing more information about the error by re-running the command with the :kbd:`--debug` flag.
