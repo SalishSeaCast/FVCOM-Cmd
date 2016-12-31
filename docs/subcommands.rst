@@ -274,7 +274,7 @@ The :command:`nemo deflate` command deflates the variables in netCDF files using
 
   Deflate variables in netCDF files using Lempel-Ziv compression. Converts files
   to netCDF-4 format. The deflated file replaces the original file. This command
-  is effectively the same as: ncks -4 -L -O filename filename
+  is effectively the same as running ncks -4 -L -O FILEPATH FILEPATH for each FILEPATH.
 
   positional arguments:
     FILEPATH    Path/name of file to be deflated.
@@ -295,7 +295,7 @@ but the deflation process uses temporary storage to prevent data loss.
 
 .. code-block:: bash
 
-    $ncks -4 -L4 -O filename filename
+    $ncks -4 -L4 -O FILEPATH FILEPATH
 
 on each :kbd:`FILEPATH`.
 
