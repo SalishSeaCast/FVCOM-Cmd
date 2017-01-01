@@ -23,6 +23,7 @@ channels:
 
 dependencies:
   - arrow
+  - attrs
   - pip
   - python=3
   - pyyaml

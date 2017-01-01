@@ -2,6 +2,7 @@
 
 alabaster==0.7.9
 arrow==0.8.0
+attrs==16.0.0
 Babel==2.3.4
 cliff==2.3.0
 cmd2==0.6.9
