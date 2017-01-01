@@ -105,7 +105,7 @@ def deflate(filenames):
     Converts files to netCDF-4 format.
     The deflated file replaces the original file.
 
-    :param list filenames: Paths/names of files to be deflated.
+    :param sequence filenames: Paths/names of files to be deflated.
     """
     return deflate_plugin.deflate(filenames)
 

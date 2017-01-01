@@ -66,7 +66,7 @@ def deflate(filepaths):
     Converts files to netCDF-4 format.
     The deflated file replaces the original file.
 
-    :param list filepaths: Paths/names of files to be deflated.
+    :param sequence filepaths: Paths/names of files to be deflated.
     """
     for fp in filepaths:
         result = _netcdf4_deflate(fp)
