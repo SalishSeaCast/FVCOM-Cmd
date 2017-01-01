@@ -98,16 +98,19 @@ def combine(
     return result
 
 
-def deflate(filenames):
-    """Deflate variables in each of the netCDF files in filenames using
+def deflate(filepaths, max_concurrent_jobs):
+    """Deflate variables in each of the netCDF files in filepaths using
     Lempel-Ziv compression.
 
     Converts files to netCDF-4 format.
     The deflated file replaces the original file.
 
-    :param sequence filenames: Paths/names of files to be deflated.
+    :param sequence filepaths: Paths/names of files to be deflated.
+
+    :param int max_concurrent_jobs: Maximum number of concurrent deflation
+    processes allowed.
     """
-    return deflate_plugin.deflate(filenames)
+    return deflate_plugin.deflate(filepaths, max_concurrent_jobs)
 
 
 def prepare(run_desc_file, nemo34=False, nocheck_init=False):

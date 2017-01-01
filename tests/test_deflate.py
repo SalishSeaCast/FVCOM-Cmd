@@ -52,8 +52,9 @@ class TestGetParser:
 
     def test_parsed_args_defaults(self, deflate_cmd):
         parser = deflate_cmd.get_parser('nemo deflate')
-        parsed_args = parser.parse_args(['foo.nc', 'bar.nc'])
+        parsed_args = parser.parse_args(['foo.nc', 'bar.nc', '-j6'])
         assert parsed_args.filepaths == ['foo.nc', 'bar.nc']
+        assert parsed_args.jobs == 6
 
 
 class TestTakeAction:
@@ -65,37 +66,3 @@ class TestTakeAction:
         parsed_args = SimpleNamespace(filepaths=['foo.nc', 'bar.nc'])
         deflate_cmd.take_action(parsed_args)
         m_deflate.assert_called_once_with(['foo.nc', 'bar.nc'])
-
-
-@patch('nemo_cmd.deflate.logger')
-class TestDeflate:
-    """Unit tests for deflate function.
-    """
-
-    def test_error(self, m_logger):
-        with patch('nemo_cmd.deflate._netcdf4_deflate', return_value='error'):
-            nemo_cmd.deflate.deflate(['foo.nc', 'bar.nc'])
-        m_logger.error.assert_has_calls([call('error')] * 2)
-
-    def test_success(self, m_logger):
-        with patch('nemo_cmd.deflate._netcdf4_deflate', return_value=''):
-            nemo_cmd.deflate.deflate(['foo.nc', 'bar.nc'])
-        m_logger.info.assert_has_calls([
-            call('netCDF4 deflated foo.nc'),
-            call('netCDF4 deflated bar.nc'),
-        ])
-
-
-@patch('nemo_cmd.deflate.subprocess.check_output')
-class TestNetcdf4Deflate:
-    """Unit tests for _netcdf4_deflate function.
-    """
-
-    def test_subprocess_check_output(self, m_check_output):
-        result = nemo_cmd.deflate._netcdf4_deflate('foo.nc')
-        m_check_output.assert_called_once_with(
-            ['ncks', '-4', '-L4', '-O', 'foo.nc', 'foo.nc'],
-            stderr=subprocess.STDOUT,
-            universal_newlines=True
-        )
-        assert result == m_check_output()
