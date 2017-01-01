@@ -44,6 +44,7 @@ install_requires = [
     # see environment-dev.yaml for conda environment dev installation
     # see requirements.txt for package versions used during recent development
     'arrow',
+    'attrs',
     'cliff',
     'PyYAML',
 ]
