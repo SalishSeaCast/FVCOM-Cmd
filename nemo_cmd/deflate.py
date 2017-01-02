@@ -133,7 +133,7 @@ def deflate(filepaths, max_concurrent_jobs):
     processes allowed.
     """
     jobs = [DeflateJob(fp) for fp in filepaths]
-    jobs_in_progress = _launch_initial_jobs(jobs)
+    jobs_in_progress = _launch_initial_jobs(jobs, max_concurrent_jobs)
     while jobs or jobs_in_progress:
         time.sleep(1)
         _poll_and_launch(jobs, jobs_in_progress)
