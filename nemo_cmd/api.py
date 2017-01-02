@@ -28,6 +28,7 @@ import cliff.commandmanager
 import yaml
 
 from nemo_cmd import deflate as deflate_plugin
+from nemo_cmd import gather as gather_plugin
 from nemo_cmd import prepare as prepare_plugin
 
 log = logging.getLogger(__name__)
@@ -111,6 +112,21 @@ def deflate(filepaths, max_concurrent_jobs):
     processes allowed.
     """
     return deflate_plugin.deflate(filepaths, max_concurrent_jobs)
+
+
+def gather(results_dir):
+    """Move all of the files and directories from the present working directory
+    into results_dir.
+
+    If results_dir doesn't exist, create it.
+
+    Delete any symbolic links so that the present working directory is empty.
+
+    :param results_dir: Path of the directory into which to store the run
+                        results.
+    :type results_dir: :py:class:`pathlib.Path`
+    """
+    return gather_plugin.gather(results_dir)
 
 
 def prepare(run_desc_file, nemo34=False, nocheck_init=False):
