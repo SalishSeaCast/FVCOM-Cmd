@@ -20,6 +20,8 @@ files with the same name-root and move them to a specified directory.
 import glob
 import gzip
 import logging
+import math
+import multiprocessing
 import os
 import shutil
 import subprocess
@@ -131,7 +133,9 @@ def _netcdf4_deflate_results():
     )
     for pattern in patterns:
         for fn in glob.glob(pattern):
-            result = lib.netcdf4_deflate(fn)
+            result = lib.netcdf4_deflate(
+                fn, math.floor(multiprocessing.cpu_count() / 2)
+            )
             if result:
                 log.info(result)
             else:
