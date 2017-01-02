@@ -157,7 +157,7 @@ def _poll_and_launch(jobs, jobs_in_progress):
         if running_job.done:
             result, _ = running_job.process.communicate()
             logger.error(result) if result else logger.info(
-                'netCDF4 deflated {.filename}'.format(running_job)
+                'netCDF4 deflated {.filepath}'.format(running_job)
             )
             jobs_in_progress.pop(running_job.pid)
             try:
