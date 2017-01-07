@@ -141,7 +141,7 @@ def deflate(filepaths, max_concurrent_jobs):
 
 def _launch_initial_jobs(jobs, max_concurrent_jobs):
     jobs_in_progress = {}
-    for process in range(max_concurrent_jobs):
+    for process in range(int(max_concurrent_jobs)):
         try:
             job = jobs.pop(0)
         except IndexError:
