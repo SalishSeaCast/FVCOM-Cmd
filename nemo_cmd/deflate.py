@@ -19,6 +19,7 @@ Deflate variables in netCDF files using Lempel-Ziv compression.
 import logging
 import math
 import multiprocessing
+from pathlib import Path
 import shlex
 import subprocess
 import time
@@ -46,6 +47,7 @@ class Deflate(cliff.command.Command):
         parser.add_argument(
             'filepaths',
             nargs='+',
+            type=Path,
             metavar='FILEPATH',
             help='Path/name of file to be deflated.'
         )

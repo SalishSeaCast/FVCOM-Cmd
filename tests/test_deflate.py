@@ -14,6 +14,8 @@
 # limitations under the License.
 """SalishSeaCmd deflate sub-command plug-in unit tests
 """
+from pathlib import Path
+
 try:
     from types import SimpleNamespace
 except ImportError:
@@ -40,7 +42,7 @@ def deflate_cmd():
     return nemo_cmd.deflate.Deflate(Mock(spec=cliff.app.App), [])
 
 
-class TestGetParser:
+class TestParser:
     """Unit tests for `nemo deflate` sub-command command-line parser.
     """
 
@@ -51,7 +53,7 @@ class TestGetParser:
     def test_parsed_args(self, deflate_cmd):
         parser = deflate_cmd.get_parser('nemo deflate')
         parsed_args = parser.parse_args(['foo.nc', 'bar.nc', '-j6'])
-        assert parsed_args.filepaths == ['foo.nc', 'bar.nc']
+        assert parsed_args.filepaths == [Path('foo.nc'), Path('bar.nc')]
         assert parsed_args.jobs == 6
 
 
@@ -61,6 +63,8 @@ class TestTakeAction:
 
     @patch('nemo_cmd.deflate.deflate')
     def test_take_action(self, m_deflate, deflate_cmd):
-        parsed_args = SimpleNamespace(filepaths=['foo.nc', 'bar.nc'], jobs=6)
+        parsed_args = SimpleNamespace(
+            filepaths=[Path('foo.nc'), Path('bar.nc')], jobs=6
+        )
         deflate_cmd.take_action(parsed_args)
-        m_deflate.assert_called_once_with(['foo.nc', 'bar.nc'], 6)
+        m_deflate.assert_called_once_with([Path('foo.nc'), Path('bar.nc')], 6)
