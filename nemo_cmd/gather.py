@@ -75,7 +75,7 @@ def gather(results_dir):
     :type results_dir: :py:class:`pathlib.Path`
     """
     results_dir.mkdir(parents=True, exist_ok=True)
-    symlinks = {p for p in Path.cwd().rglob('*') if p.is_symlink()}
+    symlinks = {p for p in Path.cwd().glob('*') if p.is_symlink()}
     try:
         _move_results(results_dir, symlinks)
     except Exception:
@@ -89,7 +89,7 @@ def _move_results(results_dir, symlinks):
     if cwd.samefile(abs_results_dir):
         return
     logger.info('Moving run definition and results files...')
-    for p in cwd.rglob('*'):
+    for p in cwd.glob('*'):
         if p not in symlinks:
             src = p.relative_to(cwd)
             suffix = '/' if src.is_dir() else ''
