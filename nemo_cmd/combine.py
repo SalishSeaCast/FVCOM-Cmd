@@ -20,7 +20,11 @@ files with the same name-root.
 import logging
 import os
 import shlex
-from pathlib import Path
+try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
 import shutil
 import subprocess
 

@@ -22,11 +22,15 @@ import datetime
 import logging
 import math
 import os
+try:
+    import pathlib
+except ImportError:
+    # Python 2.7
+    import pathlib2 as pathlib
 import socket
 import subprocess
 
 import cliff.command
-import pathlib
 
 from nemo_cmd import api, lib
 

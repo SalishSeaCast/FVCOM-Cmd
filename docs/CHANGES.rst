@@ -5,6 +5,9 @@ Change Log
 Next Release
 ============
 
+* Change from using pathlib to pathlib2 package for Python 2.7 because the
+  latter is the backport from the Python 3 stdlib that is being kept up to date.
+
 * Refactor the ``combine`` plug-in that only runs ``rebuild_nemo`` to combine
   per-processor results and/or restart files.
 
