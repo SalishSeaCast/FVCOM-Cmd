@@ -89,7 +89,7 @@ def combine(run_desc_file):
 
 def _get_results_files():
     result_pattern = '*_0000.nc'
-    name_roots = [str(fn)[:-8] for fn in Path.cwd().glob(result_pattern)]
+    name_roots = [str(fn.stem)[:-5] for fn in Path.cwd().glob(result_pattern)]
     if not name_roots:
         logger.info(
             'no files found that match the {} pattern'.format(result_pattern)
