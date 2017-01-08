@@ -26,6 +26,10 @@ and by other software.
 
 .. autofunction:: nemo_cmd.api.combine
 
+.. autofunction:: nemo_cmd.api.deflate
+
+.. autofunction:: nemo_cmd.api.gather
+
 .. autofunction:: nemo_cmd.api.prepare
 
 .. autofunction:: nemo_cmd.api.run_description

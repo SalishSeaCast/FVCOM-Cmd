@@ -64,7 +64,7 @@ def deflate(filepaths, max_concurrent_jobs):
     :param sequence filepaths: Paths/names of files to be deflated.
 
     :param int max_concurrent_jobs: Maximum number of concurrent deflation
-    processes allowed.
+                                    processes allowed.
     """
     return deflate_plugin.deflate(filepaths, max_concurrent_jobs)
 
