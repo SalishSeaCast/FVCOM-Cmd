@@ -5,6 +5,9 @@ Change Log
 Next Release
 ============
 
+* Refactor the ``combine`` plug-in that only runs ``rebuild_nemo`` to combine
+  per-processor results and/or restart files.
+
 * Add ``deflate`` plug-in to deflate variables in netCDF files using Lempel-Ziv
   compression.
 

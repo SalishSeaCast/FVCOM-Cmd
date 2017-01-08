@@ -14,8 +14,6 @@
 # limitations under the License.
 """Utility functions for use by SalishSeaCmd command plug-ins.
 """
-import subprocess
-
 import yaml
 
 
@@ -33,37 +31,6 @@ def load_run_desc(desc_file):
     return run_desc
 
 
-def add_combine_gather_options(parser):
-    """Add options that are common to combine and gather sub-commands.
-    """
-    parser.add_argument(
-        'desc_file',
-        metavar='DESC_FILE',
-        help='file path/name of run description YAML file'
-    )
-    parser.add_argument(
-        'results_dir',
-        metavar='RESULTS_DIR',
-        help='directory to store results into'
-    )
-    parser.add_argument(
-        '--compress', action='store_true', help="compress results files"
-    )
-    parser.add_argument(
-        '--keep-proc-results',
-        action='store_true',
-        help="don't delete per-processor results files"
-    )
-    parser.add_argument(
-        '--compress-restart',
-        action='store_true',
-        help="compress restart file(s)"
-    )
-    parser.add_argument(
-        '--delete-restart', action='store_true', help="delete restart file(s)"
-    )
-
-
 def get_n_processors(run_desc):
     """Return the total number of processors required for the run as
     specified by the MPI decomposition key in the run description.
@@ -76,26 +43,3 @@ def get_n_processors(run_desc):
     """
     jpni, jpnj = map(int, run_desc['MPI decomposition'].split('x'))
     return jpni * jpnj
-
-
-def netcdf4_deflate(filename, dfl_lvl=4):
-    """Run `ncks -4 -L dfl_lvl` on filename *in place*.
-
-    The result is a netCDF4 file with its variables compressed
-    with Lempel-Ziv deflation.
-
-    :arg filename: Path/filename of the netCDF file to process.
-    :type filename: string
-
-    :arg dfl_lvl: Lempel-Ziv deflation level to use.
-    :type dfl_lvl: int
-
-    :returns: Output of the ncks command.
-    :rtype: string
-    """
-    result = subprocess.check_output(
-        ['ncks', '-4', '-L{}'.format(dfl_lvl), '-O', filename, filename],
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    )
-    return result

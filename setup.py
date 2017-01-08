@@ -49,7 +49,7 @@ install_requires = [
     'PyYAML',
 ]
 if sys.version_info[0] == 2:
-    install_requires.append('pathlib')
+    install_requires.append('pathlib2')
 
 setup(
     name=__pkg_metadata__.PROJECT,
@@ -69,6 +69,7 @@ setup(
         'console_scripts': ['nemo = nemo_cmd.main:main'],
         # Sub-command plug-ins:
         'nemo.app': [
+            'combine = nemo_cmd.combine:Combine',
             'deflate = nemo_cmd.deflate:Deflate',
             'gather = nemo_cmd.gather:Gather',
             'prepare = nemo_cmd.prepare:Prepare',
