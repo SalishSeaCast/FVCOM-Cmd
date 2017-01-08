@@ -35,12 +35,12 @@ The command :kbd:`nemo --help` produces a list of the available :program:`nemo` 
     --debug              Show tracebacks on errors.
 
   Commands:
+    combine        Combine per-processor files from an MPI NEMO run into single files
     complete       print bash completion command
     deflate        Deflate variables in netCDF files using Lempel-Ziv compression.
     gather         Gather results from a NEMO run.
     help           print detailed help for another command
     prepare        Prepare a NEMO run
-
 
 For details of the arguments and options for a sub-command use
 :command:`nemo help <sub-command>`.
@@ -85,7 +85,7 @@ You can check what version of :program:`nemo` you have installed with:
 :kbd:`prepare` Sub-command
 ==========================
 
-The :command:`nemo prepare` command sets up a run directory from which to execute the NEMO run described in the specifed run description,
+The :command:`prepare` sub-command sets up a run directory from which to execute the NEMO run described in the specifed run description,
 and output file definitions files::
 
   usage: nemo prepare [-h] [--nocheck-initial-conditions] [--nemo3.4] [-q]
@@ -239,27 +239,28 @@ The run directory also contains symbolic links to:
   the file name expected by NEMO.
 
 
-.. _nemo-gather:
+.. _nemo-combine:
 
-:kbd:`gather` Sub-command
-=========================
+:kbd:`combine` Sub-command
+==========================
 
-The :command:`nemo gather` command moves results from a NEMO run into a results directory::
+The :command:`combine` sub-command combines the per-processor results and/or restart files from an MPI NEMO run described in DESC_FILE using the the NEMO :command:`rebuild_nemo` tool::
 
-  usage: nemo gather [-h] RESULTS_DIR
+  usage: nemo combine [-h] RUN_DESC_FILE
 
-  Gather the results files from the NEMO run in the present working directory
-  into files in RESULTS_DIR. The run description file, namelist(s), and other
-  files that define the run are also gathered into RESULTS_DIR. If RESULTS_DIR
-  does not exist it will be created.
+  Combine the per-processor results and/or restart files from an MPI NEMO run
+  described in DESC_FILE using the the NEMO rebuild_nemo tool. Delete the per-
+  processor files.
 
   positional arguments:
-    RESULTS_DIR  directory to store results into
+    RUN_DESC_FILE  file path/name of run description YAML file
 
   optional arguments:
-    -h, --help   show this help message and exit
+    -h, --help     show this help message and exit
 
-If the :command:`nemo gather` command prints an error message,
+The per-processor files are deleted.
+
+If the :command:`nemo combine` command prints an error message,
 you can get a Python traceback containing more information about the error by re-running the command with the :kbd:`--debug` flag.
 
 
@@ -268,7 +269,7 @@ you can get a Python traceback containing more information about the error by re
 :kbd:`deflate` Sub-command
 ==========================
 
-The :command:`nemo deflate` command deflates the variables in netCDF files using the Lempel-Ziv compression algorithm to reduce the size of the file on disk::
+The :command:`deflate` sub-command deflates the variables in netCDF files using the Lempel-Ziv compression algorithm to reduce the size of the file on disk::
 
   usage: nemo deflate [-h] FILEPATH [FILEPATH ...]
 
@@ -287,7 +288,7 @@ with or without paths.
 You can also use shell wildcards and/or regular expressions to produce the list of file paths/names to deflate.
 
 Storage savings can be as much as 80%.
-Files processed by :command:`nemo deflate` are converted to netCDF-4 format.
+Files processed by :command:`deflate` are converted to netCDF-4 format.
 The deflated file replaces the original file,
 but the deflation process uses temporary storage to prevent data loss.
 
@@ -300,4 +301,28 @@ but the deflation process uses temporary storage to prevent data loss.
 on each :kbd:`FILEPATH`.
 
 If the :command:`nemo deflate` command prints an error message,
+you can get a Python traceback containing more information about the error by re-running the command with the :kbd:`--debug` flag.
+
+
+.. _nemo-gather:
+
+:kbd:`gather` Sub-command
+=========================
+
+The :command:`gather` sub-command moves results from a NEMO run into a results directory::
+
+  usage: nemo gather [-h] RESULTS_DIR
+
+  Gather the results files from the NEMO run in the present working directory
+  into files in RESULTS_DIR. The run description file, namelist(s), and other
+  files that define the run are also gathered into RESULTS_DIR. If RESULTS_DIR
+  does not exist it will be created.
+
+  positional arguments:
+    RESULTS_DIR  directory to store results into
+
+  optional arguments:
+    -h, --help   show this help message and exit
+
+If the :command:`nemo gather` command prints an error message,
 you can get a Python traceback containing more information about the error by re-running the command with the :kbd:`--debug` flag.
