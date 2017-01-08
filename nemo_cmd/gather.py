@@ -18,7 +18,11 @@ Gather results files from a NEMO run into a specified directory.
 """
 import logging
 import shutil
-from pathlib import Path
+try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
 
 import cliff.command
 

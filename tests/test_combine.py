@@ -14,11 +14,13 @@
 # limitations under the License.
 """SalishSeaCmd combine sub-command plug-in unit tests
 """
+try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
 import shlex
-from pathlib import Path
-
 import subprocess
-
 try:
     from types import SimpleNamespace
 except ImportError:

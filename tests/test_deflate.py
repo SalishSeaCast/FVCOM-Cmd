@@ -14,8 +14,11 @@
 # limitations under the License.
 """SalishSeaCmd deflate sub-command plug-in unit tests
 """
-from pathlib import Path
-
+try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
 try:
     from types import SimpleNamespace
 except ImportError:
