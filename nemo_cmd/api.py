@@ -22,6 +22,11 @@ and by other software.
 import datetime
 import logging
 import os
+try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
 import subprocess
 
 import cliff.commandmanager
@@ -66,6 +71,8 @@ def deflate(filepaths, max_concurrent_jobs):
     :param int max_concurrent_jobs: Maximum number of concurrent deflation
                                     processes allowed.
     """
+    if not hasattr(filepaths[0], 'exists'):
+        return deflate_plugin.deflate(map(Path, filepaths), max_concurrent_jobs)
     return deflate_plugin.deflate(filepaths, max_concurrent_jobs)
 
 
