@@ -248,7 +248,7 @@ def _make_namelists(run_set_dir, run_desc, run_dir, nemo_config_dir, nemo34):
 
     :param str run_dir: Path of the temporary run directory.
 
-    :param str nemo_config_dir: Absolute paths of NEMO code CONFIG directory.
+    :param str nemo_config_dir: Absolute path of NEMO code CONFIG directory.
 
     :param boolean nemo34: Prepare a NEMO-3.4 run;
                            the default is to prepare a NEMO-3.6 run
