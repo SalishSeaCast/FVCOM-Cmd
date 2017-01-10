@@ -82,8 +82,8 @@ The :kbd:`paths` section of the run description file is a collection of director
 :kbd:`NEMO code config`
   The path to the :file:`CONFIG/` directory in the :kbd:`NEMO-3.6` code tree
   (typically a version control system clone/checkout)
-  where the NEMO where the configuration files for the run are to be found;
-  e.g. :file:`$HOME/MEOPAR/NEMO-3.6-code/CONFIG/`.
+  where the NEMO configuration directories are to be found;
+  e.g. :file:`$HOME/MEOPAR/NEMO-3.6/CONFIG/`.
   An absolute path is required because the path is used in both the current directory and the temporary run directory created in the :kbd:`runs directory`.
   You can use :kbd:`~` or :kbd:`$HOME` in the path,
   if you wish.
@@ -366,7 +366,7 @@ The :kbd:`paths` section of the run description file is a collection of director
 :kbd:`NEMO code config`
   The path to the :file:`CONFIG/` directory in the :kbd:`NEMO-3.4` code tree
   (typically a version control system clone/checkout)
-  where the NEMO where the configuration files for the run are to be found;
+  where the NEMO configuration directories are to be found;
   e.g. :file:`$HOME/MEOPAR/NEMO-3.4/NEMOGCM/CONFIG/`.
   An absolute path is required because the path is used in both the current directory and the temporary run directory created in the :kbd:`runs directory`.
   You can use :kbd:`~` or :kbd:`$HOME` in the path,
