@@ -71,9 +71,11 @@ def deflate(filepaths, max_concurrent_jobs):
     :param int max_concurrent_jobs: Maximum number of concurrent deflation
                                     processes allowed.
     """
-    if not hasattr(filepaths[0], 'exists'):
+    try:
+        return deflate_plugin.deflate(filepaths, max_concurrent_jobs)
+    except AttributeError:
+        # filepaths is sequence of path strings not Path objects
         return deflate_plugin.deflate(map(Path, filepaths), max_concurrent_jobs)
-    return deflate_plugin.deflate(filepaths, max_concurrent_jobs)
 
 
 def gather(results_dir):
