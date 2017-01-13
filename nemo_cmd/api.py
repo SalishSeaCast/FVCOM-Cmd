@@ -75,7 +75,9 @@ def deflate(filepaths, max_concurrent_jobs):
         return deflate_plugin.deflate(filepaths, max_concurrent_jobs)
     except AttributeError:
         # filepaths is sequence of path strings not Path objects
-        return deflate_plugin.deflate(map(Path, filepaths), max_concurrent_jobs)
+        return deflate_plugin.deflate(
+            map(Path, filepaths), max_concurrent_jobs
+        )
 
 
 def gather(results_dir):
