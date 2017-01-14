@@ -140,7 +140,7 @@ def deflate(filepaths, max_concurrent_jobs):
     """
     logger.info(
         'Deflating in up to {} concurrent sub-processes'.
-        format(max_concurrent_jobs)
+        format(int(max_concurrent_jobs))
     )
     jobs = [DeflateJob(fp) for fp in filepaths if fp.exists()]
     jobs_in_progress = _launch_initial_jobs(jobs, max_concurrent_jobs)
