@@ -5,6 +5,13 @@ Change Log
 Next Release
 ============
 
+* For NEMO-3.6 only,
+  enable the use of ref namelists from directories other than from
+  ``CONFIG/SHARED/``.
+  The default is to symlink to ``CONFIG/SHARED/namelist*_ref`` when there are no
+  ``namelist*_ref`` keys in the ``namelists`` section of the run description
+  YAML file.
+
 * Change from using pathlib to pathlib2 package for Python 2.7 because the
   latter is the backport from the Python 3 stdlib that is being kept up to date.
 
