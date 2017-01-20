@@ -35,7 +35,7 @@ the package must also run under `Python`_ 2.7 for use on the Westgrid HPC platfo
 Getting the Code
 ================
 
-Clone the :ref:`tools-repo` code and documentation `repository`_ from Bitbucket with:
+Clone the code and documentation `repository`_ from Bitbucket with:
 
 .. _repository: https://bitbucket.org/salishsea/nemo-cmd/
 
@@ -93,7 +93,6 @@ Building the Documentation
 
 The documentation for the :kbd:`NEMO-Cmd` package is written in `reStructuredText`_ and converted to HTML using `Sphinx`_.
 Creating a :ref:`NEMO-CmdDevelopmentEnvironment` as described above includes the installation of Sphinx.
-The documentation is integrated into the :ref:`tools-repo` docs.
 Building the documentation is driven by :file:`tools/docs/Makefile`.
 With your :kbd:`nemo-cmd` development environment activated,
 use:
@@ -211,7 +210,7 @@ create a Python 2.7 :ref:`NEMO-CmdDevelopmentEnvironment`.
 Version Control Repository
 ==========================
 
-The :kbd:`NEMO-Cmd` package code and documentation source files are available as part of the :ref:`tools-repo` `Mercurial`_ repository at https://bitbucket.org/salishsea/nemo-cmd.
+The :kbd:`NEMO-Cmd` package code and documentation source files are available from the `Mercurial`_ repository at https://bitbucket.org/salishsea/nemo-cmd.
 
 
 .. _NEMO-CmdIssueTracker:
