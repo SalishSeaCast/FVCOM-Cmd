@@ -1,17 +1,4 @@
-# salishsea command processor run description example for NEMO-3.6
-#
-# Salish Sea full domain with:
-#   Smoothed JdF mouth bathymetry
-#   S4-1 uniform initial T and S, depth corrected
-#   Open, unstructured western boundary across Strait of Juan de Fuca
-#     Tidal forcing at mouth of JdF
-#     Masson, depth corrected, open boundaries
-#   Open, unstructured northern boundary across Johnstone Strait
-#     Tidal forcing just north of Port Nelson
-#     Seasonal T and S forcing based on Thomson (1982)
-#  Rivers run-off forcing
-#  Atmospheric forcing with operational GEM2.5 model products
-#    Constrained to no solid precipitation
+# nemo command processor run description example for NEMO-3.6
 
 config name: SalishSea
 
@@ -24,11 +11,10 @@ MPI decomposition: 8x18
 # For runs on systems that use qsub/PBS/TORQUE
 run_id: example
 walltime: 10:00:00
-# If missing, email address is set to ${USER}@eos.ubc.ca
 email: dlatornell@example.com
 
 paths:
-  # Absolute path to NEMO-3.6-code repository clone.
+  # Absolute path to CONFIG/ directory in NEMO-3.6 code tree.
   # You can use ~ or $HOME if you wish.
   NEMO code config: $HOME/MEOPAR/NEMO-3.6/CONFIG/
   # If relative, paths below are taken from current directory
