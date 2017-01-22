@@ -5,6 +5,10 @@ Change Log
 Next Release
 ============
 
+* Add optional recording of revision and status of Mercurial version control
+  repositories via a new ``vcs revisions`` section in the run description YAML
+  file.
+
 * For NEMO-3.6 only,
   enable the use of ref namelists from directories other than from
   ``CONFIG/SHARED/``.
