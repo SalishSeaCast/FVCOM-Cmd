@@ -46,6 +46,7 @@ install_requires = [
     'arrow',
     'attrs',
     'cliff',
+    'python-hglib',
     'PyYAML',
 ]
 if sys.version_info[0] == 2:
