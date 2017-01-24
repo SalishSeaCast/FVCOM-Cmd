@@ -11,10 +11,10 @@ Use ``nemo help <sub-command>`` to get a synopsis of what a sub-command does,
 what its required arguments are,
 and what options are available to control it.
 
-Documentation for the command processor is in the ``docs/`` directory and is rendered at http://nemo-cmd.readthedocs.io/en/latest/.
+Documentation for the command processor is in the ``docs/`` directory and is rendered at https://nemo-cmd.readthedocs.io/en/latest/.
 
 .. image:: https://readthedocs.org/projects/nemo-cmd/badge/?version=latest
-    :target: http://nemo-cmd.readthedocs.io/en/latest/?badge=latest
+    :target: https://nemo-cmd.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 This an extensible tool built on the OpenStack ``cliff``
@@ -34,5 +34,5 @@ License
 The NEMO command processor and documentation are copyright 2013-2016 by the Salish Sea MEOPAR Project Contributors and The University of British Columbia.
 
 They are licensed under the Apache License, Version 2.0.
-http://www.apache.org/licenses/LICENSE-2.0
+https://www.apache.org/licenses/LICENSE-2.0
 Please see the LICENSE file for details of the license.
