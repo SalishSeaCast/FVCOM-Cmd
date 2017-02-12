@@ -390,7 +390,8 @@ def pbs_common(
     :arg str email: Email address to send job begin, end & abort
                     notifications to.
 
-    :arg str results_dir: Directory to store results into.
+    :arg results_dir: Directory to store results into.
+    :type results_dir: str or :py:class:`pathlib.Path`
 
     :arg str pmem: Memory per processor.
 
