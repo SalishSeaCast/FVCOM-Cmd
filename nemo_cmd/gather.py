@@ -26,6 +26,8 @@ except ImportError:
 
 import cliff.command
 
+from nemo_cmd.fspath import fspath
+
 logger = logging.getLogger(__name__)
 
 
@@ -101,9 +103,9 @@ def _move_results(results_dir, symlinks):
                 'Moving {}{} to {}/'.format(src, suffix, abs_results_dir)
             )
             if src.is_dir():
-                shutil.move(str(src), str(abs_results_dir))
+                shutil.move(fspath(src), fspath(abs_results_dir))
             else:
-                shutil.move(str(src), str(abs_results_dir / src))
+                shutil.move(fspath(src), fspath(abs_results_dir / src))
 
 
 def _delete_symlinks(symlinks):
