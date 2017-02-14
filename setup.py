@@ -74,6 +74,7 @@ setup(
             'deflate = nemo_cmd.deflate:Deflate',
             'gather = nemo_cmd.gather:Gather',
             'prepare = nemo_cmd.prepare:Prepare',
+            'run = nemo_cmd.run:Run',
         ],
     },
 )

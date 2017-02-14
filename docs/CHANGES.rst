@@ -5,6 +5,11 @@ Change Log
 Next Release
 ============
 
+* Port in the SalishSeaCmd ``run`` plug-in in a minimal form sufficient for
+  use on TORQUE/PBS systems that don't require special PBS feature (-l)
+  directives,
+  or loading of environment modules.
+
 * Add optional recording of revision and status of Mercurial version control
   repositories via a new ``vcs revisions`` section in the run description YAML
   file.
@@ -19,7 +24,7 @@ Next Release
 * Change from using pathlib to pathlib2 package for Python 2.7 because the
   latter is the backport from the Python 3 stdlib that is being kept up to date.
 
-* Refactor the ``combine`` plug-in that only runs ``rebuild_nemo`` to combine
+* Refactor the ``combine`` plug-in to only run ``rebuild_nemo`` to combine
   per-processor results and/or restart files.
 
 * Add ``deflate`` plug-in to deflate variables in netCDF files using Lempel-Ziv
