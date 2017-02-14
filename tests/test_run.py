@@ -12,13 +12,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""SalishSeaCmd run sub-command plug-in unit tests
+"""NEMO-Cmd run sub-command plug-in unit tests
 """
 try:
-    import pathlib
+    from pathlib import Path
 except ImportError:
     # Python 2.7
-    import pathlib2 as pathlib
+    from pathlib2 import Path
+try:
+    from types import SimpleNamespace
+except ImportError:
+    # Python 2.7
+    class SimpleNamespace:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+
 try:
     from unittest.mock import Mock, patch
 except ImportError:
@@ -36,40 +45,37 @@ def run_cmd():
     return nemo_cmd.run.Run(Mock(spec=cliff.app.App), [])
 
 
-class TestGetParser:
-    """Unit tests for `salishsea run` sub-command command-line parser.
+class TestParser:
+    """Unit tests for `nemo run` sub-command command-line parser.
     """
 
     def test_get_parser(self, run_cmd):
-        parser = run_cmd.get_parser('salishsea run')
-        assert parser.prog == 'salishsea run'
+        parser = run_cmd.get_parser('nemo run')
+        assert parser.prog == 'nemo run'
 
     def test_parsed_args_defaults(self, run_cmd):
-        parser = run_cmd.get_parser('salishsea run')
+        parser = run_cmd.get_parser('nemo run')
         parsed_args = parser.parse_args(['foo', 'baz'])
         assert parsed_args.desc_file == 'foo'
         assert parsed_args.results_dir == 'baz'
+        assert parsed_args.max_deflate_jobs == 4
         assert not parsed_args.nemo34
+        assert not parsed_args.nocheck_init
+        assert not parsed_args.no_submit
+        assert parsed_args.waitjob == 0
         assert not parsed_args.quiet
-        assert not parsed_args.compress
-        assert not parsed_args.keep_proc_results
-        assert not parsed_args.compress_restart
-        assert not parsed_args.delete_restart
 
     @pytest.mark.parametrize(
         'flag, attr', [
             ('--nemo3.4', 'nemo34'),
+            ('--nocheck-initial-conditions', 'nocheck_init'),
+            ('--no-submit', 'no_submit'),
             ('-q', 'quiet'),
             ('--quiet', 'quiet'),
-            ('--compress', 'compress'),
-            ('--compress', 'compress'),
-            ('--keep-proc-results', 'keep_proc_results'),
-            ('--compress-restart', 'compress_restart'),
-            ('--delete-restart', 'delete_restart'),
         ]
     )
-    def test_parsed_args_flags(self, flag, attr, run_cmd):
-        parser = run_cmd.get_parser('salishsea run')
+    def test_parsed_args_boolean_flags(self, flag, attr, run_cmd):
+        parser = run_cmd.get_parser('nemo run')
         parsed_args = parser.parse_args(['foo', 'baz', flag])
         assert getattr(parsed_args, attr)
 
@@ -81,35 +87,32 @@ class TestTakeAction:
     """
 
     def test_take_action(self, m_run, m_log, run_cmd):
-        parsed_args = Mock(
+        parsed_args = SimpleNamespace(
             desc_file='desc file',
             results_dir='results dir',
+            max_deflate_jobs=4,
             nemo34=False,
             nocheck_init=False,
+            no_submit=False,
             waitjob=0,
             quiet=False,
-            keep_proc_results=False,
-            compress=False,
-            compress_restart=False,
-            delete_restart=False,
         )
         run_cmd.run(parsed_args)
         m_run.assert_called_once_with(
-            'desc file', 'results dir', False, False, 0, False, False, False,
-            False, False
+            'desc file', 'results dir', 4, False, False, False, 0, False
         )
         m_log.info.assert_called_once_with('qsub message')
 
     def test_take_action_quiet(self, m_run, m_log, run_cmd):
-        parsed_args = Mock(
+        parsed_args = SimpleNamespace(
             desc_file='desc file',
             results_dir='results dir',
+            max_deflate_jobs=4,
             nemo34=False,
+            nocheck_init=False,
+            no_submit=False,
+            waitjob=0,
             quiet=True,
-            keep_proc_results=False,
-            compress=False,
-            compress_restart=False,
-            delete_restart=False,
         )
         run_cmd.run(parsed_args)
         assert not m_log.info.called
@@ -131,7 +134,7 @@ class TestRun:
             (False, True, 4),
         ]
     )
-    def test_run(
+    def test_run_submit(
         self, m_prepare, m_lrd, m_gnp, m_bbs, m_sco, nemo34, sep_xios_server,
         xios_servers, tmpdir
     ):
@@ -145,45 +148,65 @@ class TestRun:
                     'XIOS servers': xios_servers,
                 }
             }
-        with patch('nemo_cmd.run.os.getenv', return_value='orcinus'):
-            qsb_msg = nemo_cmd.run.run(
-                'SalishSea.yaml', str(p_results_dir), nemo34
-            )
-        m_prepare.assert_called_once_with('SalishSea.yaml', nemo34, False)
-        m_lrd.assert_called_once_with('SalishSea.yaml')
+        qsb_msg = nemo_cmd.run.run(
+            'nemo.yaml', str(p_results_dir), nemo34=nemo34
+        )
+        m_prepare.assert_called_once_with('nemo.yaml', nemo34, False)
+        m_lrd.assert_called_once_with('nemo.yaml')
         m_gnp.assert_called_once_with(m_lrd())
         m_bbs.assert_called_once_with(
-            m_lrd(), 'SalishSea.yaml', 144, xios_servers,
-            pathlib.Path(str(p_results_dir)),
-            str(p_run_dir), '', 'orcinus', nemo34
+            m_lrd(), 'nemo.yaml', 144, xios_servers, 4,
+            Path(str(p_results_dir)), str(p_run_dir)
         )
-        m_sco.assert_called_once_with(['qsub', 'SalishSeaNEMO.sh'],
+        m_sco.assert_called_once_with(['qsub', 'NEMO.sh'],
                                       universal_newlines=True)
         assert qsb_msg == 'msg'
 
-
-class TestPbsFeatures:
-    """Unit tests for `salishsea run _pbs_features() function.
-    """
-
-    @pytest.mark.parametrize('n_processors, nodes', [
-        (144, 12),
-        (145, 13),
-    ])
-    def test_jasper(self, n_processors, nodes):
-        pbs_features = nemo_cmd.run._pbs_features(n_processors, 'jasper')
-        expected = (
-            '#PBS -l feature=X5675\n'
-            '#PBS -l nodes={}:ppn=12\n'.format(nodes)
-        )
-        assert pbs_features == expected
-
     @pytest.mark.parametrize(
-        'system, expected', [
-            ('orcinus', '#PBS -l partition=QDR\n'),
-            ('salish', ''),
+        'nemo34, sep_xios_server, xios_servers', [
+            (True, None, 0),
+            (False, False, 0),
+            (False, True, 4),
         ]
     )
-    def test_orcinus(self, system, expected):
-        pbs_features = nemo_cmd.run._pbs_features(144, system)
-        assert pbs_features == expected
+    def test_run_no_submit(
+        self, m_prepare, m_lrd, m_gnp, m_bbs, m_sco, nemo34, sep_xios_server,
+        xios_servers, tmpdir
+    ):
+        p_run_dir = tmpdir.ensure_dir('run_dir')
+        m_prepare.return_value = str(p_run_dir)
+        p_results_dir = tmpdir.ensure_dir('results_dir')
+        if not nemo34:
+            m_lrd.return_value = {
+                'output': {
+                    'separate XIOS server': sep_xios_server,
+                    'XIOS servers': xios_servers,
+                }
+            }
+        qsb_msg = nemo_cmd.run.run(
+            'nemo.yaml', str(p_results_dir), nemo34=nemo34, no_submit=True
+        )
+        m_prepare.assert_called_once_with('nemo.yaml', nemo34, False)
+        m_lrd.assert_called_once_with('nemo.yaml')
+        m_gnp.assert_called_once_with(m_lrd())
+        m_bbs.assert_called_once_with(
+            m_lrd(), 'nemo.yaml', 144, xios_servers, 4,
+            Path(str(p_results_dir)), str(p_run_dir)
+        )
+        assert not m_sco.called
+        assert qsb_msg is None
+
+
+class TestCleanup:
+    """Unit test for _cleanup() function.
+    """
+
+    def test_cleanup(self):
+        script = nemo_cmd.run._cleanup()
+        expected = '''echo "Deleting run directory" >>${RESULTS_DIR}/stdout
+        rmdir $(pwd)
+        echo "Finished at $(date)" >>${RESULTS_DIR}/stdout
+        '''
+        expected = expected.splitlines()
+        for i, line in enumerate(script.splitlines()):
+            assert line.strip() == expected[i].strip()

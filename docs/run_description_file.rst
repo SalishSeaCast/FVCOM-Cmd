@@ -340,9 +340,9 @@ An example :kbd:`vcs revisions` section:
 
     vcs revisions:
       hg:
-        - $HOME/Canyons/NEMO-3.6-code/
-        - $HOME/Canyons/XIOS/
-        - $HOME/Canyons/mackenzie_canyon/
+        - $HOME/CANYONS/NEMO-3.6-code/
+        - $HOME/CANYONS/XIOS/
+        - $HOME/CANYONS/mackenzie_canyon/
 
 The sub-section keys
 (:kbd:`hg` above)
@@ -353,7 +353,8 @@ is supported.
 
 The paths listed under the version control tool key are the repositories of which the revision and status will be recorded.
 The repository paths may be relative or absolute,
-and may contain :kbd:`~` or :envvar:`$HOME` as alternative spellings of the user's home directory.
+and may contain :kbd:`~` or :envvar:`$HOME` as alternative spellings of the user's home directory,
+and :envvar:`$USER` as an alternative spelling of the user's userid.
 For each repository,
 a file will be created in the temporary run directory.
 The file names are the repository directory names with :kbd:`_rev.txt` appended.
@@ -381,7 +382,7 @@ For example,
 If any of the listed repositories contain uncommitted changes,
 the :command:`nemo prepare` command will generate a warning message like::
 
-  nemo_cmd.prepare WARNING: There are uncommitted changes in $HOME/Canyons/mackenzie_canyon/
+  nemo_cmd.prepare WARNING: There are uncommitted changes in $HOME/CANYONS/mackenzie_canyon/
 
 and the list of uncommitted changes and their status codes,
 the output of the :command:`hg status -mardC` command,
@@ -602,7 +603,8 @@ is supported.
 
 The paths listed under the version control tool key are the repositories of which the revision and status will be recorded.
 The repository paths may be relative or absolute,
-and may contain :kbd:`~` or :envvar:`$HOME` as alternative spellings of the user's home directory.
+and may contain :kbd:`~` or :envvar:`$HOME` as alternative spellings of the user's home directory,
+and :envvar:`$USER` as an alternative spelling of the user's userid.
 For each repository,
 a file will be created in the temporary run directory.
 The file names are the repository directory names with :kbd:`_rev.txt` appended.

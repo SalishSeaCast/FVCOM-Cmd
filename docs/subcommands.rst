@@ -48,30 +48,42 @@ For example:
 
 .. code-block:: bash
 
-    $ nemo help prepare
+    $ nemo help run
 
 ::
 
-    usage: nemo prepare [-h] [--nocheck-initial-conditions] [--nemo3.4] [-q]
-                        DESC_FILE
+    usage: nemo run [-h] [--max-deflate-jobs MAX_DEFLATE_JOBS] [--nemo3.4]
+                    [--nocheck-initial-conditions] [--no-submit]
+                    [--waitjob WAITJOB] [-q]
+                    DESC_FILE RESULTS_DIR
 
-    Set up the NEMO run described in DESC_FILE and print the path to the run
-    directory.
+    Prepare, execute, and gather the results from a NEMO run described in
+    DESC_FILE. The results files from the run are gathered in
+    RESULTS_DIR. If RESULTS_DIR does not exist it will be created.
 
     positional arguments:
-      DESC_FILE             run description YAML file
+      DESC_FILE             File path/name of run description YAML file
+      RESULTS_DIR           directory to store results into
 
     optional arguments:
       -h, --help            show this help message and exit
+      --max-deflate-jobs MAX_DEFLATE_JOBS
+                            Maximum number of concurrent sub-processes to use for
+                            netCDF deflating. Defaults to 4.
+      --nemo3.4             Do a NEMO-3.4 run; the default is to do a NEMO-3.6 run
       --nocheck-initial-conditions
                             Suppress checking of the initial conditions link.
-                            Useful if you are submitting a job to an HPC qsub
-                            queue and want the submitted job to wait for
-                            completion of a previous job.
-      --nemo3.4             Prepare a NEMO-3.4 run; the default is to prepare a
-                            NEMO-3.6 run.
-      -q, --quiet           don't show the run directory path on completion
-
+                            Useful if you are submitting a job to wait on a
+                            previous job
+      --no-submit           Prepare the temporary run directory, and the bash
+                            script to execute the NEMO run, but don't submit the
+                            run to the queue. This is useful during development
+                            runs when you want to hack on the bash script and/or
+                            use the same temporary run directory more than once.
+      --waitjob WAITJOB     use -W waitjob in call to qsub, to make current job
+                            wait for on waitjob. Waitjob is the queue job number
+      -q, --quiet           don't show the run directory path or job submission
+                            message
 
 You can check what version of :program:`nemo` you have installed with:
 
@@ -80,12 +92,91 @@ You can check what version of :program:`nemo` you have installed with:
     nemo --version
 
 
+.. _nemo-run:
+
+:kbd:`run` Sub-command
+======================
+
+The :command:`run` sub-command prepares,
+executes,
+and gathers the results from the NEMO run described in the specified run description file.
+The results are gathered in the specified results directory.
+
+::
+
+    usage: nemo run [-h] [--max-deflate-jobs MAX_DEFLATE_JOBS] [--nemo3.4]
+                    [--nocheck-initial-conditions] [--no-submit]
+                    [--waitjob WAITJOB] [-q]
+                    DESC_FILE RESULTS_DIR
+
+    Prepare, execute, and gather the results from a NEMO run described in
+    DESC_FILE. The results files from the run are gathered in
+    RESULTS_DIR. If RESULTS_DIR does not exist it will be created.
+
+    positional arguments:
+      DESC_FILE             File path/name of run description YAML file
+      RESULTS_DIR           directory to store results into
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --max-deflate-jobs MAX_DEFLATE_JOBS
+                            Maximum number of concurrent sub-processes to use for
+                            netCDF deflating. Defaults to 4.
+      --nemo3.4             Do a NEMO-3.4 run; the default is to do a NEMO-3.6 run
+      --nocheck-initial-conditions
+                            Suppress checking of the initial conditions link.
+                            Useful if you are submitting a job to wait on a
+                            previous job
+      --no-submit           Prepare the temporary run directory, and the bash
+                            script to execute the NEMO run, but don't submit the
+                            run to the queue. This is useful during development
+                            runs when you want to hack on the bash script and/or
+                            use the same temporary run directory more than once.
+      --waitjob WAITJOB     use -W waitjob in call to qsub, to make current job
+                            wait for on waitjob. Waitjob is the queue job number
+      -q, --quiet           don't show the run directory path or job submission
+                            message
+
+The path to the run directory,
+and the response from the job queue manager
+(typically a job number)
+are printed upon completion of the command.
+
+The :command:`run` sub-command does the following:
+
+#. Execute the :ref:`nemo-prepare` via the :ref:`NEMO-CmdAPI` to set up a temporary run directory from which to execute the NEMO run.
+#. Create a :file:`NEMO.sh` job script in the run directory.
+   The job script:
+
+   * runs NEMO
+   * executes the :ref:`nemo-combine` to combine the per-processor restart and/or results files
+   * executes the :ref:`nemo-deflate` to deflate the variables in the large netCDF results files using the Lempel-Ziv compression algorithm to reduce the size of the file on disk
+   * executes the :ref:`nemo-gather` to collect the run description and results files into the results directory
+
+#. Submit the job script to the queue manager via the :command:`qsub` command.
+
+See the :ref:`RunDescriptionFileStructure` section for details of the run description YAML file.
+
+The :command:`run` sub-command concludes by printing the path to the run directory and the response from the job queue manager.
+Example:
+
+.. code-block:: bash
+
+    $ nemo run nemo.yaml $HOME/CANYONS/Mackenzie/myrun
+
+    nemo_cmd.run INFO: nemo_cmd.prepare Created run directory ../../runs/38e87e0c-472d-11e3-9c8e-0025909a8461
+    nemo_cmd.run INFO: 3330782.orca2.ibb
+
+If the :command:`run` sub-command prints an error message,
+you can get a Python traceback containing more information about the error by re-running the command with the :kbd:`--debug` flag.
+
+
 .. _nemo-prepare:
 
 :kbd:`prepare` Sub-command
 ==========================
 
-The :command:`prepare` sub-command sets up a run directory from which to execute the NEMO run described in the specifed run description,
+The :command:`prepare` sub-command sets up a run directory from which to execute the NEMO run described in the specified run description,
 and output file definitions files::
 
   usage: nemo prepare [-h] [--nocheck-initial-conditions] [--nemo3.4] [-q]
@@ -115,9 +206,9 @@ Example:
 
 .. code-block:: bash
 
-    $ nemo prepare SalishSea.yaml iodef.xml
+    $ nemo prepare nemo.yaml
 
-    nemo_cmd.prepare INFO: Created run directory ../../runs/SalishSea/38e87e0c-472d-11e3-9c8e-0025909a8461
+    nemo_cmd.prepare INFO: Created run directory ../../runs//38e87e0c-472d-11e3-9c8e-0025909a8461
 
 The name of the run directory created is a `Universally Unique Identifier`_
 (UUID)
@@ -143,7 +234,7 @@ the run directory contains:
   file that is constructed by concatenating the namelist segments listed in the run description file
   (see :ref:`RunDescriptionFileStructure`).
 
-* A symlink to the :file:`NEMOGCM/CONFIG/SHARED/namelist_ref` file in the :kbd:`NEMO-code` directory specified in the :kbd:`paths` section of the run description file is also created to provide default values to be used for any namelist variables not included in the namelist segments listed in the run description file.
+* A symlink to the :file:`EXP00/namelist_ref` file in the directory of the NEMO configuration given by the :kbd:`config name` and :kbd:`NEMO code config` keys in the run description file is also created to provide default values to be used for any namelist variables not included in the namelist segments listed in the run description file.
 
 * A symlink called :file:`bathy_meter.nc`
   (the file name required by NEMO)
@@ -188,15 +279,17 @@ Please see :ref:`NEMO-3.6-Forcing` in the :ref:`RunDescriptionFileStructure` doc
 It is your responsibility to ensure that these symlinks match the forcing directories given in your namelist files.
 
 Finally,
-the run directory contains 3 files,
-:file:`NEMO-code_rev.txt`,
-:file:`NEMO-forcing_rev.txt`,
-and :file:`XIOS-code_rev.txt` that contain the output of the :command:`hg parents` command executed in the directories given by the :kbd:`NEMO-code`,
-:kbd:`forcing`,
-and :kbd:`XIOS` keys in the :kbd:`paths` section of the run description file,
-respectively.
-Those file provide a record of the last committed changesets in each of those directories,
+if the run description YAML file contains a :kbd:`vcs revisions` section,
+the run directory will contain 1 or more files whose names end with :file:`_rev.txt`.
+The file names begin with the root directory names of the version control repositories given in the :kbd:`vcs revisions` section.
+The files contain the output of the :command:`hg parents -v` command executed in the listed version control repositories.
+Those files provide a record of the last committed revision of the repositories that will be in effect for the run,
 which is important reproducibility information for the run.
+If any of the listed repositories contain uncommitted changes,
+the paths of the files and their status codes,
+the output of the :command:`hg status -mardC` command,
+will be appended to the repository's :file:`_rev.txt` file.
+Please see the :ref:`NEMO-3.6-VCS-Revisions` for more details.
 
 
 Run Directory Contents for NEMO-3.4
@@ -296,7 +389,7 @@ but the deflation process uses temporary storage to prevent data loss.
 
 .. code-block:: bash
 
-    $ncks -4 -L4 -O FILEPATH FILEPATH
+    $ ncks -4 -L4 -O FILEPATH FILEPATH
 
 on each :kbd:`FILEPATH`.
 
