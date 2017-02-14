@@ -10,7 +10,7 @@ dependencies:
   - arrow
   - attrs
   - pip
-  - python=3
+  - python=3.5
   - pyyaml
   - pip:
     - cliff
