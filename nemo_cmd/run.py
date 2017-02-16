@@ -279,7 +279,7 @@ def _definitions(run_desc, run_desc_file, run_dir, results_dir):
         run_desc_file=run_desc_file,
         run_dir=run_dir,
         results_dir=results_dir,
-        salishsea_cmd=Path('${PBS_O_HOME}/.local/bin/nemo'),
+        nemo_cmd=Path('${PBS_O_HOME}/.local/bin/nemo'),
     )
     return defns
 
