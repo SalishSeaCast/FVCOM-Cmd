@@ -271,15 +271,15 @@ def _definitions(run_desc, run_desc_file, run_dir, results_dir):
         u'RUN_DESC="{run_desc_file}"\n'
         u'WORK_DIR="{run_dir}"\n'
         u'RESULTS_DIR="{results_dir}"\n'
-        u'COMBINE="{salishsea_cmd} combine"\n'
-        u'DEFLATE="{salishsea_cmd} deflate"\n'
-        u'GATHER="{salishsea_cmd} gather"\n'
+        u'COMBINE="{nemo_cmd} combine"\n'
+        u'DEFLATE="{nemo_cmd} deflate"\n'
+        u'GATHER="{nemo_cmd} gather"\n'
     ).format(
         run_id=run_desc['run_id'],
         run_desc_file=run_desc_file,
         run_dir=run_dir,
         results_dir=results_dir,
-        salishsea_cmd=Path('${PBS_O_HOME}/.local/bin/salishsea'),
+        salishsea_cmd=Path('${PBS_O_HOME}/.local/bin/nemo'),
     )
     return defns
 
