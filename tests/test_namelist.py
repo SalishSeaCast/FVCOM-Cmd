@@ -50,20 +50,20 @@ class TestNameList(unittest.TestCase):
         """
         Test simple namelist group with string value enclosed in double quotes.
         """
-        group = ("&group\n" '    string = "test"\n' "/")
+        group = "&group\n" '    string = "test"\n' "/"
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict, {"group": [{"string": "test",}]})
+        self.assertEqual(namelist_dict, {"group": [{"string": "test"}]})
 
     def test_empty_string(self):
         """
         Test simple namelist group with empty string value.
         """
-        group = ("&group\n" '    string1 = ""\n' "    string2 = ''\n" "/")
+        group = "&group\n" '    string1 = ""\n' "    string2 = ''\n" "/"
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(
             namelist_dict, {"group": [{
                 "string1": "",
-                "string2": "",
+                "string2": ""
             }]}
         )
 
@@ -71,15 +71,15 @@ class TestNameList(unittest.TestCase):
         """
         Test simple namelist group with &end as end token.
         """
-        group = ("&group\n" "    float = 0.75\n" "&end")
+        group = "&group\n" "    float = 0.75\n" "&end"
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict, {"group": [{"float": 0.75,}]})
+        self.assertEqual(namelist_dict, {"group": [{"float": 0.75}]})
 
     def test_ignore_empty_group(self):
         """
          Ignore empty namelist group.
         """
-        group = ("&group\n" "&end")
+        group = "&group\n" "&end"
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(namelist_dict, {})
 
@@ -87,7 +87,7 @@ class TestNameList(unittest.TestCase):
         """
         Test list of heterogeneous values.
         """
-        group = ("&group\n" "    foo = 0.75, 700, 'test', .TRUE.\n" "/")
+        group = "&group\n" "    foo = 0.75, 700, 'test', .TRUE.\n" "/"
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(
             namelist_dict, {"group": [{
@@ -106,7 +106,7 @@ class TestNameList(unittest.TestCase):
             "&end"
         )
         namelist_dict = namelist2dict(StringIO(group))
-        self.assertEqual(namelist_dict, {"group": [{"float": [0.75, 0.85],}]})
+        self.assertEqual(namelist_dict, {"group": [{"float": [0.75, 0.85]}]})
 
     def test_complex_single_line_group(self):
         """
@@ -126,7 +126,7 @@ class TestNameList(unittest.TestCase):
         """
         Same as test_complex_single_line_group() just split over lines.
         """
-        group = ("&list a=1\n" "b=1,2, c='12 / !' /")
+        group = "&list a=1\n" "b=1,2, c='12 / !' /"
         namelist_dict = namelist2dict(StringIO(group))
         self.assertEqual(
             namelist_dict, {"list": [{

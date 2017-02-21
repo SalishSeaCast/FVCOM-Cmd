@@ -353,7 +353,7 @@ class TestMakeNamelistNEMO36:
             },
             'namelists': {
                 'namelist_cfg': [str(p_run_set_dir.join('namelist.time'))],
-                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top')),],
+                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top'))],
                 'namelist_pisces_cfg': [
                     str(p_run_set_dir.join('namelist_pisces')),
                 ],
@@ -407,7 +407,7 @@ class TestMakeNamelistNEMO36:
             },
             'namelists': {
                 'namelist_cfg': [str(p_run_set_dir.join('namelist.time'))],
-                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top')),],
+                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top'))],
                 'namelist_pisces_cfg': [
                     str(p_run_set_dir.join('namelist_pisces')),
                 ],
@@ -439,7 +439,7 @@ class TestMakeNamelistNEMO36:
             },
             'namelists': {
                 'namelist_cfg': [str(p_run_set_dir.join('namelist.time'))],
-                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top')),],
+                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top'))],
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
@@ -459,7 +459,7 @@ class TestMakeNamelistNEMO36:
                 'NEMO code config': str(p_nemo_config_dir),
             },
             'namelists': {
-                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top')),],
+                'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top'))],
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
