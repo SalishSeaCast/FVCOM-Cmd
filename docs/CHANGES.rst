@@ -5,6 +5,10 @@ Change Log
 Next Release
 ============
 
+* Add ``nemo_cmd.fspath()`` and ``nemo_cmd.resolved_path()`` functions for
+  working with file system paths.
+  See https://nemo-cmd.readthedocs.io/en/latest/api.html#functions-for-working-with-file-system-paths.
+
 * Port in the SalishSeaCmd ``run`` plug-in in a minimal form sufficient for
   use on TORQUE/PBS systems that don't require special PBS feature (-l)
   directives,
