@@ -12,26 +12,50 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Define the :func:`fspath` function that returns the string representation
-of a file system path.
-This provides a uniform interface for working with :class:`Path` objects in
-Python versions both before and after Python 3.6 in which the PEP 519 file
-system protocol appeared.
+"""Functions for working with file system paths.
+
+The :func:`fspath` function returns the string representation of a
+file system path.
+This provides a uniform interface for working with :class:`pathlib.Path`
+objects in Python versions both before and after Python 3.6 in which the
+PEP 519 file system protocol appeared.
+
+The :func:`resolved_path` function returns an absolute :class:`pathlib.Path`
+object with shell and user variables expanded and symlinks resolved.
 """
 import os
+try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
 
 
 def fspath(path):
-    """ Return the string representation of a file system path.
+    """Return the string representation of a file system path.
 
     This function provides a uniform interface for working with
     :class:`pathlib.Path` objects in Python versions both before and after
     Python 3.6 in which the PEP 519 file system protocol appeared.
 
-    :param path:
+    :param path: Path to get string representation of.
     :type path: :class:`pathlib.Path` or str
 
     :return: String representation of path.
     :rtype: str
     """
     return os.fspath(path) if hasattr(os, 'fspath') else str(path)
+
+
+def resolved_path(path):
+    """Expand shell and user variables in path and resolve symbolic links
+    to produce a absolute :class:`pathlib.Path` object.
+
+    :param path: Path to expand variables in and resolve.
+    :type path: :class:`pathlib.Path` or str
+
+    :return: Absolute path with shell and user variables expanded and
+             symlinks resolved.
+    :rtype: :class:`pathlib.Path`
+    """
+    return Path(os.path.expandvars(fspath(path))).expanduser().resolve()

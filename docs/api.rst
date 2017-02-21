@@ -45,3 +45,13 @@ Functions for Reading Fortran Namelists
 .. autofunction:: nemo_cmd.namelist.namelist2dict
 
 .. autofunction:: nemo_cmd.namelist.get_namelist_value
+
+
+.. _FileSystemPathFunctions:
+
+Functions for Working with File System Paths
+============================================
+
+.. autofunction:: nemo_cmd.fspath
+
+.. autofunction:: nemo_cmd.resolved_path
