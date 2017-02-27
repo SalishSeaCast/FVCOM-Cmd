@@ -35,7 +35,6 @@ import hglib
 from dateutil import tz
 
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
-
 from nemo_cmd import lib
 
 logger = logging.getLogger(__name__)
@@ -736,12 +735,9 @@ def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
             for basename, period in v['params']:
                 if period == 'daily':
                     file_path = os.path.join(
-                        v['dir'],
-                        '{basename}_'
+                        v['dir'], '{basename}_'
                         'y{date.year}m{date.month:02d}d{date.day:02d}.nc'
-                        .format(
-                            basename=basename, date=r
-                        )
+                        .format(basename=basename, date=r)
                     )
                 elif period == 'yearly':
                     file_path = os.path.join(
@@ -815,12 +811,9 @@ def _check_atmos_files(run_desc, run_dir):
             for basename, period in v['params']:
                 if period == 'daily':
                     file_path = os.path.join(
-                        v['dir'],
-                        '{basename}_'
+                        v['dir'], '{basename}_'
                         'y{date.year}m{date.month:02d}d{date.day:02d}.nc'
-                        .format(
-                            basename=basename, date=r
-                        )
+                        .format(basename=basename, date=r)
                     )
                 elif period == 'yearly':
                     file_path = os.path.join(
@@ -926,9 +919,8 @@ def _get_hg_revision(repo):
         logger.warning('There are uncommitted changes in {}'.format(repo))
         repo_rev_file_lines.append('uncommitted changes:')
         repo_rev_file_lines.extend(
-            '{code} {path}'.format(
-                code=s[0].decode(), path=s[1].decode()
-            ) for s in status
+            '{code} {path}'.format(code=s[0].decode(), path=s[1].decode())
+            for s in status
         )
     return repo_rev_file_lines
 
