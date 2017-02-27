@@ -34,6 +34,7 @@ import cliff.command
 import hglib
 from dateutil import tz
 
+from nemo_cmd.fspath import resolved_path, fspath
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
 from nemo_cmd import lib
 
@@ -157,29 +158,27 @@ def _check_nemo_exec(run_desc, nemo34):
     except KeyError:
         # Alternate key spelling for backward compatibility
         nemo_code_config = run_desc['paths']['NEMO-code-config']
-    nemo_config_dir = os.path.abspath(
-        os.path.expandvars(os.path.expanduser(nemo_code_config))
-    )
+    nemo_config_dir = resolved_path(nemo_code_config)
     try:
-        config_dir = os.path.join(nemo_config_dir, run_desc['config name'])
+        config_dir = nemo_config_dir / run_desc['config name']
     except KeyError:
         # Alternate key spelling for backward compatibility
-        config_dir = os.path.join(nemo_config_dir, run_desc['config_name'])
-    nemo_bin_dir = os.path.join(config_dir, 'BLD', 'bin')
-    nemo_exec = os.path.join(nemo_bin_dir, 'nemo.exe')
-    if not os.path.exists(nemo_exec):
+        config_dir = nemo_config_dir / run_desc['config_name']
+    nemo_bin_dir = config_dir / 'BLD' / 'bin'
+    nemo_exec = nemo_bin_dir / 'nemo.exe'
+    if not nemo_exec.exists():
         logger.error(
             '{} not found - did you forget to build it?'.format(nemo_exec)
         )
         raise SystemExit(2)
     if nemo34:
-        iom_server_exec = os.path.join(nemo_bin_dir, 'server.exe')
-        if not os.path.exists(iom_server_exec):
-            logger.warn(
+        iom_server_exec = nemo_bin_dir / 'server.exe'
+        if not iom_server_exec.exists():
+            logger.warning(
                 '{} not found - are you running without key_iomput?'
                 .format(iom_server_exec)
             )
-    return nemo_config_dir, nemo_bin_dir
+    return fspath(nemo_config_dir), fspath(nemo_bin_dir)
 
 
 def _check_xios_exec(run_desc):
@@ -317,10 +316,17 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
 
     :raises: SystemExit
     """
-    nemo_config_dir = Path(
-        os.path.expandvars(run_desc['paths']['NEMO code config'])
-    ).expanduser().resolve()
-    config_name = run_desc['config name']
+    try:
+        nemo_code_config = run_desc['paths']['NEMO code config']
+    except KeyError:
+        # Alternate key spelling for backward compatibility
+        nemo_code_config = run_desc['paths']['NEMO-code-config']
+    nemo_config_dir = resolved_path(nemo_code_config)
+    try:
+        config_name = run_desc['config name']
+    except KeyError:
+        # Alternate key spelling for backward compatibility
+        config_name = run_desc['config_name']
     for namelist_filename in run_desc['namelists']:
         with open(os.path.join(run_dir, namelist_filename), 'wt') as namelist:
             for nl in run_desc['namelists'][namelist_filename]:
@@ -856,7 +862,7 @@ def _record_vcs_revisions(run_desc, run_dir):
     vcs_funcs = {'hg': _get_hg_revision}
     for vcs_tool in run_desc['vcs revisions']:
         for repo in run_desc['vcs revisions'][vcs_tool]:
-            repo_path = Path(os.path.expandvars(repo)).expanduser().resolve()
+            repo_path = resolved_path(repo)
             repo_rev_file_lines = vcs_funcs[vcs_tool](repo)
             rev_file = Path(run_dir) / '{repo.name}_rev.txt'.format(
                 repo=repo_path

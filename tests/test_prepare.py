@@ -162,6 +162,23 @@ class TestCheckNemoExec:
         )
         assert nemo_bin_dir == p_bin_dir
 
+    @patch('nemo_cmd.prepare.logger')
+    def test_nemo34_iom_server_exists(self, m_logger, tmpdir):
+        p_code_config = tmpdir.ensure_dir('NEMO-code/NEMOGCM/CONFIG')
+        run_desc = {
+            'config_name': 'SalishSea',
+            'paths': {
+                'NEMO-code-config': str(p_code_config)
+            },
+        }
+        p_bin_dir = p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
+        p_bin_dir.ensure('nemo.exe')
+        p_bin_dir.ensure('server.exe')
+        nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
+            run_desc, nemo34=True
+        )
+        assert not m_logger.warning.called
+
     @pytest.mark.parametrize(
         'code_config_key, nemo_code_config, config_name_key, config_name', [
             (
@@ -188,27 +205,46 @@ class TestCheckNemoExec:
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
 
+    @pytest.mark.parametrize(
+        'config_name_key, nemo_code_config_key',
+        [
+            ('config name', 'NEMO code config'),  # recommended
+            ('config_name', 'NEMO-code-config'),  # backward compatibility
+        ]
+    )
     @patch('nemo_cmd.prepare.logger')
-    def test_iom_server_exec_not_found(self, m_log, tmpdir):
+    def test_iom_server_exec_not_found(
+        self, m_log, config_name_key, nemo_code_config_key, tmpdir
+    ):
         p_code_config = tmpdir.ensure_dir('NEMO-3.4-code')
         run_desc = {
-            'config_name': 'SalishSea',
+            config_name_key: 'SalishSea',
             'paths': {
-                'NEMO-code-config': str(p_code_config)
+                nemo_code_config_key: str(p_code_config)
             },
         }
         p_bin_dir = p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
         p_exists = patch(
-            'nemo_cmd.prepare.os.path.exists', side_effect=[True, False]
+            'nemo_cmd.prepare.Path.exists', side_effect=[True, False]
         )
         with p_exists:
             nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=True)
-        m_log.warn.assert_called_once_with(
+        m_log.warning.assert_called_once_with(
             '{}/server.exe not found - are you running without key_iomput?'
             .format(p_bin_dir)
         )
 
-    def test_nemo36_no_iom_server_check(self, tmpdir):
+    @pytest.mark.parametrize(
+        'config_name_key, nemo_code_config_key',
+        [
+            ('config name', 'NEMO code config'),  # recommended
+            ('config_name', 'NEMO-code-config'),  # backward compatibility
+        ]
+    )
+    @patch('nemo_cmd.prepare.logger')
+    def test_nemo36_no_iom_server_check(
+        self, m_log, config_name_key, nemo_code_config_key, tmpdir
+    ):
         p_code_config = tmpdir.ensure_dir('NEMO-3.6-code')
         run_desc = {
             'config_name': 'SalishSea',
@@ -217,7 +253,7 @@ class TestCheckNemoExec:
             },
         }
         p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
-        with patch('nemo_cmd.prepare.os.path.exists') as m_exists:
+        with patch('nemo_cmd.prepare.Path.exists') as m_exists:
             nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
         assert m_exists.call_count == 1
 
@@ -340,16 +376,25 @@ class TestMakeNamelistNEMO36:
     """Unit tests for `nemo prepare` _make_namelist_nemo36() function.
     """
 
-    def test_make_namelists_nemo36(self, tmpdir):
+    @pytest.mark.parametrize(
+        'config_name_key, nemo_code_config_key',
+        [
+            ('config name', 'NEMO code config'),  # recommended
+            ('config_name', 'NEMO-code-config'),  # backward compatibility
+        ]
+    )
+    def test_make_namelists_nemo36(
+        self, config_name_key, nemo_code_config_key, tmpdir
+    ):
         p_nemo_config_dir = tmpdir.ensure_dir('NEMO-3.6/NEMOGCM/CONFIG')
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
         p_run_set_dir.join('namelist.time').write('&namrun\n&end\n')
         p_run_set_dir.join('namelist_top').write('&namtrc\n&end\n')
         p_run_set_dir.join('namelist_pisces').write('&nampisbio\n&end\n')
         run_desc = {
-            'config name': 'SalishSea',
+            config_name_key: 'SalishSea',
             'paths': {
-                'NEMO code config': str(p_nemo_config_dir),
+                nemo_code_config_key: str(p_nemo_config_dir),
             },
             'namelists': {
                 'namelist_cfg': [str(p_run_set_dir.join('namelist.time'))],
@@ -368,13 +413,22 @@ class TestMakeNamelistNEMO36:
         assert p_run_dir.join('namelist_top_cfg').check()
         assert p_run_dir.join('namelist_pisces_cfg').check()
 
-    def test_file_not_found_error(self, tmpdir):
+    @pytest.mark.parametrize(
+        'config_name_key, nemo_code_config_key',
+        [
+            ('config name', 'NEMO code config'),  # recommended
+            ('config_name', 'NEMO-code-config'),  # backward compatibility
+        ]
+    )
+    def test_file_not_found_error(
+        self, config_name_key, nemo_code_config_key, tmpdir
+    ):
         p_nemo_config_dir = tmpdir.ensure_dir('NEMO-3.6/NEMOGCM/CONFIG')
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
         run_desc = {
-            'config name': 'SalishSea',
+            config_name_key: 'SalishSea',
             'paths': {
-                'NEMO code config': str(p_nemo_config_dir),
+                nemo_code_config_key: str(p_nemo_config_dir),
             },
             'namelists': {
                 'namelist_cfg': [str(p_run_set_dir.join('namelist.time'))],
@@ -427,15 +481,24 @@ class TestMakeNamelistNEMO36:
             file=True, link=True
         )
 
-    def test_namelist_cfg_set_mpi_decomposition(self, tmpdir):
+    @pytest.mark.parametrize(
+        'config_name_key, nemo_code_config_key',
+        [
+            ('config name', 'NEMO code config'),  # recommended
+            ('config_name', 'NEMO-code-config'),  # backward compatibility
+        ]
+    )
+    def test_namelist_cfg_set_mpi_decomposition(
+        self, config_name_key, nemo_code_config_key, tmpdir
+    ):
         p_nemo_config_dir = tmpdir.ensure_dir('NEMO-3.6/NEMOGCM/CONFIG')
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
         p_run_set_dir.join('namelist.time').write('&namrun\n&end\n')
         p_run_set_dir.join('namelist_top').write('&namtrc\n&end\n')
         run_desc = {
-            'config name': 'SalishSea',
+            config_name_key: 'SalishSea',
             'paths': {
-                'NEMO code config': str(p_nemo_config_dir),
+                nemo_code_config_key: str(p_nemo_config_dir),
             },
             'namelists': {
                 'namelist_cfg': [str(p_run_set_dir.join('namelist.time'))],
@@ -449,14 +512,23 @@ class TestMakeNamelistNEMO36:
             )
         m_smd.assert_called_once_with('namelist_cfg', run_desc, str(p_run_dir))
 
-    def test_no_namelist_cfg_error(self, tmpdir):
+    @pytest.mark.parametrize(
+        'config_name_key, nemo_code_config_key',
+        [
+            ('config name', 'NEMO code config'),  # recommended
+            ('config_name', 'NEMO-code-config'),  # backward compatibility
+        ]
+    )
+    def test_no_namelist_cfg_error(
+        self, config_name_key, nemo_code_config_key, tmpdir
+    ):
         p_nemo_config_dir = tmpdir.ensure_dir('NEMO-3.6/NEMOGCM/CONFIG')
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
         p_run_set_dir.join('namelist_top').write('&namtrc\n&end\n')
         run_desc = {
-            'config name': 'SalishSea',
+            config_name_key: 'SalishSea',
             'paths': {
-                'NEMO code config': str(p_nemo_config_dir),
+                nemo_code_config_key: str(p_nemo_config_dir),
             },
             'namelists': {
                 'namelist_top_cfg': [str(p_run_set_dir.join('namelist_top'))],
