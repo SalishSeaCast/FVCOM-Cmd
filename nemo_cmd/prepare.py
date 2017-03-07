@@ -34,7 +34,7 @@ import cliff.command
 import hglib
 from dateutil import tz
 
-from nemo_cmd.fspath import resolved_path, fspath
+from nemo_cmd.fspath import resolved_path, fspath, expanded_path
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
 from nemo_cmd import lib
 
@@ -526,29 +526,61 @@ def _make_grid_links(run_desc, run_dir):
 
     :raises: SystemExit
     """
-    nemo_forcing_dir = os.path.abspath(run_desc['paths']['forcing'])
-    if not os.path.exists(nemo_forcing_dir):
+    try:
+        coords_path = expanded_path(run_desc['grid']['coordinates'])
+    except KeyError:
         logger.error(
-            '{} not found; cannot create symlinks - '
-            'please check the forcing path in your run description file'
-            .format(nemo_forcing_dir)
+            'grid: coordinates key not found - '
+            'please check your run description YAML file'
         )
         _remove_run_dir(run_dir)
         raise SystemExit(2)
-    grid_dir = os.path.join(nemo_forcing_dir, 'grid')
-    grid_files = ((run_desc['grid']['coordinates'], 'coordinates.nc'),
-                  (run_desc['grid']['bathymetry'], 'bathy_meter.nc'))
-    for source, link_name in grid_files:
-        link_path = os.path.join(grid_dir, source)
-        if not os.path.exists(link_path):
+    try:
+        bathy_path = expanded_path(run_desc['grid']['bathymetry'])
+    except KeyError:
+        logger.error(
+            'grid: bathymetry key not found - '
+            'please check your run description YAML file'
+        )
+        _remove_run_dir(run_dir)
+        raise SystemExit(2)
+    if coords_path.is_absolute() and bathy_path.is_absolute():
+        grid_paths = ((coords_path, 'coordinates.nc'),
+                      (bathy_path, 'bathy_meter.nc'))
+    else:
+        try:
+            nemo_forcing_dir = resolved_path(run_desc['paths']['forcing'])
+        except KeyError:
             logger.error(
-                '{} not found; cannot create symlink - '
-                'please check the forcing path and grid file names '
-                'in your run description file'.format(link_path)
+                'forcing key not found - '
+                'please check your run description YAML file'
             )
             _remove_run_dir(run_dir)
             raise SystemExit(2)
-        os.symlink(link_path, os.path.join(run_dir, link_name))
+        if not nemo_forcing_dir.exists():
+            logger.error(
+                '{} not found; cannot create symlinks - '
+                'please check the forcing path in your run description file'
+                .format(nemo_forcing_dir)
+            )
+            _remove_run_dir(run_dir)
+            raise SystemExit(2)
+        grid_dir = nemo_forcing_dir / 'grid'
+        grid_paths = (
+            (grid_dir / run_desc['grid']['coordinates'], 'coordinates.nc'),
+            (grid_dir / run_desc['grid']['bathymetry'], 'bathy_meter.nc')
+        )
+    run_dir_path = Path(run_dir)
+    for source, link_name in grid_paths:
+        if not source.exists():
+            logger.error(
+                '{} not found; cannot create symlink - '
+                'please check the forcing path and grid file names '
+                'in your run description file'.format(source)
+            )
+            _remove_run_dir(run_dir)
+            raise SystemExit(2)
+        (run_dir_path / link_name).symlink_to(source)
 
 
 def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):

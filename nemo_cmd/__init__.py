@@ -15,4 +15,4 @@
 
 # Make fspath.fspath() and fspath.resolved_path() available in the nemo_cmd
 # namespace
-from nemo_cmd.fspath import fspath, resolved_path
+from nemo_cmd.fspath import fspath, expanded_path, resolved_path
