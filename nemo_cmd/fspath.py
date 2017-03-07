@@ -47,9 +47,22 @@ def fspath(path):
     return os.fspath(path) if hasattr(os, 'fspath') else str(path)
 
 
+def expanded_path(path):
+    """Expand shell and user variables in path and produce a
+    :class:`pathlib.Path` object.
+
+    :param path: Path to expand variables in.
+    :type path: :class:`pathlib.Path` or str
+
+    :return: Path with shell and user variables expanded.
+    :rtype: :class:`pathlib.Path`
+    """
+    return Path(os.path.expandvars(fspath(path))).expanduser()
+
+
 def resolved_path(path):
     """Expand shell and user variables in path and resolve symbolic links
-    to produce a absolute :class:`pathlib.Path` object.
+    to produce an absolute :class:`pathlib.Path` object.
 
     :param path: Path to expand variables in and resolve.
     :type path: :class:`pathlib.Path` or str
@@ -58,4 +71,4 @@ def resolved_path(path):
              symlinks resolved.
     :rtype: :class:`pathlib.Path`
     """
-    return Path(os.path.expandvars(fspath(path))).expanduser().resolve()
+    return expanded_path(path).resolve()

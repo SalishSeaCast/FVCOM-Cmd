@@ -5,7 +5,14 @@ Change Log
 Next Release
 ============
 
-* Add ``nemo_cmd.fspath()`` and ``nemo_cmd.resolved_path()`` functions for
+* Add the option to use absolute paths for coordinates and bathymetry files
+  in the run description YAML file.
+  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#grid-section,
+  and https://bitbucket.org/salishsea/nemo-cmd/issues/5.
+
+* Add ``nemo_cmd.fspath()``,
+  ``nemo_cmd.expanded_path()``,
+  and ``nemo_cmd.resolved_path()`` functions for
   working with file system paths.
   See https://nemo-cmd.readthedocs.io/en/latest/api.html#functions-for-working-with-file-system-paths.
 

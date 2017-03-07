@@ -54,4 +54,6 @@ Functions for Working with File System Paths
 
 .. autofunction:: nemo_cmd.fspath
 
+.. autofunction:: nemo_cmd.expanded_path
+
 .. autofunction:: nemo_cmd.resolved_path
