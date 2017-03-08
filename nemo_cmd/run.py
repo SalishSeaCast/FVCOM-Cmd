@@ -128,7 +128,7 @@ class Run(cliff.command.Command):
             parsed_args.nocheck_init, parsed_args.no_submit,
             parsed_args.waitjob, parsed_args.quiet
         )
-        if not parsed_args.quiet:
+        if qsub_msg and not parsed_args.quiet:
             log.info(qsub_msg)
 
 
