@@ -32,7 +32,7 @@ import cliff.command
 from nemo_cmd import api, lib
 from nemo_cmd.fspath import fspath
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Run(cliff.command.Command):
@@ -129,7 +129,7 @@ class Run(cliff.command.Command):
             parsed_args.waitjob, parsed_args.quiet
         )
         if qsub_msg and not parsed_args.quiet:
-            log.info(qsub_msg)
+            logger.info(qsub_msg)
 
 
 def run(
@@ -182,7 +182,7 @@ def run(
     """
     run_dir_name = api.prepare(desc_file, nemo34, nocheck_init)
     if not quiet:
-        log.info('Created run directory {}'.format(run_dir_name))
+        logger.info('Created run directory {}'.format(run_dir_name))
     run_dir = Path(run_dir_name).resolve()
     run_desc = lib.load_run_desc(desc_file)
     nemo_processors = lib.get_n_processors(run_desc)
