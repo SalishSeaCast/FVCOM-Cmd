@@ -406,6 +406,42 @@ the output of the :command:`hg status -mardC` command,
 will be appended to the :file:`_rev.txt` file.
 
 
+.. _NEMO-3.6-ModulesToLoad:
+
+:kbd:`modules to load` Section
+------------------------------
+
+The optional :kbd:`modules to load` section of the run description file contains a list of HPC `environment modules`_ for which :command:`module load` commands will be added to the :file:`NEMO.sh` script in the temporary run directory.
+You will need to use this section if you are running on an HPC system that uses environment modules;
+otherwise,
+you can omit the :kbd:`modules to load` section.
+
+.. _environment modules: http://modules.sourceforge.net/
+
+An example of a :kbd:`modules to load` section is:
+
+.. code-block:: yaml
+
+    modules to load:
+      - intel
+      - intel/14.0/netcdf-4.3.3.1_mpi
+      - intel/14.0/netcdf-fortran-4.4.0_mpi
+      - intel/14.0/hdf5-1.8.15p1_mpi
+      - intel/14.0/nco-4.5.2
+      - python
+
+You will need to determine the specific list of modules to load and how to spell them for the HPC system that you are running on.
+In general,
+you will probably need to load modules for:
+
+* the compiler you used to build NEMO and XIOS
+* the netcdf,
+  netcdf-fortran,
+  and hdf5 libraries that you used to build NEMO and XIOS
+* the nco library to make the :command:`ncks` available for the :command:`nemo` :ref:`nemo-deflate`
+* the Python language
+
+
 NEMO-3.4 Run Description File
 =============================
 
@@ -669,3 +705,39 @@ the :command:`nemo prepare` command will generate a warning message like::
 and the list of uncommitted changes and their status codes,
 the output of the :command:`hg status -mardC` command,
 will be appended to the :file:`_rev.txt` file.
+
+
+.. _NEMO-3.4-ModulesToLoad:
+
+:kbd:`modules to load` Section
+------------------------------
+
+The optional :kbd:`modules to load` section of the run description file contains a list of HPC `environment modules`_ for which :command:`module load` commands will be added to the :file:`NEMO.sh` script in the temporary run directory.
+You will need to use this section if you are running on an HPC system that uses environment modules;
+otherwise,
+you can omit the :kbd:`modules to load` section.
+
+.. _environment modules: http://modules.sourceforge.net/
+
+An example of a :kbd:`modules to load` section is:
+
+.. code-block:: yaml
+
+    modules to load:
+      - intel
+      - intel/14.0/netcdf-4.3.3.1_mpi
+      - intel/14.0/netcdf-fortran-4.4.0_mpi
+      - intel/14.0/hdf5-1.8.15p1_mpi
+      - intel/14.0/nco-4.5.2
+      - python
+
+You will need to determine the specific list of modules to load and how to spell them for the HPC system that you are running on.
+In general,
+you will probably need to load modules for:
+
+* the compiler you used to build NEMO and XIOS
+* the netcdf,
+  netcdf-fortran,
+  and hdf5 libraries that you used to build NEMO and XIOS
+* the nco library to make the :command:`ncks` available for the :command:`nemo` :ref:`nemo-deflate`
+* the Python language

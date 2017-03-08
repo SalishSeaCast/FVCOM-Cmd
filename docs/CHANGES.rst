@@ -5,6 +5,12 @@ Change Log
 Next Release
 ============
 
+* Add option to provide in the run description YAML file a list of
+  HPC environment modules to include ``module load`` commands for in the
+  run shell script.
+  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#modules-to-load-section,
+  and https://bitbucket.org/salishsea/nemo-cmd/issues/11.
+
 * Add the option to use absolute paths for coordinates and bathymetry files
   in the run description YAML file.
   See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#grid-section,

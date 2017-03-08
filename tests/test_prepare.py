@@ -839,8 +839,8 @@ class TestMakeGridLinks:
         assert Path(str(run_dir), 'coordinates.nc'
                     ).samefile(str(grid_dir.join('coords.nc')))
         assert Path(str(run_dir), 'bathy_meter.nc').is_symlink()
-        assert Path(str(run_dir), 'bathy_meter.nc'
-                    ).samefile(str(grid_dir.join('bathy.nc')))
+        assert Path(str(run_dir),
+                    'bathy_meter.nc').samefile(str(grid_dir.join('bathy.nc')))
 
 
 class TestMakeForcingLinks:
