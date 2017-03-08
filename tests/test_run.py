@@ -197,6 +197,22 @@ class TestRun:
         assert qsb_msg is None
 
 
+class TestModules:
+    """Unit tests for _module() function.
+    """
+
+    @pytest.mark.parametrize(
+        'modules, expected', [
+            ([], u''),
+            (['intel'], u'module load intel\n'),
+            (['intel', 'python'], u'module load intel\nmodule load python\n'),
+        ]
+    )
+    def test_module(self, modules, expected):
+        module_loads = nemo_cmd.run._modules(modules)
+        assert module_loads == expected
+
+
 class TestCleanup:
     """Unit test for _cleanup() function.
     """

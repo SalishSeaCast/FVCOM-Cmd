@@ -243,18 +243,24 @@ def _build_batch_script(
     script = u'#!/bin/bash\n'
     email = run_desc['email']
     script = u'\n'.join((
-        script, u'{pbs_common}\n'.format(
+        script, u'{pbs_common}\n'
+        u'{defns}\n'.format(
             pbs_common=api.pbs_common(
                 run_desc, nemo_processors + xios_processors, email, results_dir
-            )
+            ),
+            defns=_definitions(run_desc, desc_file, run_dir, results_dir),
         )
     ))
+    if 'modules to load' in run_desc:
+        script = u'\n'.join((
+            script, u'{modules}\n'.format(
+                modules=_modules(run_desc['modules to load']),
+            )
+        ))
     script = u'\n'.join((
-        script, u'{defns}\n'
-        u'{execute}\n'
+        script, u'{execute}\n'
         u'{fix_permissions}\n'
         u'{cleanup}'.format(
-            defns=_definitions(run_desc, desc_file, run_dir, results_dir),
             execute=_execute(
                 nemo_processors, xios_processors, max_deflate_jobs
             ),
@@ -282,6 +288,15 @@ def _definitions(run_desc, run_desc_file, run_dir, results_dir):
         nemo_cmd=Path('${PBS_O_HOME}/.local/bin/nemo'),
     )
     return defns
+
+
+def _modules(modules_to_load):
+    modules = u''
+    for module in modules_to_load:
+        modules = u''.join(
+            (modules, u'module load {module}\n'.format(module=module))
+        )
+    return modules
 
 
 def _execute(nemo_processors, xios_processors, max_deflate_jobs):
