@@ -80,13 +80,13 @@ class TestParser:
         assert getattr(parsed_args, attr)
 
 
-@patch('nemo_cmd.run.log')
-@patch('nemo_cmd.run.run', return_value='qsub message')
+@patch('nemo_cmd.run.logger')
 class TestTakeAction:
     """Unit tests for `salishsea run` sub-command take_action() method.
     """
 
-    def test_take_action(self, m_run, m_log, run_cmd):
+    @patch('nemo_cmd.run.run', return_value='qsub message')
+    def test_take_action(self, m_run, m_logger, run_cmd):
         parsed_args = SimpleNamespace(
             desc_file='desc file',
             results_dir='results dir',
@@ -101,9 +101,10 @@ class TestTakeAction:
         m_run.assert_called_once_with(
             'desc file', 'results dir', 4, False, False, False, 0, False
         )
-        m_log.info.assert_called_once_with('qsub message')
+        m_logger.info.assert_called_once_with('qsub message')
 
-    def test_take_action_quiet(self, m_run, m_log, run_cmd):
+    @patch('nemo_cmd.run.run', return_value='qsub message')
+    def test_take_action_quiet(self, m_run, m_logger, run_cmd):
         parsed_args = SimpleNamespace(
             desc_file='desc file',
             results_dir='results dir',
@@ -115,7 +116,22 @@ class TestTakeAction:
             quiet=True,
         )
         run_cmd.run(parsed_args)
-        assert not m_log.info.called
+        assert not m_logger.info.called
+
+    @patch('nemo_cmd.run.run', return_value=None)
+    def test_take_action_no_submit(self, m_run, m_logger, run_cmd):
+        parsed_args = SimpleNamespace(
+            desc_file='desc file',
+            results_dir='results dir',
+            max_deflate_jobs=4,
+            nemo34=False,
+            nocheck_init=False,
+            no_submit=True,
+            waitjob=0,
+            quiet=True,
+        )
+        run_cmd.run(parsed_args)
+        assert not m_logger.info.called
 
 
 @patch('nemo_cmd.run.subprocess.check_output', return_value='msg')
