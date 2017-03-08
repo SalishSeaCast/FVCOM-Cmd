@@ -192,9 +192,10 @@ class TestCheckNemoExec:
             ),
         ]
     )
+    @patch('nemo_cmd.prepare.logger')
     def test_nemo_exec_not_found(
-        self, code_config_key, nemo_code_config, config_name_key, config_name,
-        tmpdir
+        self, m_logger, code_config_key, nemo_code_config, config_name_key,
+        config_name, tmpdir
     ):
         p_code_config = tmpdir.ensure_dir(nemo_code_config)
         run_desc = {
@@ -274,7 +275,8 @@ class TestCheckXiosExec:
         assert xios_code_repo == p_xios
         assert xios_bin_dir == p_bin_dir
 
-    def test_xios_exec_not_found(self, tmpdir):
+    @patch('nemo_cmd.prepare.logger')
+    def test_xios_exec_not_found(self, m_logger, tmpdir):
         p_xios = tmpdir.ensure_dir('XIOS')
         run_desc = {'paths': {'XIOS': str(p_xios)}}
         with pytest.raises(SystemExit):
@@ -351,7 +353,8 @@ class TestMakeNamelistNEMO34:
             )
         assert p_run_dir.join('namelist').check()
 
-    def test_make_file_not_found_error(self, tmpdir):
+    @patch('nemo_cmd.prepare.logger')
+    def test_make_file_not_found_error(self, m_logger, tmpdir):
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
         run_desc = {'namelists': [str(p_run_set_dir.join('namelist.time'))]}
         p_run_dir = tmpdir.ensure_dir('run_dir')
@@ -421,8 +424,9 @@ class TestMakeNamelistNEMO36:
             ('config_name', 'NEMO-code-config'),  # backward compatibility
         ]
     )
+    @patch('nemo_cmd.prepare.logger')
     def test_file_not_found_error(
-        self, config_name_key, nemo_code_config_key, tmpdir
+        self, m_logger, config_name_key, nemo_code_config_key, tmpdir
     ):
         p_nemo_config_dir = tmpdir.ensure_dir('NEMO-3.6/NEMOGCM/CONFIG')
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
@@ -520,8 +524,9 @@ class TestMakeNamelistNEMO36:
             ('config_name', 'NEMO-code-config'),  # backward compatibility
         ]
     )
+    @patch('nemo_cmd.prepare.logger')
     def test_no_namelist_cfg_error(
-        self, config_name_key, nemo_code_config_key, tmpdir
+        self, m_logger, config_name_key, nemo_code_config_key, tmpdir
     ):
         p_nemo_config_dir = tmpdir.ensure_dir('NEMO-3.6/NEMOGCM/CONFIG')
         p_run_set_dir = tmpdir.ensure_dir('run_set_dir')
