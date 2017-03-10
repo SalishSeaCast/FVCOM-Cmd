@@ -19,6 +19,7 @@ Prepare for, execute, and gather the results of a run of the NEMO model.
 from __future__ import division
 
 import logging
+import math
 import os
 try:
     from pathlib import Path
@@ -243,11 +244,27 @@ def _build_batch_script(
     script = u'#!/bin/bash\n'
     email = run_desc['email']
     script = u'\n'.join((
-        script, u'{pbs_common}\n'
-        u'{defns}\n'.format(
+        script, u'{pbs_common}\n'.format(
             pbs_common=api.pbs_common(
                 run_desc, nemo_processors + xios_processors, email, results_dir
-            ),
+            )
+        )
+    ))
+    if 'PBS resources' in run_desc:
+        script = u''.join((
+            script[:-1],
+            '# resource(s) requested in run description YAML file\n'
+        ))
+        script = u''.join((
+            script, u'{pbs_resources}\n'.format(
+                pbs_resources=_pbs_resources(
+                    run_desc['PBS resources'],
+                    nemo_processors + xios_processors
+                )
+            )
+        ))
+    script = u'\n'.join((
+        script, u'{defns}\n'.format(
             defns=_definitions(run_desc, desc_file, run_dir, results_dir),
         )
     ))
@@ -269,6 +286,19 @@ def _build_batch_script(
         )
     ))
     return script
+
+
+def _pbs_resources(resources, n_processors):
+    pbs_directives = u''
+    for resource in resources:
+        if 'nodes=' in resource and ':ppn=' in resource:
+            _, ppn = resource.rsplit('=', 1)
+            nodes = math.ceil(n_processors / int(ppn))
+            resource = 'nodes={nodes}:ppn={ppn}'.format(nodes=nodes, ppn=ppn)
+        pbs_directives = u''.join((
+            pbs_directives, u'#PBS -l {resource}\n'.format(resource=resource)
+        ))
+    return pbs_directives
 
 
 def _definitions(run_desc, run_desc_file, run_dir, results_dir):

@@ -213,6 +213,33 @@ class TestRun:
         assert qsb_msg is None
 
 
+class TestPBS_Resources:
+    """Unit tests for _pbs_resources() function.
+    """
+
+    @pytest.mark.parametrize(
+        'resources, expected', [
+            ([], u''),
+            (['partition=QDR'], u'#PBS -l partition=QDR\n'),
+            (['partition=QDR', 'feature=X5675'],
+             u'#PBS -l partition=QDR\n#PBS -l feature=X5675\n'),
+        ]
+    )
+    def test_pbs_resources(self, resources, expected):
+        pbs_resources = nemo_cmd.run._pbs_resources(resources, 11)
+        assert pbs_resources == expected
+
+    @pytest.mark.parametrize(
+        'resources, n_procs, expected', [
+            (['nodes=4:ppn=12'], 13, '#PBS -l nodes=2:ppn=12\n'),
+            (['nodes=n:ppn=12'], 13, '#PBS -l nodes=2:ppn=12\n'),
+        ]
+    )
+    def test_node_ppn_resource(self, resources, n_procs, expected):
+        pbs_resources = nemo_cmd.run._pbs_resources(resources, n_procs)
+        assert pbs_resources == expected
+
+
 class TestModules:
     """Unit tests for _module() function.
     """

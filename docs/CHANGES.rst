@@ -6,6 +6,12 @@ Next Release
 ============
 
 * Add option to provide in the run description YAML file a list of
+  PBS resource key-value pairs to produce ``#PBS -l`` directives for in the
+  run shell script.
+  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#pbs-resources-section,
+  and https://bitbucket.org/salishsea/nemo-cmd/issues/10.
+
+* Add option to provide in the run description YAML file a list of
   HPC environment modules to include ``module load`` commands for in the
   run shell script.
   See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#modules-to-load-section,
