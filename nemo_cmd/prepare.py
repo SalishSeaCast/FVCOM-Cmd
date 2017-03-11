@@ -133,8 +133,8 @@ def prepare(desc_file, nemo34, nocheck_init):
 
 
 def _check_nemo_exec(run_desc, nemo34):
-    """Calculate absolute paths of NEMO code repo & NEMO executable's
-    directory.
+    """Calculate absolute paths of NEMO code configuration directory
+    and NEMO executable directory.
 
     Confirm that the NEMO executable exists, raising a SystemExit
     exception if it does not.
