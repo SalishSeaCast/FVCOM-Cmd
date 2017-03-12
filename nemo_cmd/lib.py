@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Utility functions for use by SalishSeaCmd command plug-ins.
+"""Utility functions for use by NEMO-Cmd sub-command plug-ins.
 """
 import yaml
 
