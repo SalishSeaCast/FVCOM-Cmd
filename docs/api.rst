@@ -57,3 +57,11 @@ Functions for Working with File System Paths
 .. autofunction:: nemo_cmd.expanded_path
 
 .. autofunction:: nemo_cmd.resolved_path
+
+
+.. _UtilityFunctions:
+
+Utility Functions
+=================
+
+.. autofunction:: nemo_cmd.utils.get_run_desc_value
