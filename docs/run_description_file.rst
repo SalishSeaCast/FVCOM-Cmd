@@ -743,14 +743,14 @@ So,
 from the example above,
 the files created will be::
 
-  NEMO-3.6-code_rev.txt
+  NEMO-code_rev.txt
   XIOS_rev.txt
   mackenzie_canyon_rev.txt
 
 Each file will contain the output of the :command:`hg parents -v` command for the repository.
 That is a record of the last committed revision of the repository that will be in effect for the run.
 For example,
-:file:`NEMO-3.6-code_rev.txt` might contain::
+:file:`NEMO-code_rev.txt` might contain::
 
   changset:   501:20bcd3fda18ceec47b7d1998118f57b0a526b4d2
   tag:        tip
