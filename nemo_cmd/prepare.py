@@ -31,12 +31,13 @@ import xml.etree.ElementTree
 
 import arrow
 import cliff.command
-import hglib
 from dateutil import tz
+import hglib
 
-from nemo_cmd.fspath import resolved_path, fspath, expanded_path
+from nemo_cmd import lib, fspath, resolved_path
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
-from nemo_cmd import lib
+import nemo_cmd.prepare
+import nemo_cmd.utils
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +119,7 @@ def prepare(desc_file, nemo34, nocheck_init):
     """
     run_desc = lib.load_run_desc(desc_file)
     nemo_config_dir, nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
-    xios_code_repo, xios_bin_dir = (
-        _check_xios_exec(run_desc) if not nemo34 else (None, None)
-    )
+    xios_bin_dir = _check_xios_exec(run_desc) if not nemo34 else ('', '')
     run_set_dir = os.path.dirname(os.path.abspath(desc_file))
     run_dir = _make_run_dir(run_desc)
     _make_namelists(run_set_dir, run_desc, run_dir, nemo34)
@@ -154,16 +153,26 @@ def _check_nemo_exec(run_desc, nemo34):
     :raises: SystemExit
     """
     try:
-        nemo_code_config = run_desc['paths']['NEMO code config']
+        nemo_config_dir = nemo_cmd.utils.get_run_desc_value(
+            run_desc, ('paths', 'NEMO code config'),
+            resolve_path=True,
+            fatal=False
+        )
     except KeyError:
         # Alternate key spelling for backward compatibility
-        nemo_code_config = run_desc['paths']['NEMO-code-config']
-    nemo_config_dir = resolved_path(nemo_code_config)
+        nemo_config_dir = nemo_cmd.utils.get_run_desc_value(
+            run_desc, ('paths', 'NEMO-code-config'), resolve_path=True
+        )
     try:
-        config_dir = nemo_config_dir / run_desc['config name']
+        config_name = nemo_cmd.utils.get_run_desc_value(
+            run_desc, ('config name',), fatal=False
+        )
     except KeyError:
         # Alternate key spelling for backward compatibility
-        config_dir = nemo_config_dir / run_desc['config_name']
+        config_name = nemo_cmd.utils.get_run_desc_value(
+            run_desc, ('config_name',)
+        )
+    config_dir = nemo_config_dir / config_name
     nemo_bin_dir = config_dir / 'BLD' / 'bin'
     nemo_exec = nemo_bin_dir / 'nemo.exe'
     if not nemo_exec.exists():
@@ -196,15 +205,17 @@ def _check_xios_exec(run_desc):
 
     :raises: SystemExit
     """
-    xios_code_repo = os.path.abspath(run_desc['paths']['XIOS'])
-    xios_bin_dir = os.path.join(xios_code_repo, 'bin')
+    xios_code_dir = nemo_cmd.utils.get_run_desc_value(
+        run_desc, ('paths', 'XIOS')
+    )
+    xios_bin_dir = os.path.join(xios_code_dir, 'bin')
     xios_exec = os.path.join(xios_bin_dir, 'xios_server.exe')
     if not os.path.exists(xios_exec):
         logger.error(
             '{} not found - did you forget to build it?'.format(xios_exec)
         )
         raise SystemExit(2)
-    return xios_code_repo, xios_bin_dir
+    return xios_bin_dir
 
 
 def _make_run_dir(run_desc):
@@ -222,7 +233,7 @@ def _make_run_dir(run_desc):
     return run_dir
 
 
-def _remove_run_dir(run_dir):
+def remove_run_dir(run_dir):
     """Remove all files from run_dir, then remove run_dir.
 
     Intended to be used as a clean-up operation when some other part
@@ -293,7 +304,7 @@ def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
                     namelist.write('\n\n')
             except IOError as e:
                 logger.error(e)
-                _remove_run_dir(run_dir)
+                remove_run_dir(run_dir)
                 raise SystemExit(2)
         namelist.writelines(EMPTY_NAMELISTS)
     _set_mpi_decomposition(namelist_filename, run_desc, run_dir)
@@ -336,7 +347,7 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
                         namelist.write('\n\n')
                 except IOError as e:
                     logger.error(e)
-                    _remove_run_dir(run_dir)
+                    remove_run_dir(run_dir)
                     raise SystemExit(2)
         ref_namelist = namelist_filename.replace('_cfg', '_ref')
         if ref_namelist not in run_desc['namelists']:
@@ -379,7 +390,7 @@ def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
             'that says how you want the domain distributed over the '
             'processors in the i (longitude) and j (latitude) dimensions.'
         )
-        _remove_run_dir(run_dir)
+        remove_run_dir(run_dir)
         raise SystemExit(2)
     with open(os.path.join(run_dir, namelist_filename), 'rt') as f:
         lines = f.readlines()
@@ -468,7 +479,7 @@ def _set_xios_server_mode(run_desc, run_dir):
             'that say whether to run the XIOS server(s) attached or detached, '
             'and how many of them to use.'
         )
-        _remove_run_dir(run_dir)
+        remove_run_dir(run_dir)
         raise SystemExit(2)
     tree = xml.etree.ElementTree.parse('iodef.xml')
     root = tree.getroot()
@@ -526,44 +537,26 @@ def _make_grid_links(run_desc, run_dir):
 
     :raises: SystemExit
     """
-    try:
-        coords_path = expanded_path(run_desc['grid']['coordinates'])
-    except KeyError:
-        logger.error(
-            'grid: coordinates key not found - '
-            'please check your run description YAML file'
-        )
-        _remove_run_dir(run_dir)
-        raise SystemExit(2)
-    try:
-        bathy_path = expanded_path(run_desc['grid']['bathymetry'])
-    except KeyError:
-        logger.error(
-            'grid: bathymetry key not found - '
-            'please check your run description YAML file'
-        )
-        _remove_run_dir(run_dir)
-        raise SystemExit(2)
+    coords_path = nemo_cmd.utils.get_run_desc_value(
+        run_desc, ('grid', 'coordinates'), expand_path=True, run_dir=run_dir
+    )
+    bathy_path = nemo_cmd.utils.get_run_desc_value(
+        run_desc, ('grid', 'bathymetry'), expand_path=True, run_dir=run_dir
+    )
     if coords_path.is_absolute() and bathy_path.is_absolute():
         grid_paths = ((coords_path, 'coordinates.nc'),
                       (bathy_path, 'bathy_meter.nc'))
     else:
-        try:
-            nemo_forcing_dir = resolved_path(run_desc['paths']['forcing'])
-        except KeyError:
-            logger.error(
-                'forcing key not found - '
-                'please check your run description YAML file'
-            )
-            _remove_run_dir(run_dir)
-            raise SystemExit(2)
+        nemo_forcing_dir = nemo_cmd.utils.get_run_desc_value(
+            run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
+        )
         if not nemo_forcing_dir.exists():
             logger.error(
                 '{} not found; cannot create symlinks - '
                 'please check the forcing path in your run description file'
                 .format(nemo_forcing_dir)
             )
-            _remove_run_dir(run_dir)
+            remove_run_dir(run_dir)
             raise SystemExit(2)
         grid_dir = nemo_forcing_dir / 'grid'
         grid_paths = (
@@ -578,7 +571,7 @@ def _make_grid_links(run_desc, run_dir):
                 'please check the forcing path and grid file names '
                 'in your run description file'.format(source)
             )
-            _remove_run_dir(run_dir)
+            remove_run_dir(run_dir)
             raise SystemExit(2)
         (run_dir_path / link_name).symlink_to(source)
 
@@ -609,7 +602,7 @@ def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
             'please check the forcing path in your run description file'
             .format(nemo_forcing_dir)
         )
-        _remove_run_dir(run_dir)
+        remove_run_dir(run_dir)
         raise SystemExit(2)
     if nemo34:
         _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init)
@@ -651,7 +644,7 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
             'please check the forcing path and initial conditions file names '
             'in your run description file'.format(ic_source)
         )
-        _remove_run_dir(run_dir)
+        remove_run_dir(run_dir)
         raise SystemExit(2)
     os.symlink(ic_source, ic_link_name)
     for source, link_name in forcing_dirs:
@@ -662,7 +655,7 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
                 'please check the forcing paths and file names '
                 'in your run description file'.format(link_path)
             )
-            _remove_run_dir(run_dir)
+            remove_run_dir(run_dir)
             raise SystemExit(2)
         os.symlink(link_path, link_name)
     _check_atmos_files(run_desc, run_dir)
@@ -696,7 +689,7 @@ def _make_forcing_links_nemo36(run_desc, run_dir, nocheck_init):
                     'please check the forcing paths and file names '
                     'in your run description file'.format(link_path)
                 )
-                _remove_run_dir(run_dir)
+                remove_run_dir(run_dir)
                 raise SystemExit(2)
         os.symlink(link_path, os.path.join(run_dir, link_name))
         try:
@@ -714,7 +707,7 @@ def _make_forcing_links_nemo36(run_desc, run_dir, nocheck_init):
                         'unknown forcing link checker: {}'
                         .format(link_checker)
                     )
-                    _remove_run_dir(run_dir)
+                    remove_run_dir(run_dir)
                     raise SystemExit(2)
 
 
@@ -796,7 +789,7 @@ def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
                             dir=link_path
                         )
                     )
-                    _remove_run_dir(run_dir)
+                    remove_run_dir(run_dir)
                     raise SystemExit(2)
 
 
@@ -876,13 +869,12 @@ def _check_atmos_files(run_desc, run_dir):
                             dir=os.path.join(nemo_forcing_dir, atmos_dir)
                         )
                     )
-                    _remove_run_dir(run_dir)
+                    remove_run_dir(run_dir)
                     raise SystemExit(2)
 
 
 def _record_vcs_revisions(run_desc, run_dir):
-    """Record revision and status information from version
-    control system
+    """Record revision and status information from version control system
     repositories in files in the temporary run directory.
 
     :param dict run_desc: Run description dictionary.
