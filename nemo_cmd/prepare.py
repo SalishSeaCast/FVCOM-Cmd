@@ -883,34 +883,45 @@ def _record_vcs_revisions(run_desc, run_dir):
     """
     if 'vcs revisions' not in run_desc:
         return
-    vcs_funcs = {'hg': _get_hg_revision}
+    vcs_funcs = {'hg': get_hg_revision}
     for vcs_tool in run_desc['vcs revisions']:
         for repo in run_desc['vcs revisions'][vcs_tool]:
-            repo_path = resolved_path(repo)
-            repo_rev_file_lines = vcs_funcs[vcs_tool](repo)
-            rev_file = Path(run_dir) / '{repo.name}_rev.txt'.format(
-                repo=repo_path
-            )
-            with rev_file.open('wt') as f:
-                f.writelines(
-                    '{}\n'.format(line) for line in repo_rev_file_lines
-                )
+            write_repo_rev_file(repo, run_dir, vcs_funcs[vcs_tool])
 
 
-def _get_hg_revision(repo):
-    """Gather revision and status information from Mercurial
-    repo.
+def write_repo_rev_file(repo, run_dir, vcs_func):
+    """Write revision and status information from a version control
+    system repository to a file in the temporary run directory.
 
-    Effectively record the output of :command:`hg parents -v`
-    and
-    :command:`hg status -mardC`.
+    The file name is the repository directory name with :kbd:`_rev.txt`
+    appended.
 
-    :param str repo: Path of Mercurial repository to get
-    revision and status
+    :param str repo: Path of Mercurial repository to get revision and status
                      information from.
 
-    :returns: Mercurial repository revision and status
-    information strings.
+    :param str run_dir: Path of the temporary run directory.
+
+    :param vcs_func: Function to call to gather revision and status
+                     information from repo.
+    """
+    repo_path = nemo_cmd.resolved_path(repo)
+    repo_rev_file_lines = vcs_func(repo)
+    rev_file = Path(run_dir) / '{repo.name}_rev.txt'.format(repo=repo_path)
+    with rev_file.open('wt') as f:
+        f.writelines('{}\n'.format(line) for line in repo_rev_file_lines)
+
+
+def get_hg_revision(repo):
+    """Gather revision and status information from Mercurial repo.
+
+    Effectively record the output of :command:`hg parents -v` and
+    :command:`hg status -mardC`.
+
+    :param str repo: Path of Mercurial repository to get revision and status
+                     information from.
+
+    :returns: Mercurial repository revision and status information strings.
+
     :rtype: list
     """
     with hglib.open(repo) as hg:

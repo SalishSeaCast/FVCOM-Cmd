@@ -1036,46 +1036,26 @@ class TestMakeForcingLinksNEMO36:
 
 
 class TestRecordVcsRevision:
-    """Unit tests for `nemo prepare` __record_vcs_revisions() function.
+    """Unit tests for `nemo prepare` _record_vcs_revisions() function.
     """
 
-    @patch('nemo_cmd.prepare._get_hg_revision')
+    @patch('nemo_cmd.prepare.get_hg_revision')
     def test_no_vcs_revisions_stanza_in_run_desc(self, m_get_hg_rev):
         nemo_cmd.prepare._record_vcs_revisions({}, 'tmp_run_dir')
         assert not m_get_hg_rev.called
 
-    # @pytest.mark.parametrize('nemo34', [True, False])
-    # def test_nemo_code_rev_file(self, nemo34, tmpdir):
-    #     p_nemo_bin_dir = tmpdir.ensure_dir(
-    #         'NEMO-code/NEMOGCM/CONFIG/SalishSea/BLD/bin')
-    #     p_nemo_bin_dir.ensure('nemo.exe')
-    #     p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
-    #     p_run_dir = tmpdir.ensure_dir('run_dir')
-    #     with patch('nemo_cmd.prepare.hg.parents'):
-    #         nemo_cmd.prepare._make_executable_links(
-    #             'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-    #             nemo34, 'xios_code_repo', str(p_xios_bin_dir))
-    #     assert p_run_dir.join('NEMO-code_rev.txt').check(file=True)
-
-    # @pytest.mark.parametrize('nemo34, xios_code_repo', [
-    #     (True, None),
-    #     (False, 'xios_code_repo'),
-    # ])
-    # def test_xios_code_rev_file(
-    #     self, nemo34, xios_code_repo, tmpdir,
-    # ):
-    #     p_nemo_bin_dir = tmpdir.ensure_dir(
-    #         'NEMO-code/NEMOGCM/CONFIG/SalishSea/BLD/bin')
-    #     p_nemo_bin_dir.ensure('nemo.exe')
-    #     p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
-    #     if not nemo34:
-    #         p_xios_bin_dir.ensure('xios_server.exe')
-    #     p_run_dir = tmpdir.ensure_dir('run_dir')
-    #     with patch('nemo_cmd.prepare.hg.parents'):
-    #         nemo_cmd.prepare._make_executable_links(
-    #             'nemo_code_repo', str(p_nemo_bin_dir), str(p_run_dir),
-    #             nemo34, xios_code_repo, str(p_xios_bin_dir))
-    #     if nemo34:
-    #         assert not p_run_dir.join('XIOS-code_rev.txt').check(file=True)
-    #     else:
-    #         assert p_run_dir.join('XIOS-code_rev.txt').check(file=True)
+    @patch('nemo_cmd.prepare.write_repo_rev_file')
+    def test_write_repo_rev_file(self, m_write, tmpdir):
+        nemo_code_repo = tmpdir.ensure_dir('NEMO-3.6-code')
+        run_desc = {
+            'paths': {
+                'forcing': 'NEO-forcing/'
+            },
+            'vcs revisions': {
+                'hg': [str(nemo_code_repo)]
+            }
+        }
+        nemo_cmd.prepare._record_vcs_revisions(run_desc, 'run_dir')
+        assert m_write.call_args_list[-1] == call(
+            str(nemo_code_repo), 'run_dir', nemo_cmd.prepare.get_hg_revision
+        )
