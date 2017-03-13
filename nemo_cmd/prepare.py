@@ -924,7 +924,7 @@ def get_hg_revision(repo):
 
     :rtype: list
     """
-    with hglib.open(repo) as hg:
+    with hglib.open(fspath(repo)) as hg:
         parents = hg.parents()
         files = [f[1] for f in hg.status(change=[parents[0].rev])]
         status = hg.status(
