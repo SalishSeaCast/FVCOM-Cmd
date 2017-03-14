@@ -17,6 +17,7 @@
 Sets up the necessary symbolic links for a NEMO run
 in a specified directory and changes the pwd to that directory.
 """
+from copy import copy
 import logging
 import os
 try:
@@ -886,7 +887,7 @@ def _record_vcs_revisions(run_desc, run_dir):
     vcs_funcs = {'hg': get_hg_revision}
     for vcs_tool in run_desc['vcs revisions']:
         for repo in run_desc['vcs revisions'][vcs_tool]:
-            write_repo_rev_file(repo, run_dir, vcs_funcs[vcs_tool])
+            write_repo_rev_file(Path(repo), run_dir, vcs_funcs[vcs_tool])
 
 
 def write_repo_rev_file(repo, run_dir, vcs_func):
@@ -896,8 +897,9 @@ def write_repo_rev_file(repo, run_dir, vcs_func):
     The file name is the repository directory name with :kbd:`_rev.txt`
     appended.
 
-    :param str repo: Path of Mercurial repository to get revision and status
-                     information from.
+    :param repo: Path of Mercurial repository to get revision and status
+                 information from.
+    :type repo: :py:class:`pathlib.Path`
 
     :param str run_dir: Path of the temporary run directory.
 
@@ -905,31 +907,51 @@ def write_repo_rev_file(repo, run_dir, vcs_func):
                      information from repo.
     """
     repo_path = nemo_cmd.resolved_path(repo)
-    repo_rev_file_lines = vcs_func(repo)
+    repo_rev_file_lines = vcs_func(repo, run_dir)
     rev_file = Path(run_dir) / '{repo.name}_rev.txt'.format(repo=repo_path)
     with rev_file.open('wt') as f:
         f.writelines('{}\n'.format(line) for line in repo_rev_file_lines)
 
 
-def get_hg_revision(repo):
+def get_hg_revision(repo, run_dir):
     """Gather revision and status information from Mercurial repo.
 
     Effectively record the output of :command:`hg parents -v` and
+    :param run_dir:
     :command:`hg status -mardC`.
 
-    :param str repo: Path of Mercurial repository to get revision and status
-                     information from.
+    :param repo: Path of Mercurial repository to get revision and status
+                 information from.
+    :type repo: :py:class:`pathlib.Path`
+
+    :param str run_dir: Path of the temporary run directory.
 
     :returns: Mercurial repository revision and status information strings.
-
     :rtype: list
     """
-    with hglib.open(fspath(repo)) as hg:
-        parents = hg.parents()
-        files = [f[1] for f in hg.status(change=[parents[0].rev])]
-        status = hg.status(
-            modified=True, added=True, removed=True, deleted=True, copies=True
+    repo_path = copy(repo)
+    while str(repo) != repo_path.root:
+        try:
+            with hglib.open(fspath(repo)) as hg:
+                parents = hg.parents()
+                files = [f[1] for f in hg.status(change=[parents[0].rev])]
+                status = hg.status(
+                    modified=True,
+                    added=True,
+                    removed=True,
+                    deleted=True,
+                    copies=True
+                )
+            break
+        except hglib.error.ServerError:
+            repo = repo.parent
+    else:
+        logger.error(
+            'unable to find Mercurial repo root in or above '
+            '{repo_path}'.format(repo_path=repo_path)
         )
+        remove_run_dir(run_dir)
+        raise SystemExit(2)
     revision = parents[0]
     repo_rev_file_lines = [
         'changset:   {rev}:{node}'.format(
