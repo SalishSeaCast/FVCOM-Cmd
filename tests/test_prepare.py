@@ -15,7 +15,11 @@
 """NEMO-Cmd prepare sub-command plug-in unit tests
 """
 import os
-from pathlib import Path
+try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
 try:
     from unittest.mock import call, Mock, patch
 except ImportError:
@@ -77,11 +81,8 @@ class TestPrepare:
 
     @pytest.mark.parametrize(
         'nemo34, m_cne_return, m_cxe_return', [
-            (True, ('repo', 'bin_dir'), ('', '')),
-            (
-                False, ('nemo_repo', 'nemo_bin_dir'),
-                ('xios_repo', 'xios_bin_dir')
-            ),
+            (True, 'bin_dir', ''),
+            (False, 'nemo_bin_dir', 'xios_bin_dir'),
         ]
     )
     def test_prepare(
@@ -106,7 +107,7 @@ class TestPrepare:
             m_lrd(), 'SalishSea.yaml', m_dirname(), m_mrd(), nemo34
         )
         m_mel.assert_called_once_with(
-            m_cne_return[1], m_mrd(), nemo34, m_cxe_return
+            m_cne_return, m_mrd(), nemo34, m_cxe_return
         )
         m_mgl.assert_called_once_with(m_lrd(), m_mrd())
         m_mfl.assert_called_once_with(m_lrd(), m_mrd(), nemo34, False)
@@ -117,28 +118,6 @@ class TestPrepare:
 class TestCheckNemoExec:
     """Unit tests for `nemo prepare` _check_nemo_exec() function.
     """
-
-    @pytest.mark.parametrize(
-        'key, nemo_code_config, config_name', [
-            ('NEMO-code-config', 'NEMO-3.6-code/NEMOGCM/CONFIG', 'SalishSea'),
-            ('NEMO code config', 'NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
-        ]
-    )
-    def test_nemo_config_dir_path(
-        self, key, nemo_code_config, config_name, tmpdir
-    ):
-        p_code_config = tmpdir.ensure_dir(nemo_code_config)
-        p_code_config.ensure(config_name, 'BLD', 'bin', 'nemo.exe')
-        run_desc = {
-            'config_name': config_name,
-            'paths': {
-                key: str(p_code_config)
-            }
-        }
-        nemo_config_dir, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
-            run_desc, nemo34=False
-        )
-        assert nemo_config_dir == p_code_config
 
     @pytest.mark.parametrize(
         'key, nemo_code_config, config_name', [
@@ -158,10 +137,10 @@ class TestCheckNemoExec:
         }
         p_bin_dir = p_code_config.ensure_dir(config_name, 'BLD', 'bin')
         p_bin_dir.ensure('nemo.exe')
-        nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
+        nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
             run_desc, nemo34=False
         )
-        assert nemo_bin_dir == p_bin_dir
+        assert nemo_bin_dir == Path(p_bin_dir)
 
     @patch('nemo_cmd.prepare.logger')
     def test_nemo34_iom_server_exists(self, m_logger, tmpdir):
@@ -175,9 +154,7 @@ class TestCheckNemoExec:
         p_bin_dir = p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
         p_bin_dir.ensure('nemo.exe')
         p_bin_dir.ensure('server.exe')
-        nemo_code_repo, nemo_bin_dir = nemo_cmd.prepare._check_nemo_exec(
-            run_desc, nemo34=True
-        )
+        nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=True)
         assert not m_logger.warning.called
 
     @pytest.mark.parametrize(
@@ -270,7 +247,7 @@ class TestCheckXiosExec:
         p_bin_dir = p_xios.ensure_dir('bin')
         p_bin_dir.ensure('xios_server.exe')
         xios_bin_dir = nemo_cmd.prepare._check_xios_exec(run_desc)
-        assert xios_bin_dir == p_bin_dir
+        assert xios_bin_dir == Path(p_bin_dir)
 
     @patch('nemo_cmd.prepare.logger')
     def test_xios_exec_not_found(self, m_logger, tmpdir):
@@ -658,7 +635,7 @@ class TestMakeExecutableLinks:
         p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
         p_run_dir = tmpdir.ensure_dir('run_dir')
         nemo_cmd.prepare._make_executable_links(
-            str(p_nemo_bin_dir), str(p_run_dir), nemo34, str(p_xios_bin_dir)
+            Path(p_nemo_bin_dir), str(p_run_dir), nemo34, Path(p_xios_bin_dir)
         )
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
 
@@ -673,7 +650,7 @@ class TestMakeExecutableLinks:
             p_nemo_bin_dir.ensure('server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
         nemo_cmd.prepare._make_executable_links(
-            str(p_nemo_bin_dir), str(p_run_dir), nemo34, str(p_xios_bin_dir)
+            Path(p_nemo_bin_dir), str(p_run_dir), nemo34, Path(p_xios_bin_dir)
         )
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
         if nemo34:
@@ -697,7 +674,7 @@ class TestMakeExecutableLinks:
             p_xios_bin_dir.ensure('xios_server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
         nemo_cmd.prepare._make_executable_links(
-            str(p_nemo_bin_dir), str(p_run_dir), nemo34, str(p_xios_bin_dir)
+            Path(p_nemo_bin_dir), str(p_run_dir), nemo34, Path(p_xios_bin_dir)
         )
         if nemo34:
             assert not p_run_dir.join('xios_server.exe').check(

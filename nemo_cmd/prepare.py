@@ -119,8 +119,8 @@ def prepare(desc_file, nemo34, nocheck_init):
     :rtype: str
     """
     run_desc = lib.load_run_desc(desc_file)
-    nemo_config_dir, nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
-    xios_bin_dir = _check_xios_exec(run_desc) if not nemo34 else ('', '')
+    nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
+    xios_bin_dir = _check_xios_exec(run_desc) if not nemo34 else ''
     run_set_dir = os.path.dirname(os.path.abspath(desc_file))
     run_dir = _make_run_dir(run_desc)
     _make_namelists(run_set_dir, run_desc, run_dir, nemo34)
@@ -147,9 +147,8 @@ def _check_nemo_exec(run_desc, nemo34):
     :param boolean nemo34: Prepare a NEMO-3.4 run;
                            the default is to prepare a NEMO-3.6 run
 
-    :returns: Absolute paths of NEMO code CONFIG directory & NEMO executable's
-              directory.
-    :rtype: 2-tuple
+    :returns: Absolute path of NEMO executable's directory.
+    :rtype: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
@@ -188,7 +187,7 @@ def _check_nemo_exec(run_desc, nemo34):
                 '{} not found - are you running without key_iomput?'
                 .format(iom_server_exec)
             )
-    return fspath(nemo_config_dir), fspath(nemo_bin_dir)
+    return nemo_bin_dir
 
 
 def _check_xios_exec(run_desc):
@@ -200,18 +199,17 @@ def _check_xios_exec(run_desc):
 
     :param dict run_desc: Run description dictionary.
 
-    :returns: Absolute paths of XIO code repo & XIOS executable's
-              directory.
-    :rtype: 2-tuple
+    :returns: Absolute path of XIOS executable's directory.
+    :rtype: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
-    xios_code_dir = nemo_cmd.utils.get_run_desc_value(
-        run_desc, ('paths', 'XIOS')
+    xios_code_path = nemo_cmd.utils.get_run_desc_value(
+        run_desc, ('paths', 'XIOS'), resolve_path=True
     )
-    xios_bin_dir = os.path.join(xios_code_dir, 'bin')
-    xios_exec = os.path.join(xios_bin_dir, 'xios_server.exe')
-    if not os.path.exists(xios_exec):
+    xios_bin_dir = xios_code_path / 'bin'
+    xios_exec = xios_bin_dir / 'xios_server.exe'
+    if not xios_exec.exists():
         logger.error(
             '{} not found - did you forget to build it?'.format(xios_exec)
         )
@@ -503,8 +501,8 @@ def _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir):
     """Create symlinks in run_dir to the NEMO and I/O server executables
     and record the code repository revision(s) used for the run.
 
-    :param str nemo_bin_dir: Absolute path of directory containing NEMO
-                             executable.
+    :param nemo_bin_dir: Absolute path of directory containing NEMO executable.
+    :type nemo_bin_dir: :py:class:`pathlib.Path`
 
     :param str run_dir: Path of the temporary run directory.
 
@@ -512,20 +510,17 @@ def _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir):
                            if :py:obj:`True`,
                            otherwise make links for a NEMO-3.6 run.
 
-    :param str xios_bin_dir: Absolute path of directory containing XIOS
-                             executable.
+    :param xios_bin_dir: Absolute path of directory containing XIOS executable.
+    :type xios_bin_dir: :py:class:`pathlib.Path`
     """
-    nemo_exec = os.path.join(nemo_bin_dir, 'nemo.exe')
-    saved_cwd = os.getcwd()
-    os.chdir(run_dir)
-    os.symlink(nemo_exec, 'nemo.exe')
-    iom_server_exec = os.path.join(nemo_bin_dir, 'server.exe')
-    if nemo34 and os.path.exists(iom_server_exec):
-        os.symlink(iom_server_exec, 'server.exe')
+    nemo_exec = nemo_bin_dir / 'nemo.exe'
+    (Path(run_dir) / 'nemo.exe').symlink_to(nemo_exec)
+    iom_server_exec = nemo_bin_dir / 'server.exe'
+    if nemo34 and iom_server_exec.exists():
+        (Path(run_dir) / 'server.exe').symlink_to(iom_server_exec)
     if not nemo34:
-        xios_server_exec = os.path.join(xios_bin_dir, 'xios_server.exe')
-        os.symlink(xios_server_exec, 'xios_server.exe')
-    os.chdir(saved_cwd)
+        xios_server_exec = xios_bin_dir / 'xios_server.exe'
+        (Path(run_dir) / 'xios_server.exe').symlink_to(xios_server_exec)
 
 
 def _make_grid_links(run_desc, run_dir):
