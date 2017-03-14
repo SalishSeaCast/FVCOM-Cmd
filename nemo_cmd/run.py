@@ -294,7 +294,9 @@ def _pbs_resources(resources, n_processors):
         if 'nodes=' in resource and ':ppn=' in resource:
             _, ppn = resource.rsplit('=', 1)
             nodes = math.ceil(n_processors / int(ppn))
-            resource = 'nodes={nodes}:ppn={ppn}'.format(nodes=nodes, ppn=ppn)
+            resource = 'nodes={nodes}:ppn={ppn}'.format(
+                nodes=int(nodes), ppn=ppn
+            )
         pbs_directives = u''.join((
             pbs_directives, u'#PBS -l {resource}\n'.format(resource=resource)
         ))
