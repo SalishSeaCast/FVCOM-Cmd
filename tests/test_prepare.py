@@ -1057,5 +1057,6 @@ class TestRecordVcsRevision:
         }
         nemo_cmd.prepare._record_vcs_revisions(run_desc, 'run_dir')
         assert m_write.call_args_list[-1] == call(
-            str(nemo_code_repo), 'run_dir', nemo_cmd.prepare.get_hg_revision
+            Path(str(nemo_code_repo)), 'run_dir',
+            nemo_cmd.prepare.get_hg_revision
         )
