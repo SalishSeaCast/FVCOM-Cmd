@@ -16,6 +16,8 @@
 """
 import yaml
 
+from nemo_cmd import fspath
+
 
 def load_run_desc(desc_file):
     """Load the run description file contents into a data structure.
@@ -26,7 +28,7 @@ def load_run_desc(desc_file):
     :returns: Contents of run description file parsed from YAML into a dict.
     :rtype: dict
     """
-    with open(desc_file, 'rt') as f:
+    with open(fspath(desc_file), 'rt') as f:
         run_desc = yaml.load(f)
     return run_desc
 
