@@ -52,7 +52,8 @@ class Run(cliff.command.Command):
         parser.add_argument(
             'desc_file',
             metavar='DESC_FILE',
-            help='File path/name of run description YAML file'
+            type=Path,
+            help='run description YAML file'
         )
         parser.add_argument(
             'results_dir',
