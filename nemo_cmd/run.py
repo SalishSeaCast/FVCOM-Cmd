@@ -153,7 +153,8 @@ def run(
     in the run directory.
     That script is submitted to the queue manager in a subprocess.
 
-    :arg str desc_file: File path/name of the YAML run description file.
+    :param desc_file: File path/name of the YAML run description file.
+    :type desc_file: :py:class:`pathlib.Path`
 
     :arg str results_dir: Path of the directory in which to store the run
                           results;
@@ -194,8 +195,9 @@ def run(
         xios_processors = 0
     results_dir = Path(results_dir)
     batch_script = _build_batch_script(
-        run_desc, desc_file, nemo_processors, xios_processors,
-        max_deflate_jobs, results_dir, fspath(run_dir)
+        run_desc,
+        fspath(desc_file), nemo_processors, xios_processors, max_deflate_jobs,
+        results_dir, fspath(run_dir)
     )
     batch_file = run_dir / 'NEMO.sh'
     with batch_file.open('wt') as f:

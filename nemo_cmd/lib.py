@@ -22,8 +22,8 @@ from nemo_cmd import fspath
 def load_run_desc(desc_file):
     """Load the run description file contents into a data structure.
 
-    :arg desc_file: File path/name of YAML run description file.
-    :type desc_file: str
+    :param desc_file: File path/name of the YAML run description file.
+    :type desc_file: :py:class:`pathlib.Path`
 
     :returns: Contents of run description file parsed from YAML into a dict.
     :rtype: dict
