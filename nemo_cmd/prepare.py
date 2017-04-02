@@ -922,7 +922,7 @@ def write_repo_rev_file(repo, run_dir, vcs_func):
     repo_rev_file_lines = vcs_func(repo, run_dir)
     rev_file = Path(run_dir) / '{repo.name}_rev.txt'.format(repo=repo_path)
     with rev_file.open('wt') as f:
-        f.writelines('{}\n'.format(line) for line in repo_rev_file_lines)
+        f.writelines(u'{}\n'.format(line) for line in repo_rev_file_lines)
 
 
 def get_hg_revision(repo, run_dir):
