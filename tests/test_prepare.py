@@ -529,10 +529,16 @@ class TestCopyRunSetFiles:
     """Unit tests for `nemo prepare` _copy_run_set_files() function.
     """
 
+    @pytest.mark.parametrize('iodefs_key', [
+        'iodefs',
+        'files',
+    ])
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    def test_nemo34_copy_run_set_files_no_path(self, m_sxsm, m_copy):
-        run_desc = {'output': {'files': 'iodef.xml'}}
+    def test_nemo34_copy_run_set_files_no_path(
+        self, m_sxsm, m_copy, iodefs_key
+    ):
+        run_desc = {'output': {iodefs_key: 'iodef.xml'}}
         desc_file = Path('foo.yaml')
         pwd = Path.cwd()
         nemo_cmd.prepare._copy_run_set_files(
@@ -548,14 +554,22 @@ class TestCopyRunSetFiles:
         ]
         assert m_copy.call_args_list == expected
 
+    @pytest.mark.parametrize(
+        'iodefs_key, domains_key, fields_key', [
+            ('iodefs', 'domaindefs', 'fielddefs'),
+            ('files', 'domain', 'fields'),
+        ]
+    )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    def test_nemo36_copy_run_set_files_no_path(self, m_sxsm, m_copy):
+    def test_nemo36_copy_run_set_files_no_path(
+        self, m_sxsm, m_copy, iodefs_key, domains_key, fields_key
+    ):
         run_desc = {
             'output': {
-                'files': 'iodef.xml',
-                'domain': 'domain_def.xml',
-                'fields': 'field_def.xml',
+                iodefs_key: 'iodef.xml',
+                domains_key: 'domain_def.xml',
+                fields_key: 'field_def.xml',
             },
         }
         desc_file = Path('foo.yaml')
@@ -577,10 +591,16 @@ class TestCopyRunSetFiles:
         ]
         assert m_copy.call_args_list == expected
 
+    @pytest.mark.parametrize('iodefs_key', [
+        'iodefs',
+        'files',
+    ])
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    def test_nemo34_copy_run_set_files_relative_path(self, m_sxsm, m_copy):
-        run_desc = {'output': {'files': '../iodef.xml'}}
+    def test_nemo34_copy_run_set_files_relative_path(
+        self, m_sxsm, m_copy, iodefs_key
+    ):
+        run_desc = {'output': {iodefs_key: '../iodef.xml'}}
         desc_file = Path('foo.yaml')
         pwd = Path.cwd()
         nemo_cmd.prepare._copy_run_set_files(
@@ -599,14 +619,22 @@ class TestCopyRunSetFiles:
         ]
         assert m_copy.call_args_list == expected
 
+    @pytest.mark.parametrize(
+        'iodefs_key, domains_key, fields_key', [
+            ('iodefs', 'domaindefs', 'fielddefs'),
+            ('files', 'domain', 'fields'),
+        ]
+    )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    def test_nemo36_copy_run_set_files_relative_path(self, m_sxsm, m_copy):
+    def test_nemo36_copy_run_set_files_relative_path(
+        self, m_sxsm, m_copy, iodefs_key, domains_key, fields_key
+    ):
         run_desc = {
             'output': {
-                'files': '../iodef.xml',
-                'domain': '../domain_def.xml',
-                'fields': '../field_def.xml',
+                iodefs_key: '../iodef.xml',
+                domains_key: '../domain_def.xml',
+                fields_key: '../field_def.xml',
             },
         }
         desc_file = Path('foo.yaml')
@@ -630,6 +658,27 @@ class TestCopyRunSetFiles:
             ),
         ]
         assert m_copy.call_args_list == expected
+
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    @patch('nemo_cmd.prepare._set_xios_server_mode')
+    def test_nemo36_files_def(self, m_sxsm, m_copy):
+        run_desc = {
+            'output': {
+                'iodefs': '../iodef.xml',
+                'filedefs': '../file_def.xml',
+                'domaindefs': '../domain_def.xml',
+                'fielddefs': '../field_def.xml',
+            },
+        }
+        desc_file = Path('foo.yaml')
+        pwd = Path.cwd()
+        nemo_cmd.prepare._copy_run_set_files(
+            run_desc, desc_file, pwd, 'run_dir', nemo34=False
+        )
+        assert m_copy.call_args_list[-1] == call(
+            str(pwd.parent / 'file_def.xml'),
+            str(Path('run_dir') / 'file_def.xml')
+        )
 
 
 class TestMakeExecutableLinks:

@@ -308,29 +308,50 @@ and :envvar:`$USER` as an alternative spelling of the user's userid.
 If relative paths are given,
 they are appended to the directory containing the run description file.
 
-:kbd:`files`
+:kbd:`iodefs`
   The path and name of the :file:`iodef.xml` output files definitions file to use for the run.
   It is copied into the run directory as :file:`iodef.xml`
   (the file name required by XIOS).
   The value is typically either:
 
-  * a relative or absolute path to an :file:`iodef.xml` file in the directory tree in which you also store your model configuration elements
   * a relative or absolute run-specific output files definitions file
+  * a relative or absolute path to an :file:`iodef.xml` file in the directory tree in which you also store your model configuration elements;
+    e.g. :file:`$HOME/CANYONS/mackenzie_canyon/output/iodef.xml`
 
-:kbd:`domain`
+  This key may also be spelled :kbd:`files` for backward compatibility.
+
+:kbd:`domainefs`
   The path and name of the :file:`domain_def.xml` output domains definitions file to use for the run.
   It is copied into the run directory as :file:`domain_def.xml`
   (the file name required by XIOS).
   The value is typically either:
 
   * a relative or absolute path to a :file:`domain_def.xml` file in the directory tree in which you also store your model configuration elements
+    e.g. :file:`$HOME/CANYONS/mackenzie_canyon/output/domain_def.xml`
   * a relative or absolute run-specific output domains definitions file
 
-:kbd:`fields`
+  This key may also be spelled :kbd:`domain` for backward compatibility.
+
+:kbd:`fielddefs`
   The path and name of the :file:`field_def.xml` output fields definitions file to use for the run.
   It is copied into the run directory as :file:`field_def.xml`
   (the file name required by XIOS).
   The value is typically a relative or absolute path to :file:`CONFIG/SHARED/field_def.xml`.
+
+  This key may also be spelled :kbd:`fields` for backward compatibility.
+
+:kbd:`filedefs` (optional)
+  The path and name of the :file:`file_def.xml` output domains definitions file to use for the run.
+  This item is optional because it is only used by XIOS-2
+  (but it is required by XIOS-2).
+  It is copied into the run directory as :file:`file_def.xml`
+  (the file name required by XIOS-2).
+  The value is typically either:
+
+  * a relative or absolute run-specific output domains definitions file
+  * a relative or absolute path to a :file:`file_def.xml` file in the directory tree in which you also store your model configuration elements
+    e.g. :file:`$HOME/CANYONS/mackenzie_canyon/output/file_def.xml`
+
 
 The :kbd:`output` section also contains key-value pairs that control how the XIOS server is run and,
 in the case where it is run as a separate server,
@@ -700,16 +721,17 @@ The path may be relative or absolute,
 and may contain :kbd:`~` or :envvar:`$HOME` as alternative spellings of the user's home directory,
 and :envvar:`$USER` as an alternative spelling of the user's userid.
 If relative a path is given,
-it is appended to the directory containing the run description file.
+it is appended to the directory containing the run description YAML file.
 
-:kbd:`files`
+:kbd:`iodefs`
   The path and name of the :file:`iodef.xml` output files definitions file to use for the run.
   It is copied into the run directory as :file:`iodef.xml`
   (the file name required by XIOS).
   The value is typically either:
 
-  * a relative or absolute path to an :file:`iodef.xml` file in the directory tree in which you also store your model configuration elements
   * a relative or absolute run-specific output files definitions file
+  * a relative or absolute path to an :file:`iodef.xml` file in the directory tree in which you also store your model configuration elements
+    e.g. :file:`$HOME/CANYONS/mackenzie_canyon/output/iodef.xml`
 
 
 .. _NEMO-3.4-VCS-Revisions:
