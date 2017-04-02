@@ -5,6 +5,21 @@ Change Log
 Next Release
 ============
 
+* Add optional ``filedefs`` item to output section of run description YAML
+  file to facilitate the use of a ``file_Def.xml`` file with XIOS-2.
+
+* Change spelling of keys in output section of run description YAML file:
+
+  * ``files`` becomes ``iodefs``
+  *  ``domain`` becomes ``domaindefs``
+  *  ``fields`` becomes ``fielddefs``
+
+  Old spellings are retained as fall-backs for backward compatibility.
+
+* Fix Python 2.7 Unicode/str issue in Mercurial version control revision
+  and status recording.
+  See https://bitbucket.org/salishsea/nemo-cmd/issues/16.
+
 * Add option to provide in the run description YAML file a list of
   PBS resource key-value pairs to produce ``#PBS -l`` directives for in the
   run shell script.
