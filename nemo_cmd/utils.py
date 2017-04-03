@@ -47,6 +47,9 @@ def get_run_desc_value(
                                  shell and user variables expanded and symbolic
                                  links resolved via
                                  :func:`nemo_cmd.resolved_path`.
+                                 Also confirm that the path exists,
+                                 otherwise,
+                                 raise a :py:exec:`SystemExit` exception.
 
     :param str run_dir: Path of the temporary run directory.
 
@@ -77,4 +80,14 @@ def get_run_desc_value(
         value = expanded_path(value)
     if resolve_path:
         value = resolved_path(value)
+        if not value.exists():
+            logger.error(
+                '{path} path from "{keys}" key not found - please check your '
+                'run description YAML file'.format(
+                    path=value, keys=': '.join(keys)
+                )
+            )
+            if run_dir:
+                nemo_cmd.prepare.remove_run_dir(run_dir)
+            raise SystemExit(2)
     return value

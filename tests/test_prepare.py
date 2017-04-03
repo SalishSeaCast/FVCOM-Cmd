@@ -196,8 +196,10 @@ class TestCheckNemoExec:
         ]
     )
     @patch('nemo_cmd.prepare.logger')
+    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
     def test_iom_server_exec_not_found(
-        self, m_log, config_name_key, nemo_code_config_key, tmpdir
+        self, m_get_run_desc_value, m_log, config_name_key,
+        nemo_code_config_key, tmpdir
     ):
         p_code_config = tmpdir.ensure_dir('NEMO-3.4-code')
         run_desc = {
@@ -207,6 +209,7 @@ class TestCheckNemoExec:
             },
         }
         p_bin_dir = p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
+        m_get_run_desc_value.side_effect = (Path(p_code_config), 'SalishSea')
         p_exists = patch(
             'nemo_cmd.prepare.Path.exists', side_effect=[True, False]
         )
@@ -225,8 +228,10 @@ class TestCheckNemoExec:
         ]
     )
     @patch('nemo_cmd.prepare.logger')
+    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
     def test_nemo36_no_iom_server_check(
-        self, m_log, config_name_key, nemo_code_config_key, tmpdir
+        self, m_get_run_desc_value, m_log, config_name_key,
+        nemo_code_config_key, tmpdir
     ):
         p_code_config = tmpdir.ensure_dir('NEMO-3.6-code')
         run_desc = {
@@ -236,6 +241,7 @@ class TestCheckNemoExec:
             },
         }
         p_code_config.ensure_dir('SalishSea', 'BLD', 'bin')
+        m_get_run_desc_value.side_effect = (Path(p_code_config), 'SalishSea')
         with patch('nemo_cmd.prepare.Path.exists') as m_exists:
             nemo_cmd.prepare._check_nemo_exec(run_desc, nemo34=False)
         assert m_exists.call_count == 1
@@ -529,18 +535,23 @@ class TestCopyRunSetFiles:
     """Unit tests for `nemo prepare` _copy_run_set_files() function.
     """
 
-    @pytest.mark.parametrize('iodefs_key', [
-        'iodefs',
-        'files',
-    ])
+    @pytest.mark.parametrize(
+        'iodefs_key',
+        [
+            'iodefs',  # recommended
+            'files',  # backward compatibility
+        ]
+    )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
     def test_nemo34_copy_run_set_files_no_path(
-        self, m_sxsm, m_copy, iodefs_key
+        self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key
     ):
         run_desc = {'output': {iodefs_key: 'iodef.xml'}}
         desc_file = Path('foo.yaml')
         pwd = Path.cwd()
+        m_get_run_desc_value.return_value = pwd / 'iodef.xml'
         nemo_cmd.prepare._copy_run_set_files(
             run_desc, desc_file, pwd, 'run_dir', nemo34=True
         )
@@ -555,15 +566,18 @@ class TestCopyRunSetFiles:
         assert m_copy.call_args_list == expected
 
     @pytest.mark.parametrize(
-        'iodefs_key, domains_key, fields_key', [
-            ('iodefs', 'domaindefs', 'fielddefs'),
-            ('files', 'domain', 'fields'),
+        'iodefs_key, domains_key, fields_key',
+        [
+            ('iodefs', 'domaindefs', 'fielddefs'),  # recommended
+            ('files', 'domain', 'fields'),  # backward compatibility
         ]
     )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
     def test_nemo36_copy_run_set_files_no_path(
-        self, m_sxsm, m_copy, iodefs_key, domains_key, fields_key
+        self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key, domains_key,
+        fields_key
     ):
         run_desc = {
             'output': {
@@ -574,6 +588,10 @@ class TestCopyRunSetFiles:
         }
         desc_file = Path('foo.yaml')
         pwd = Path.cwd()
+        m_get_run_desc_value.side_effect = (
+            pwd / 'iodef.xml', pwd / 'domain_def.xml', pwd / 'field_def.xml',
+            KeyError
+        )
         nemo_cmd.prepare._copy_run_set_files(
             run_desc, desc_file, pwd, 'run_dir', nemo34=False
         )
@@ -591,18 +609,23 @@ class TestCopyRunSetFiles:
         ]
         assert m_copy.call_args_list == expected
 
-    @pytest.mark.parametrize('iodefs_key', [
-        'iodefs',
-        'files',
-    ])
+    @pytest.mark.parametrize(
+        'iodefs_key',
+        [
+            'iodefs',  # recommended
+            'files',  # backward compatibility
+        ]
+    )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
     def test_nemo34_copy_run_set_files_relative_path(
-        self, m_sxsm, m_copy, iodefs_key
+        self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key
     ):
         run_desc = {'output': {iodefs_key: '../iodef.xml'}}
         desc_file = Path('foo.yaml')
         pwd = Path.cwd()
+        m_get_run_desc_value.return_value = (pwd / '../iodef.xml').resolve()
         nemo_cmd.prepare._copy_run_set_files(
             run_desc, desc_file, pwd, 'run_dir', nemo34=True
         )
@@ -620,15 +643,18 @@ class TestCopyRunSetFiles:
         assert m_copy.call_args_list == expected
 
     @pytest.mark.parametrize(
-        'iodefs_key, domains_key, fields_key', [
-            ('iodefs', 'domaindefs', 'fielddefs'),
-            ('files', 'domain', 'fields'),
+        'iodefs_key, domains_key, fields_key',
+        [
+            ('iodefs', 'domaindefs', 'fielddefs'),  # recommended
+            ('files', 'domain', 'fields'),  # backward compatibility
         ]
     )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
+    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
     def test_nemo36_copy_run_set_files_relative_path(
-        self, m_sxsm, m_copy, iodefs_key, domains_key, fields_key
+        self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key, domains_key,
+        fields_key
     ):
         run_desc = {
             'output': {
@@ -639,6 +665,11 @@ class TestCopyRunSetFiles:
         }
         desc_file = Path('foo.yaml')
         pwd = Path.cwd()
+        m_get_run_desc_value.side_effect = (
+            (pwd / '../iodef.xml').resolve(),
+            (pwd / '../domain_def.xml').resolve(),
+            (pwd / '../field_def.xml').resolve(), KeyError
+        )
         nemo_cmd.prepare._copy_run_set_files(
             run_desc, desc_file, pwd, 'run_dir', nemo34=False
         )
@@ -661,7 +692,8 @@ class TestCopyRunSetFiles:
 
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    def test_nemo36_files_def(self, m_sxsm, m_copy):
+    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    def test_nemo36_files_def(self, m_get_run_desc_value, m_sxsm, m_copy):
         run_desc = {
             'output': {
                 'iodefs': '../iodef.xml',
@@ -672,6 +704,12 @@ class TestCopyRunSetFiles:
         }
         desc_file = Path('foo.yaml')
         pwd = Path.cwd()
+        m_get_run_desc_value.side_effect = (
+            (pwd / '../iodef.xml').resolve(),
+            (pwd / '../domain_def.xml').resolve(),
+            (pwd / '../field_def.xml').resolve(),
+            (pwd / '../file_def.xml').resolve()
+        )
         nemo_cmd.prepare._copy_run_set_files(
             run_desc, desc_file, pwd, 'run_dir', nemo34=False
         )
@@ -773,27 +811,6 @@ class TestMakeGridLinks:
         }
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
-        m_rm_run_dir.assert_called_once_with('run_dir')
-
-    @patch('nemo_cmd.prepare.remove_run_dir')
-    @patch('nemo_cmd.prepare.logger')
-    def test_no_forcing_dir(self, m_logger, m_rm_run_dir):
-        run_desc = {
-            'paths': {
-                'forcing': '/foo'
-            },
-            'grid': {
-                'coordinates': 'coords.nc',
-                'bathymetry': 'bathy.nc'
-            }
-        }
-        p_exists = patch('nemo_cmd.prepare.Path.exists', return_value=False)
-        with pytest.raises(SystemExit), p_exists:
-            nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
-        m_logger.error.assert_called_once_with(
-            '/foo not found; cannot create symlinks - '
-            'please check the forcing path in your run description file'
-        )
         m_rm_run_dir.assert_called_once_with('run_dir')
 
     @patch('nemo_cmd.prepare.remove_run_dir')

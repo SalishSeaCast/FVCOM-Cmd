@@ -15,6 +15,11 @@
 """Unit tests for utils module.
 """
 try:
+    from pathlib import Path
+except ImportError:
+    # Python 2.7
+    from pathlib2 import Path
+try:
     from unittest.mock import patch
 except ImportError:
     from mock import patch
@@ -71,3 +76,12 @@ class TestGetRunDescValue:
         run_desc = {'foo': 'bar'}
         value = utils.get_run_desc_value(run_desc, ('foo',), resolve_path=True)
         assert value == m_resolved_path('bar')
+
+    @patch('nemo_cmd.utils.resolved_path')
+    def test_resolved_path_does_not_exist(
+        self, m_resolved_path, m_rm_run_dir, m_logger
+    ):
+        m_resolved_path().exists.return_value = False
+        run_desc = {'foo': 'bar'}
+        with pytest.raises(SystemExit):
+            utils.get_run_desc_value(run_desc, ('foo',), resolve_path=True)
