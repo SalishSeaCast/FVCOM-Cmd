@@ -5,6 +5,10 @@ Change Log
 Next Release
 ============
 
+* The existence of all paths/files given in the run description YAML file
+  is confirmed.
+  An informative error message is emitted for paths/files that don't exist.
+
 * Add optional ``filedefs`` item to output section of run description YAML
   file to facilitate the use of a ``file_Def.xml`` file with XIOS-2.
 
