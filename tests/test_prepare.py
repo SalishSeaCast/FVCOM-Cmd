@@ -67,7 +67,7 @@ class TestParser:
 @patch('nemo_cmd.prepare.lib.load_run_desc')
 @patch('nemo_cmd.prepare._check_nemo_exec')
 @patch('nemo_cmd.prepare._check_xios_exec')
-@patch('nemo_cmd.resolved_path')
+@patch('nemo_cmd.prepare.resolved_path')
 @patch('nemo_cmd.prepare._make_run_dir')
 @patch('nemo_cmd.prepare._make_namelists')
 @patch('nemo_cmd.prepare._copy_run_set_files')
@@ -196,7 +196,7 @@ class TestCheckNemoExec:
         ]
     )
     @patch('nemo_cmd.prepare.logger')
-    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    @patch('nemo_cmd.prepare.get_run_desc_value')
     def test_iom_server_exec_not_found(
         self, m_get_run_desc_value, m_log, config_name_key,
         nemo_code_config_key, tmpdir
@@ -228,7 +228,7 @@ class TestCheckNemoExec:
         ]
     )
     @patch('nemo_cmd.prepare.logger')
-    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    @patch('nemo_cmd.prepare.get_run_desc_value')
     def test_nemo36_no_iom_server_check(
         self, m_get_run_desc_value, m_log, config_name_key,
         nemo_code_config_key, tmpdir
@@ -544,7 +544,7 @@ class TestCopyRunSetFiles:
     )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    @patch('nemo_cmd.prepare.get_run_desc_value')
     def test_nemo34_copy_run_set_files_no_path(
         self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key
     ):
@@ -574,7 +574,7 @@ class TestCopyRunSetFiles:
     )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    @patch('nemo_cmd.prepare.get_run_desc_value')
     def test_nemo36_copy_run_set_files_no_path(
         self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key, domains_key,
         fields_key
@@ -618,7 +618,7 @@ class TestCopyRunSetFiles:
     )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    @patch('nemo_cmd.prepare.get_run_desc_value')
     def test_nemo34_copy_run_set_files_relative_path(
         self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key
     ):
@@ -651,7 +651,7 @@ class TestCopyRunSetFiles:
     )
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    @patch('nemo_cmd.prepare.get_run_desc_value')
     def test_nemo36_copy_run_set_files_relative_path(
         self, m_get_run_desc_value, m_sxsm, m_copy, iodefs_key, domains_key,
         fields_key
@@ -692,7 +692,7 @@ class TestCopyRunSetFiles:
 
     @patch('nemo_cmd.prepare.shutil.copy2')
     @patch('nemo_cmd.prepare._set_xios_server_mode')
-    @patch('nemo_cmd.prepare.nemo_cmd.utils.get_run_desc_value')
+    @patch('nemo_cmd.prepare.get_run_desc_value')
     def test_nemo36_files_def(self, m_get_run_desc_value, m_sxsm, m_copy):
         run_desc = {
             'output': {

@@ -37,8 +37,7 @@ import hglib
 
 from nemo_cmd import lib, fspath, resolved_path
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
-import nemo_cmd.prepare
-import nemo_cmd.utils
+from nemo_cmd.utils import get_run_desc_value
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +124,7 @@ def prepare(desc_file, nemo34, nocheck_init):
     run_desc = lib.load_run_desc(desc_file)
     nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
     xios_bin_dir = _check_xios_exec(run_desc) if not nemo34 else ''
-    run_set_dir = nemo_cmd.resolved_path(desc_file).parent
+    run_set_dir = resolved_path(desc_file).parent
     run_dir = _make_run_dir(run_desc)
     _make_namelists(run_set_dir, run_desc, run_dir, nemo34)
     _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34)
@@ -157,25 +156,23 @@ def _check_nemo_exec(run_desc, nemo34):
     :raises: SystemExit
     """
     try:
-        nemo_config_dir = nemo_cmd.utils.get_run_desc_value(
+        nemo_config_dir = get_run_desc_value(
             run_desc, ('paths', 'NEMO code config'),
             resolve_path=True,
             fatal=False
         )
     except KeyError:
         # Alternate key spelling for backward compatibility
-        nemo_config_dir = nemo_cmd.utils.get_run_desc_value(
+        nemo_config_dir = get_run_desc_value(
             run_desc, ('paths', 'NEMO-code-config'), resolve_path=True
         )
     try:
-        config_name = nemo_cmd.utils.get_run_desc_value(
+        config_name = get_run_desc_value(
             run_desc, ('config name',), fatal=False
         )
     except KeyError:
         # Alternate key spelling for backward compatibility
-        config_name = nemo_cmd.utils.get_run_desc_value(
-            run_desc, ('config_name',)
-        )
+        config_name = get_run_desc_value(run_desc, ('config_name',))
     nemo_bin_dir = nemo_config_dir / config_name / 'BLD' / 'bin'
     nemo_exec = nemo_bin_dir / 'nemo.exe'
     if not nemo_exec.exists():
@@ -207,7 +204,7 @@ def _check_xios_exec(run_desc):
 
     :raises: SystemExit
     """
-    xios_code_path = nemo_cmd.utils.get_run_desc_value(
+    xios_code_path = get_run_desc_value(
         run_desc, ('paths', 'XIOS'), resolve_path=True
     )
     xios_bin_dir = xios_code_path / 'bin'
@@ -298,7 +295,7 @@ def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
 
     :raises: SystemExit
     """
-    namelists = run_desc['namelists']
+    namelists = get_run_desc_value(run_desc, ('namelists',), run_dir=run_dir)
     namelist_filename = 'namelist'
     with open(os.path.join(run_dir, namelist_filename), 'wt') as namelist:
         for nl in namelists:
@@ -343,9 +340,13 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
     except KeyError:
         # Alternate key spelling for backward compatibility
         config_name = run_desc['config_name']
-    for namelist_filename in run_desc['namelists']:
+    namelists = get_run_desc_value(run_desc, ('namelists',), run_dir=run_dir)
+    for namelist_filename in namelists:
         with open(os.path.join(run_dir, namelist_filename), 'wt') as namelist:
-            for nl in run_desc['namelists'][namelist_filename]:
+            namelist_files = get_run_desc_value(
+                run_desc, ('namelists', namelist_filename), run_dir=run_dir
+            )
+            for nl in namelist_files:
                 try:
                     with (run_set_dir / nl).open('rt') as f:
                         namelist.writelines(f.readlines())
@@ -355,12 +356,12 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
                     remove_run_dir(run_dir)
                     raise SystemExit(2)
         ref_namelist = namelist_filename.replace('_cfg', '_ref')
-        if ref_namelist not in run_desc['namelists']:
+        if ref_namelist not in namelists:
             ref_namelist_target = (
                 nemo_config_dir / config_name / 'EXP00' / ref_namelist
             )
             Path(run_dir, ref_namelist).symlink_to(ref_namelist_target)
-    if 'namelist_cfg' in run_desc['namelists']:
+    if 'namelist_cfg' in namelists:
         _set_mpi_decomposition('namelist_cfg', run_desc, run_dir)
     else:
         logger.error(
@@ -386,7 +387,9 @@ def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
     :raises: SystemExit
     """
     try:
-        jpni, jpnj = run_desc['MPI decomposition'].split('x')
+        jpni, jpnj = get_run_desc_value(
+            run_desc, ('MPI decomposition',), fatal=False
+        ).split('x')
     except KeyError:
         logger.error(
             'MPI decomposition value not found in YAML run description file. '
@@ -446,7 +449,7 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
                            the default is to prepare a NEMO-3.6 run
     """
     try:
-        iodefs = nemo_cmd.utils.get_run_desc_value(
+        iodefs = get_run_desc_value(
             run_desc, ('output', 'iodefs'),
             resolve_path=True,
             run_dir=run_dir,
@@ -454,7 +457,7 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
         )
     except KeyError:
         # Alternate key spelling for backward compatibility
-        iodefs = nemo_cmd.utils.get_run_desc_value(
+        iodefs = get_run_desc_value(
             run_desc, ('output', 'files'), resolve_path=True, run_dir=run_dir
         )
     run_set_files = [
@@ -467,7 +470,7 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
         )
     else:
         try:
-            domains_def = nemo_cmd.utils.get_run_desc_value(
+            domains_def = get_run_desc_value(
                 run_desc,
                 ('output', 'domaindefs'),
                 resolve_path=True,
@@ -476,13 +479,13 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
             )
         except KeyError:
             # Alternate key spelling for backward compatibility
-            domains_def = nemo_cmd.utils.get_run_desc_value(
+            domains_def = get_run_desc_value(
                 run_desc, ('output', 'domain'),
                 resolve_path=True,
                 run_dir=run_dir
             )
         try:
-            fields_def = nemo_cmd.utils.get_run_desc_value(
+            fields_def = get_run_desc_value(
                 run_desc, ('output', 'fielddefs'),
                 resolve_path=True,
                 run_dir=run_dir,
@@ -490,7 +493,7 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
             )
         except KeyError:
             # Alternate key spelling for backward compatibility
-            fields_def = nemo_cmd.utils.get_run_desc_value(
+            fields_def = get_run_desc_value(
                 run_desc, ('output', 'fields'),
                 resolve_path=True,
                 run_dir=run_dir
@@ -500,7 +503,7 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
             (fields_def, 'field_def.xml'),
         ])
         try:
-            files_def = nemo_cmd.utils.get_run_desc_value(
+            files_def = get_run_desc_value(
                 run_desc, ('output', 'filedefs'),
                 resolve_path=True,
                 run_dir=run_dir,
@@ -511,10 +514,7 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
             # `files` key is optional and only used with XIOS-2
             pass
     for source, dest_name in run_set_files:
-        shutil.copy2(
-            nemo_cmd.fspath(source),
-            nemo_cmd.fspath(Path(run_dir) / dest_name)
-        )
+        shutil.copy2(fspath(source), fspath(Path(run_dir) / dest_name))
     if not nemo34:
         _set_xios_server_mode(run_desc, run_dir)
 
@@ -531,7 +531,9 @@ def _set_xios_server_mode(run_desc, run_dir):
     :raises: SystemExit
     """
     try:
-        sep_xios_server = run_desc['output']['separate XIOS server']
+        sep_xios_server = get_run_desc_value(
+            run_desc, ('output', 'separate XIOS server'), fatal=False
+        )
     except KeyError:
         logger.error(
             'separate XIOS server key/value not found in output section '
@@ -597,17 +599,17 @@ def _make_grid_links(run_desc, run_dir):
 
     :raises: SystemExit
     """
-    coords_path = nemo_cmd.utils.get_run_desc_value(
+    coords_path = get_run_desc_value(
         run_desc, ('grid', 'coordinates'), expand_path=True, run_dir=run_dir
     )
-    bathy_path = nemo_cmd.utils.get_run_desc_value(
+    bathy_path = get_run_desc_value(
         run_desc, ('grid', 'bathymetry'), expand_path=True, run_dir=run_dir
     )
     if coords_path.is_absolute() and bathy_path.is_absolute():
         grid_paths = ((coords_path, 'coordinates.nc'),
                       (bathy_path, 'bathy_meter.nc'))
     else:
-        nemo_forcing_dir = nemo_cmd.utils.get_run_desc_value(
+        nemo_forcing_dir = get_run_desc_value(
             run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
         )
         grid_dir = nemo_forcing_dir / 'grid'
@@ -957,7 +959,7 @@ def write_repo_rev_file(repo, run_dir, vcs_func):
     :param vcs_func: Function to call to gather revision and status
                      information from repo.
     """
-    repo_path = nemo_cmd.resolved_path(repo)
+    repo_path = resolved_path(repo)
     repo_rev_file_lines = vcs_func(repo, run_dir)
     rev_file = Path(run_dir) / '{repo.name}_rev.txt'.format(repo=repo_path)
     with rev_file.open('wt') as f:
