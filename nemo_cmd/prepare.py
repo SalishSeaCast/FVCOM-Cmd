@@ -613,10 +613,8 @@ def _make_grid_links(run_desc, run_dir):
             run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
         )
         grid_dir = nemo_forcing_dir / 'grid'
-        grid_paths = (
-            (grid_dir / run_desc['grid']['coordinates'], 'coordinates.nc'),
-            (grid_dir / run_desc['grid']['bathymetry'], 'bathy_meter.nc')
-        )
+        grid_paths = ((grid_dir / coords_path, 'coordinates.nc'),
+                      (grid_dir / bathy_path, 'bathy_meter.nc'))
     run_dir_path = Path(run_dir)
     for source, link_name in grid_paths:
         if not source.exists():
