@@ -972,6 +972,11 @@ def get_hg_revision(repo, run_dir):
     Effectively record the output of :command:`hg parents -v` and
     :param run_dir:
     :command:`hg status -mardC`.
+    
+    Files named :file:`CONFIG/cfg.txt` and 
+    :file:`TOOLS/COMPILE/full_key_list.txt` are ignored because they change
+    frequently but the changes generally of no consequence;
+    see https://bitbucket.org/salishsea/nemo-cmd/issues/18.
 
     :param repo: Path of Mercurial repository to get revision and status
                  information from.
@@ -1031,6 +1036,10 @@ def get_hg_revision(repo, run_dir):
     repo_rev_file_lines.extend(
         line.decode() for line in revision.desc.splitlines()
     )
+    ignore = (u'CONFIG/cfg.txt', u'TOOLS/COMPILE/full_key_list.txt')
+    for s in copy(status):
+        if s[1].decode().endswith(ignore):
+            status.remove(s)
     if status:
         logger.warning('There are uncommitted changes in {}'.format(repo))
         repo_rev_file_lines.append('uncommitted changes:')

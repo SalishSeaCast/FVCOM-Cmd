@@ -1102,7 +1102,7 @@ class TestRecordVcsRevision:
         nemo_code_repo = tmpdir.ensure_dir('NEMO-3.6-code')
         run_desc = {
             'paths': {
-                'forcing': 'NEO-forcing/'
+                'forcing': 'NEMO-forcing/'
             },
             'vcs revisions': {
                 'hg': [str(nemo_code_repo)]
