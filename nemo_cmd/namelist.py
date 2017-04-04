@@ -102,9 +102,9 @@ def auto_token(value):
             GroupEndToken()
             if value[1:] == 'end' else GroupStartToken(value[1:])
         )
-    elif value.lower() == ".true.":
+    elif value.lower() == ".true." or value.lower() == 'true':
         return BooleanToken(True)
-    elif value.lower() == ".false.":
+    elif value.lower() == ".false."  or value.lower() == 'false':
         return BooleanToken(False)
     try:
         return IntegerToken(int(value))
