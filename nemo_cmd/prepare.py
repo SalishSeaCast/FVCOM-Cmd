@@ -35,9 +35,8 @@ import cliff.command
 from dateutil import tz
 import hglib
 
-from nemo_cmd import lib, fspath, resolved_path
+from nemo_cmd import lib, fspath, resolved_path, expanded_path
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
-from nemo_cmd.utils import get_run_desc_value
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +132,76 @@ def prepare(desc_file, nemo34, nocheck_init):
     _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init)
     _record_vcs_revisions(run_desc, run_dir)
     return run_dir
+
+
+def get_run_desc_value(
+    run_desc,
+    keys,
+    expand_path=False,
+    resolve_path=False,
+    run_dir=None,
+    fatal=True
+):
+    """Get the run description value defined by the sequence of keys.
+
+    :param dict run_desc: Run description dictionary.
+
+    :param sequence keys: Keys that lead to the value to be returned.
+
+    :param boolean expand_path: When :py:obj:`True`, return the value as a
+                                :class:`pathlib.Path` object with shell and
+                                user variables expanded via
+                                :func:`nemo_cmd.expanded_path`.
+
+    :param boolean resolve_path: When :py:obj:`True`, return the value as an
+                                 absolute :class:`pathlib.Path` object with
+                                 shell and user variables expanded and symbolic
+                                 links resolved via
+                                 :func:`nemo_cmd.resolved_path`.
+                                 Also confirm that the path exists,
+                                 otherwise,
+                                 raise a :py:exc:`SystemExit` exception.
+
+    :param str run_dir: Path of the temporary run directory.
+
+    :param boolean fatal: When :py:obj:`True`, delete the under construction
+                          temporary run directory, and raise a
+                          :py:exc:`SystemExit` exception.
+                          Otherwise, raise a :py:exc:`KeyError` exception.
+
+    :raises: :py:exc:`SystemExit` or :py:exc:`KeyError`
+
+    :returns: Run description value defined by the sequence of keys.
+    """
+    try:
+        value = run_desc
+        for key in keys:
+            value = value[key]
+    except KeyError:
+        if not fatal:
+            raise
+        logger.error(
+            '"{}" key not found - please check your run description YAML file'
+            .format(': '.join(keys))
+        )
+        if run_dir:
+            _remove_run_dir(run_dir)
+        raise SystemExit(2)
+    if expand_path:
+        value = expanded_path(value)
+    if resolve_path:
+        value = resolved_path(value)
+        if not value.exists():
+            logger.error(
+                '{path} path from "{keys}" key not found - please check your '
+                'run description YAML file'.format(
+                    path=value, keys=': '.join(keys)
+                )
+            )
+            if run_dir:
+                _remove_run_dir(run_dir)
+            raise SystemExit(2)
+    return value
 
 
 def _check_nemo_exec(run_desc, nemo34):
@@ -232,7 +301,7 @@ def _make_run_dir(run_desc):
     return run_dir
 
 
-def remove_run_dir(run_dir):
+def _remove_run_dir(run_dir):
     """Remove all files from run_dir, then remove run_dir.
 
     Intended to be used as a clean-up operation when some other part
@@ -305,7 +374,7 @@ def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
                     namelist.write('\n\n')
             except IOError as e:
                 logger.error(e)
-                remove_run_dir(run_dir)
+                _remove_run_dir(run_dir)
                 raise SystemExit(2)
         namelist.writelines(EMPTY_NAMELISTS)
     _set_mpi_decomposition(namelist_filename, run_desc, run_dir)
@@ -353,7 +422,7 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
                         namelist.write('\n\n')
                 except IOError as e:
                     logger.error(e)
-                    remove_run_dir(run_dir)
+                    _remove_run_dir(run_dir)
                     raise SystemExit(2)
         ref_namelist = namelist_filename.replace('_cfg', '_ref')
         if ref_namelist not in namelists:
@@ -398,7 +467,7 @@ def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
             'that says how you want the domain distributed over the '
             'processors in the i (longitude) and j (latitude) dimensions.'
         )
-        remove_run_dir(run_dir)
+        _remove_run_dir(run_dir)
         raise SystemExit(2)
     with open(os.path.join(run_dir, namelist_filename), 'rt') as f:
         lines = f.readlines()
@@ -544,7 +613,7 @@ def _set_xios_server_mode(run_desc, run_dir):
             'that say whether to run the XIOS server(s) attached or detached, '
             'and how many of them to use.'
         )
-        remove_run_dir(run_dir)
+        _remove_run_dir(run_dir)
         raise SystemExit(2)
     tree = xml.etree.ElementTree.parse(os.path.join('iodef.xml'))
     root = tree.getroot()
@@ -623,7 +692,7 @@ def _make_grid_links(run_desc, run_dir):
                 'please check the forcing path and grid file names '
                 'in your run description file'.format(source)
             )
-            remove_run_dir(run_dir)
+            _remove_run_dir(run_dir)
             raise SystemExit(2)
         (run_dir_path / link_name).symlink_to(source)
 
@@ -654,7 +723,7 @@ def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
             'please check the forcing path in your run description file'
             .format(nemo_forcing_dir)
         )
-        remove_run_dir(run_dir)
+        _remove_run_dir(run_dir)
         raise SystemExit(2)
     if nemo34:
         _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init)
@@ -696,7 +765,7 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
             'please check the forcing path and initial conditions file names '
             'in your run description file'.format(ic_source)
         )
-        remove_run_dir(run_dir)
+        _remove_run_dir(run_dir)
         raise SystemExit(2)
     os.symlink(ic_source, ic_link_name)
     for source, link_name in forcing_dirs:
@@ -707,7 +776,7 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
                 'please check the forcing paths and file names '
                 'in your run description file'.format(link_path)
             )
-            remove_run_dir(run_dir)
+            _remove_run_dir(run_dir)
             raise SystemExit(2)
         os.symlink(link_path, link_name)
     _check_atmos_files(run_desc, run_dir)
@@ -741,7 +810,7 @@ def _make_forcing_links_nemo36(run_desc, run_dir, nocheck_init):
                     'please check the forcing paths and file names '
                     'in your run description file'.format(link_path)
                 )
-                remove_run_dir(run_dir)
+                _remove_run_dir(run_dir)
                 raise SystemExit(2)
         os.symlink(link_path, os.path.join(run_dir, link_name))
         try:
@@ -759,7 +828,7 @@ def _make_forcing_links_nemo36(run_desc, run_dir, nocheck_init):
                         'unknown forcing link checker: {}'
                         .format(link_checker)
                     )
-                    remove_run_dir(run_dir)
+                    _remove_run_dir(run_dir)
                     raise SystemExit(2)
 
 
@@ -841,7 +910,7 @@ def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
                             dir=link_path
                         )
                     )
-                    remove_run_dir(run_dir)
+                    _remove_run_dir(run_dir)
                     raise SystemExit(2)
 
 
@@ -921,7 +990,7 @@ def _check_atmos_files(run_desc, run_dir):
                             dir=os.path.join(nemo_forcing_dir, atmos_dir)
                         )
                     )
-                    remove_run_dir(run_dir)
+                    _remove_run_dir(run_dir)
                     raise SystemExit(2)
 
 
@@ -1006,7 +1075,7 @@ def get_hg_revision(repo, run_dir):
             'unable to find Mercurial repo root in or above '
             '{repo_path}'.format(repo_path=repo_path)
         )
-        remove_run_dir(run_dir)
+        _remove_run_dir(run_dir)
         raise SystemExit(2)
     revision = parents[0]
     repo_rev_file_lines = [
