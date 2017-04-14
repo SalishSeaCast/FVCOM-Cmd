@@ -1041,8 +1041,14 @@ def _record_vcs_revisions(run_desc, run_dir):
     if 'vcs revisions' not in run_desc:
         return
     vcs_funcs = {'hg': get_hg_revision}
-    for vcs_tool in run_desc['vcs revisions']:
-        for repo in run_desc['vcs revisions'][vcs_tool]:
+    vcs_tools = get_run_desc_value(
+        run_desc, ('vcs revisions',), run_dir=run_dir
+    )
+    for vcs_tool in vcs_tools:
+        repos = get_run_desc_value(
+            run_desc, ('vcs revisions', vcs_tool), run_dir=run_dir
+        )
+        for repo in repos:
             write_repo_rev_file(Path(repo), run_dir, vcs_funcs[vcs_tool])
 
 

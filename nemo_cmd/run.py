@@ -32,6 +32,7 @@ import cliff.command
 
 from nemo_cmd import api, lib
 from nemo_cmd.fspath import fspath
+from nemo_cmd.prepare import get_run_desc_value
 
 logger = logging.getLogger(__name__)
 
@@ -189,8 +190,13 @@ def run(
     run_dir = Path(run_dir_name).resolve()
     run_desc = lib.load_run_desc(desc_file)
     nemo_processors = lib.get_n_processors(run_desc)
-    if not nemo34 and run_desc['output']['separate XIOS server']:
-        xios_processors = run_desc['output']['XIOS servers']
+    separate_xios_server = get_run_desc_value(
+        run_desc, ('output', 'separate XIOS server')
+    )
+    if not nemo34 and separate_xios_server:
+        xios_processors = get_run_desc_value(
+            run_desc, ('output', 'XIOS servers')
+        )
     else:
         xios_processors = 0
     results_dir = Path(results_dir)
@@ -245,7 +251,7 @@ def _build_batch_script(
     :rtype: str
     """
     script = u'#!/bin/bash\n'
-    email = run_desc['email']
+    email = get_run_desc_value(run_desc, ('email',))
     script = u'\n'.join((
         script, u'{pbs_common}\n'.format(
             pbs_common=api.pbs_common(
@@ -316,7 +322,7 @@ def _definitions(run_desc, run_desc_file, run_dir, results_dir):
         u'DEFLATE="{nemo_cmd} deflate"\n'
         u'GATHER="{nemo_cmd} gather"\n'
     ).format(
-        run_id=run_desc['run_id'],
+        run_id=get_run_desc_value(run_desc, ('run_id',)),
         run_desc_file=run_desc_file,
         run_dir=run_dir,
         results_dir=results_dir,
