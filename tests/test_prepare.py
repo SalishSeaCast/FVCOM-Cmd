@@ -961,11 +961,8 @@ class TestMakeForcingLinks:
     def test_nemo34(self, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
         run_desc = {'paths': {'forcing': 'nemo_forcing_dir'}}
-        patch_exists = patch(
-            'nemo_cmd.prepare.os.path.exists', return_value=True
-        )
         patch_mfl34 = patch('nemo_cmd.prepare._make_forcing_links_nemo34')
-        with patch_exists, patch_mfl34 as m_mfl34:
+        with patch_mfl34 as m_mfl34:
             nemo_cmd.prepare._make_forcing_links(
                 run_desc, str(p_run_dir), nemo34=True, nocheck_init=False
             )
@@ -974,37 +971,12 @@ class TestMakeForcingLinks:
     def test_nemo36(self, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
         run_desc = {'paths': {'forcing': 'nemo_forcing_dir'}}
-        patch_exists = patch(
-            'nemo_cmd.prepare.os.path.exists', return_value=True
-        )
         patch_mfl36 = patch('nemo_cmd.prepare._make_forcing_links_nemo36')
-        with patch_exists, patch_mfl36 as m_mfl36:
+        with patch_mfl36 as m_mfl36:
             nemo_cmd.prepare._make_forcing_links(
                 run_desc, str(p_run_dir), nemo34=False, nocheck_init=False
             )
         m_mfl36.assert_called_once_with(run_desc, str(p_run_dir), False)
-
-    @pytest.mark.parametrize('nemo34', [True, False])
-    @patch('nemo_cmd.prepare.logger')
-    def test_make_forcing_links_no_forcing_dir(self, m_log, nemo34, tmpdir):
-        p_run_dir = tmpdir.ensure_dir('run_dir')
-        run_desc = {'paths': {'forcing': 'foo'}}
-        nemo_cmd.prepare._remove_run_dir = Mock()
-        p_exists = patch('nemo_cmd.prepare.os.path.exists', return_value=False)
-        p_abspath = patch(
-            'nemo_cmd.prepare.os.path.abspath', side_effect=lambda path: path
-        )
-        with pytest.raises(SystemExit), p_exists, p_abspath:
-            nemo_cmd.prepare._make_forcing_links(
-                run_desc, str(p_run_dir), nemo34, nocheck_init=False
-            )
-        m_log.error.assert_called_once_with(
-            'foo not found; cannot create symlinks - '
-            'please check the forcing path in your run description file'
-        )
-        nemo_cmd.prepare._remove_run_dir.assert_called_once_with(
-            str(p_run_dir)
-        )
 
 
 class TestMakeForcingLinksNEMO34:
@@ -1014,17 +986,18 @@ class TestMakeForcingLinksNEMO34:
     @pytest.mark.parametrize(
         'link_path, expected', [
             ('SalishSea_00475200_restart.nc', 'SalishSea_00475200_restart.nc'),
-            ('initial_strat/', 'foo/initial_strat/'),
+            ('initial_strat/', 'initial_strat/'),
         ]
     )
     @patch('nemo_cmd.prepare._check_atmos_files')
     @patch('nemo_cmd.prepare.logger')
     def test_make_forcing_links_no_restart_path(
-        self, m_log, m_caf, link_path, expected
+        self, m_log, m_caf, link_path, expected, tmpdir
     ):
+        forcing_dir = tmpdir.ensure_dir('foo')
         run_desc = {
             'paths': {
-                'forcing': 'foo',
+                'forcing': str(forcing_dir),
             },
             'forcing': {
                 'atmospheric': 'bar',
@@ -1034,19 +1007,14 @@ class TestMakeForcingLinksNEMO34:
             },
         }
         nemo_cmd.prepare._remove_run_dir = Mock()
-        p_exists = patch('nemo_cmd.prepare.os.path.exists', return_value=False)
-        p_abspath = patch(
-            'nemo_cmd.prepare.os.path.abspath', side_effect=lambda path: path
-        )
-        p_chdir = patch('nemo_cmd.prepare.os.chdir')
-        with pytest.raises(SystemExit), p_exists, p_abspath, p_chdir:
+        with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_forcing_links_nemo34(
                 run_desc, 'run_dir', nocheck_init=False
             )
         m_log.error.assert_called_once_with(
             '{} not found; cannot create symlink - '
             'please check the forcing path and initial conditions file names '
-            'in your run description file'.format(expected)
+            'in your run description file'.format(forcing_dir.join(expected))
         )
         nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
 
@@ -1064,26 +1032,55 @@ class TestMakeForcingLinksNEMO34:
                 'rivers': 'rivers/',
             },
         }
-        nemo_cmd.prepare._remove_run_dir = Mock()
-        p_exists = patch(
-            'nemo_cmd.prepare.os.path.exists', side_effect=[True, False]
+        with pytest.raises(SystemExit):
+            nemo_cmd.prepare._make_forcing_links_nemo34(
+                run_desc, 'run_dir', nocheck_init=False
+            )
+
+
+class TestResolveForcingPath:
+    """Unit tests for `salishsea prepare` _resolve_forcing_path() function.
+    """
+
+    @pytest.mark.parametrize(
+        'keys, forcing_dict', [
+            (('atmospheric',), {
+                'atmospheric': '/foo'
+            }),
+            (('atmospheric', 'link to'), {
+                'atmospheric': {
+                    'link to': '/foo'
+                }
+            }),
+        ]
+    )
+    def test_absolute_path(self, keys, forcing_dict):
+        run_desc = {'forcing': forcing_dict}
+        path = nemo_cmd.prepare._resolve_forcing_path(
+            run_desc, keys, 'run_dir'
         )
-        p_abspath = patch(
-            'nemo_cmd.prepare.os.path.abspath', side_effect=lambda path: path
+        assert path == Path('/foo')
+
+    @pytest.mark.parametrize(
+        'keys, forcing_dict', [
+            (('atmospheric',), {
+                'atmospheric': 'foo'
+            }),
+            (('atmospheric', 'link to'), {
+                'atmospheric': {
+                    'link to': 'foo'
+                }
+            }),
+        ]
+    )
+    @patch('nemo_cmd.prepare.get_run_desc_value')
+    def test_relative_path(self, m_get_run_desc_value, keys, forcing_dict):
+        run_desc = {'paths': {'forcing': '/foo'}, 'forcing': forcing_dict}
+        m_get_run_desc_value.side_effect = (Path('bar'), Path('/foo'))
+        path = nemo_cmd.prepare._resolve_forcing_path(
+            run_desc, keys, 'run_dir'
         )
-        p_chdir = patch('nemo_cmd.prepare.os.chdir')
-        p_symlink = patch('nemo_cmd.prepare.os.symlink')
-        with pytest.raises(SystemExit), p_exists, p_abspath, p_chdir:
-            with p_symlink:
-                nemo_cmd.prepare._make_forcing_links_nemo34(
-                    run_desc, 'run_dir', nocheck_init=False
-                )
-        m_log.error.assert_called_once_with(
-            'foo/bar not found; cannot create symlink - '
-            'please check the forcing paths and file names '
-            'in your run description file'
-        )
-        nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+        assert path == Path('/foo/bar')
 
 
 class TestMakeForcingLinksNEMO36:
@@ -1105,12 +1102,12 @@ class TestMakeForcingLinksNEMO36:
                 }
             }
         }
-        patch_symlink = patch('nemo_cmd.prepare.os.symlink')
-        with patch_symlink as m_symlink:
+        patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
+        with patch_symlink_to as m_symlink_to:
             nemo_cmd.prepare._make_forcing_links_nemo36(
                 run_desc, 'run_dir', nocheck_init=False
             )
-        m_symlink.assert_called_once_with(p_atmos_ops, 'run_dir/NEMO-atmos')
+        m_symlink_to.assert_called_once_with(Path(p_atmos_ops))
 
     def test_rel_path_link(self, tmpdir):
         p_nemo_forcing = tmpdir.ensure_dir('NEMO-forcing')
@@ -1125,13 +1122,13 @@ class TestMakeForcingLinksNEMO36:
                 }
             }
         }
-        patch_symlink = patch('nemo_cmd.prepare.os.symlink')
-        with patch_symlink as m_symlink:
+        patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
+        with patch_symlink_to as m_symlink_to:
             nemo_cmd.prepare._make_forcing_links_nemo36(
                 run_desc, 'run_dir', nocheck_init=False
             )
-        m_symlink.assert_called_once_with(
-            p_nemo_forcing.join('rivers'), 'run_dir/rivers'
+        m_symlink_to.assert_called_once_with(
+            Path(p_nemo_forcing.join('rivers'))
         )
 
     @patch('nemo_cmd.prepare.logger')
@@ -1159,6 +1156,83 @@ class TestMakeForcingLinksNEMO36:
             .format(p_nemo_forcing.join('rivers'))
         )
         nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+
+    def test_no_checkinit(self, tmpdir):
+        p_nemo_forcing = tmpdir.ensure_dir('NEMO-forcing')
+        run_desc = {
+            'paths': {
+                'forcing': str(p_nemo_forcing),
+            },
+            'forcing': {
+                'restart.nc': {
+                    'link to': 'restart.nc',
+                }
+            }
+        }
+        patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
+        with patch_symlink_to as m_symlink_to:
+            nemo_cmd.prepare._make_forcing_links_nemo36(
+                run_desc, 'run_dir', nocheck_init=True
+            )
+        m_symlink_to.assert_called_once_with(
+            Path(p_nemo_forcing.join('restart.nc'))
+        )
+
+    @patch('nemo_cmd.prepare._check_atmospheric_forcing_link')
+    def test_link_checker(self, m_chk_atmos_frc_link, tmpdir):
+        p_nemo_forcing = tmpdir.ensure_dir('NEMO-forcing')
+        p_atmos_ops = tmpdir.ensure_dir(
+            'results/forcing/atmospheric/GEM2.5/operational'
+        )
+        run_desc = {
+            'paths': {
+                'forcing': str(p_nemo_forcing),
+            },
+            'forcing': {
+                'NEMO-atmos': {
+                    'link to': str(p_atmos_ops),
+                    'check link': {
+                        'type': 'atmospheric',
+                        'namelist filename': 'namelist_cfg',
+                    }
+                }
+            }
+        }
+        patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
+        with patch_symlink_to as m_symlink_to:
+            nemo_cmd.prepare._make_forcing_links_nemo36(
+                run_desc, 'run_dir', nocheck_init=False
+            )
+        m_chk_atmos_frc_link.assert_called_once_with(
+            run_desc, 'run_dir', Path(p_atmos_ops), 'namelist_cfg'
+        )
+
+    def test_unknown_link_checker(self, tmpdir):
+        p_nemo_forcing = tmpdir.ensure_dir('NEMO-forcing')
+        p_atmos_ops = tmpdir.ensure_dir(
+            'results/forcing/atmospheric/GEM2.5/operational'
+        )
+        run_desc = {
+            'paths': {
+                'forcing': str(p_nemo_forcing),
+            },
+            'forcing': {
+                'NEMO-atmos': {
+                    'link to': str(p_atmos_ops),
+                    'check link': {
+                        'type': 'bogus',
+                        'namelist filename': 'namelist_cfg',
+                    }
+                }
+            }
+        }
+        patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
+        nemo_cmd.prepare._remove_run_dir = Mock()
+        with patch_symlink_to as m_symlink_to:
+            with pytest.raises(SystemExit):
+                nemo_cmd.prepare._make_forcing_links_nemo36(
+                    run_desc, 'run_dir', nocheck_init=False
+                )
 
 
 class TestRecordVcsRevision:
