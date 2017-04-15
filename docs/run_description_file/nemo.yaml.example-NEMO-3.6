@@ -1,63 +1,63 @@
 # nemo command processor run description example for NEMO-3.6
 
-config name: SalishSea
+# Name of the NEMO-3.6 configuration to use for the run;
+# i.e. your NEMO-3.6-code/NEMOGCM/CONFIG/ configuration directory
+config name: mackenzie03
 
 # How is the domain to be distributed over the processors in the
 # i (longitude) and j (latitude) directions?
 # These values are used to set the nammpp namelist jpni & jpnj values
 # and to set the number of processors and nodes in the PBS script
-MPI decomposition: 8x18
+MPI decomposition: 6x6
 
 # For runs on systems that use qsub/PBS/TORQUE
+#
+# The run_id value appears in the list of jobs display by the showq command
 run_id: example
+# Maximum run time requested/allowed for job
+# Too low and you job will be terminated before it finishes
+# Too high and you will have to wait longer on the queue for your job to start
+# You have to experiment to find the "just right" value
 walltime: 10:00:00
-email: dlatornell@example.com
+# Email address to send job begin, end, and abort notifications to
+email: you@example.com
 
 paths:
   # Absolute path to CONFIG/ directory in NEMO-3.6 code tree.
   # You can use ~ or $HOME or $USER if you wish.
-  NEMO code config: $HOME/MEOPAR/NEMO-3.6/CONFIG/
+  NEMO code config: $HOME/CANYONS/NEMO-3.6/CONFIG/
   # If relative, paths below are taken from current directory
-  XIOS: ../../../XIOS/
+  # You can use ~, $USER, $HOME if you wish.
+  XIOS: $HOME/CANYONS/XIOS/
+  # Optional directory to use as base for relative paths in grid:
+  # and forcing: sections below
   forcing: ../../../NEMO-forcing/
-  runs directory: ../../../SalishSea/
+  # Directory in which to create temporary run directories
+  # Typically NOT inside a version control repository
+  runs directory: $HOME/CANYONS/runs/
 
 grid:
   # If relative, paths are taken from the grid/ directory in the forcing
   # path above
-  coordinates: coordinates_seagrid_SalishSea.nc
-  bathymetry: bathy_meter_SalishSea2.nc
+  coordinates: coords_02.nc
+  bathymetry: ideal_bathy_05.nc
 
 forcing:
   # The keys below are the names of symlinks that will be created.
   # The targets of those symlinks will be the paths named by the associated
   # "link to:" keys;
-  # e.g. a symlink named NEMO-atmos will be created to
-  # /results/forcing/atmospheric/GEM2.5/operational/
+  # e.g. a symlink named NEMO_files will be created to
+  # $HOME/CANYONS/mackenzie_canyon/conditions/NEMO_files/
+  #
+  # The keys are directory names that you use as "cn_dir" values in your
+  # namelists.
   #
   # You only need to include keys that are used in the namelist(s) for
   # your run.
   #
   # If relative, paths are taken from forcing path above
-  NEMO-atmos:
-    link to: /results/forcing/atmospheric/GEM2.5/operational/
-    check link:
-      type: atmospheric
-      namelist filename: namelist_cfg
-  initial_strat:
-    link to: initial_strat/
-  initial_green:
-    link to: initial_green/
-  # Typically, you would use either 1 or more initial conditions directories
-  # (above), or 1 or more restart files (below), but not both
-  restart.nc:
-    link to: /results/SalishSea/nowcast/05may15/SalishSea_02056320_restart.nc
-  restart_trc.nc:
-    link to: /results/SalishSea/nowcast-green/06dec15/SalishSea_00004320_restart_trc.nc
-  open_boundaries:
-    link to: open_boundaries/
-  rivers:
-    link to: rivers/
+  NEMO_files:
+      link to: $HOME/CANYONS/mackenzie_canyon/conditions/NEMO_files/
 
 namelists:
   # The namelist section files in the lists below will be concatenated
