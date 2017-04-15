@@ -5,6 +5,11 @@ Change Log
 Next Release
 ============
 
+* For NEMO-3.6 only,
+  restart file paths/filenames are now specified in a new ``restart`` section
+  instead of in the ``forcing`` section.
+  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file/3.6_yaml_file.html#restart-section.
+
 * The existence of all paths/files given in the run description YAML file
   is confirmed.
   An informative error message is emitted for paths/files that don't exist.
@@ -27,18 +32,18 @@ Next Release
 * Add option to provide in the run description YAML file a list of
   PBS resource key-value pairs to produce ``#PBS -l`` directives for in the
   run shell script.
-  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#pbs-resources-section,
+  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file/3.6_yaml_file.html#pbs-resources-section,
   and https://bitbucket.org/salishsea/nemo-cmd/issues/10.
 
 * Add option to provide in the run description YAML file a list of
   HPC environment modules to include ``module load`` commands for in the
   run shell script.
-  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#modules-to-load-section,
+  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file/3.6_yaml_file.html#modules-to-load-section,
   and https://bitbucket.org/salishsea/nemo-cmd/issues/11.
 
 * Add the option to use absolute paths for coordinates and bathymetry files
   in the run description YAML file.
-  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file.html#grid-section,
+  See https://nemo-cmd.readthedocs.io/en/latest/run_description_file/3.6_yaml_file.html#grid-section,
   and https://bitbucket.org/salishsea/nemo-cmd/issues/5.
 
 * Add ``nemo_cmd.fspath()``,

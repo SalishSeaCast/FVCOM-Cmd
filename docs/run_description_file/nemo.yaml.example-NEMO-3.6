@@ -59,6 +59,19 @@ forcing:
   NEMO_files:
       link to: $HOME/CANYONS/mackenzie_canyon/conditions/NEMO_files/
 
+restart:
+  # The keys below are the names of symlinks that will be created.
+  # The targets of those symlinks will be the paths/filenames associated
+  # with the keys;
+  # e.g. a symlink named restart.nc will be created to
+  # $HOME/CANYONS/results_mackenzie/idealized/sbcana_forcings/forcing01/GYRE_00000030_restart.nc
+  #
+  # You only need to include keys for the types of restart files
+  # that are used in your run.
+  #
+  # If relative, paths are taken from current directory
+  restart.nc: $HOME/CANYONS/results_mackenzie/idealized/sbcana_forcings/forcing01/GYRE_00000030_restart.nc
+
 namelists:
   # The namelist section files in the lists below will be concatenated
   # to create a namelist file whose name is the key under which the files
