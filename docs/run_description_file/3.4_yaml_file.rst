@@ -87,12 +87,15 @@ The :kbd:`paths` section of the run description file is a collection of director
   This key may also be spelled :kbd:`NEMO-code-config` for backward compatibility.
 
 :kbd:`forcing`
+  Optional.
   The path to the directory tree where the netCDF files for the grid coordinates,
   coordinates,
   bathymetry,
   initial conditions,
   open boundary conditions,
   etc. are to be found.
+
+  If this path is provided it is used as the base for relative paths in the :ref:`NEMO-3.4-Grid` and the :ref:`NEMO-3.4-Forcing`.
 
   This path may be relative or absolute,
   and may contain :kbd:`~` or :envvar:`$HOME` as alternative spellings of the user's home directory,
