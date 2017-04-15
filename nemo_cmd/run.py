@@ -355,6 +355,7 @@ def _execute(nemo_processors, xios_processors, max_deflate_jobs):
     )
     script += u'{mpirun}\n'.format(mpirun=mpirun)
     script += (
+        u'MPIRUN_EXIT_CODE=$?\n'
         u'echo "Ended run at $(date)"\n'
         u'\n'
         u'echo "Results combining started at $(date)"\n'
@@ -384,8 +385,9 @@ def _fix_permissions():
 
 def _cleanup():
     script = (
-        'echo "Deleting run directory" >>${RESULTS_DIR}/stdout\n'
-        'rmdir $(pwd)\n'
-        'echo "Finished at $(date)" >>${RESULTS_DIR}/stdout\n'
+        u'echo "Deleting run directory" >>${RESULTS_DIR}/stdout\n'
+        u'rmdir $(pwd)\n'
+        u'echo "Finished at $(date)" >>${RESULTS_DIR}/stdout\n'
+        u'exit ${MPIRUN_EXIT_CODE}\n'
     )
     return script

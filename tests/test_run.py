@@ -95,7 +95,7 @@ class TestTakeAction:
             nocheck_init=False,
             no_submit=False,
             waitjob=0,
-            quiet=False,
+            quiet=False
         )
         run_cmd.run(parsed_args)
         m_run.assert_called_once_with(
@@ -113,7 +113,7 @@ class TestTakeAction:
             nocheck_init=False,
             no_submit=False,
             waitjob=0,
-            quiet=True,
+            quiet=True
         )
         run_cmd.run(parsed_args)
         assert not m_logger.info.called
@@ -128,7 +128,7 @@ class TestTakeAction:
             nocheck_init=False,
             no_submit=True,
             waitjob=0,
-            quiet=True,
+            quiet=True
         )
         run_cmd.run(parsed_args)
         assert not m_logger.info.called
@@ -265,6 +265,7 @@ class TestCleanup:
         expected = '''echo "Deleting run directory" >>${RESULTS_DIR}/stdout
         rmdir $(pwd)
         echo "Finished at $(date)" >>${RESULTS_DIR}/stdout
+        exit ${MPIRUN_EXIT_CODE}
         '''
         expected = expected.splitlines()
         for i, line in enumerate(script.splitlines()):
