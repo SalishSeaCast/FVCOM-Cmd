@@ -39,6 +39,7 @@ from nemo_cmd import lib, fspath, resolved_path, expanded_path
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
 
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class Prepare(cliff.command.Command):
@@ -118,7 +119,7 @@ def prepare(desc_file, nemo34, nocheck_init):
                                  the default is to check
 
     :returns: Path of the temporary run directory
-    :rtype: str
+    :rtype: :py:class:`pathlib.Path`
     """
     run_desc = lib.load_run_desc(desc_file)
     nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
@@ -164,7 +165,8 @@ def get_run_desc_value(
                                  otherwise,
                                  raise a :py:exc:`SystemExit` exception.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param boolean fatal: When :py:obj:`True`, delete the under construction
                           temporary run directory, and raise a
@@ -295,11 +297,15 @@ def _make_run_dir(run_desc):
     and its name is a hostname- and time-based UUID.
 
     :param dict run_desc: Run description dictionary.
+    
+    :returns: Path of the temporary run directory
+    :rtype: :py:class:`pathlib.Path`
     """
-    run_dir = os.path.join(
-        run_desc['paths']['runs directory'], str(uuid.uuid1())
+    runs_dir = get_run_desc_value(
+        run_desc, ('paths', 'runs directory'), resolve_path=True
     )
-    os.mkdir(run_dir)
+    run_dir = runs_dir / str(uuid.uuid1())
+    run_dir.mkdir()
     return run_dir
 
 
@@ -309,14 +315,15 @@ def _remove_run_dir(run_dir):
     Intended to be used as a clean-up operation when some other part
     of the prepare process fails.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
     """
     # Allow time for the OS to flush file buffers to disk
     time.sleep(0.1)
     try:
-        for fn in os.listdir(run_dir):
-            os.remove(os.path.join(run_dir, fn))
-        os.rmdir(run_dir)
+        for p in run_dir.iterdir():
+            p.unlink()
+        run_dir.rmdir()
     except OSError:
         pass
 
@@ -335,7 +342,8 @@ def _make_namelists(run_set_dir, run_desc, run_dir, nemo34):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param boolean nemo34: Prepare a NEMO-3.4 run;
                            the default is to prepare a NEMO-3.6 run
@@ -360,20 +368,19 @@ def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
                         files start.
     :type run_set_dir: :py:class:`pathlib.Path`
 
-    :param dict run_desc: Run description dictionary.
-
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
     namelists = get_run_desc_value(run_desc, ('namelists',), run_dir=run_dir)
     namelist_filename = 'namelist'
-    with open(os.path.join(run_dir, namelist_filename), 'wt') as namelist:
+    with (run_dir / namelist_filename).open('wt') as namelist:
         for nl in namelists:
             try:
                 with (run_set_dir / nl).open('rt') as f:
                     namelist.writelines(f.readlines())
-                    namelist.write('\n\n')
+                    namelist.write(u'\n\n')
             except IOError as e:
                 logger.error(e)
                 _remove_run_dir(run_dir)
@@ -396,7 +403,8 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
@@ -413,7 +421,7 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
         config_name = run_desc['config_name']
     namelists = get_run_desc_value(run_desc, ('namelists',), run_dir=run_dir)
     for namelist_filename in namelists:
-        with open(os.path.join(run_dir, namelist_filename), 'wt') as namelist:
+        with (run_dir / namelist_filename).open('wt') as namelist:
             namelist_files = get_run_desc_value(
                 run_desc, ('namelists', namelist_filename), run_dir=run_dir
             )
@@ -421,7 +429,7 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
                 try:
                     with (run_set_dir / nl).open('rt') as f:
                         namelist.writelines(f.readlines())
-                        namelist.write('\n\n')
+                        namelist.write(u'\n\n')
                 except IOError as e:
                     logger.error(e)
                     _remove_run_dir(run_dir)
@@ -453,7 +461,8 @@ def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
@@ -471,12 +480,12 @@ def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
         )
         _remove_run_dir(run_dir)
         raise SystemExit(2)
-    with open(os.path.join(run_dir, namelist_filename), 'rt') as f:
+    with (run_dir / namelist_filename).open('rt') as f:
         lines = f.readlines()
     for key, new_value in {'jpni': jpni, 'jpnj': jpnj}.items():
         value, i = get_namelist_value(key, lines)
         lines[i] = lines[i].replace(value, new_value)
-    with open(os.path.join(run_dir, namelist_filename), 'wt') as f:
+    with (run_dir / namelist_filename).open('wt') as f:
         f.writelines(lines)
 
 
@@ -514,7 +523,8 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
                         files start.
     :type run_set_dir: :py:class:`pathlib.Path`
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param boolean nemo34: Prepare a NEMO-3.4 run;
                            the default is to prepare a NEMO-3.6 run
@@ -585,7 +595,7 @@ def _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34):
             # `files` key is optional and only used with XIOS-2
             pass
     for source, dest_name in run_set_files:
-        shutil.copy2(fspath(source), fspath(Path(run_dir) / dest_name))
+        shutil.copy2(fspath(source), fspath(run_dir / dest_name))
     if not nemo34:
         _set_xios_server_mode(run_desc, run_dir)
 
@@ -597,7 +607,8 @@ def _set_xios_server_mode(run_desc, run_dir):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
@@ -617,20 +628,20 @@ def _set_xios_server_mode(run_desc, run_dir):
         )
         _remove_run_dir(run_dir)
         raise SystemExit(2)
-    tree = xml.etree.ElementTree.parse(os.path.join('iodef.xml'))
+    tree = xml.etree.ElementTree.parse(fspath(run_dir / 'iodef.xml'))
     root = tree.getroot()
     using_server = root.find(
         'context[@id="xios"]//variable[@id="using_server"]'
     )
     using_server.text = 'true' if sep_xios_server else 'false'
     using_server_line = xml.etree.ElementTree.tostring(using_server).decode()
-    with open(os.path.join('iodef.xml'), 'rt') as f:
+    with (run_dir / 'iodef.xml').open('rt') as f:
         lines = f.readlines()
     for i, line in enumerate(lines):
         if 'using_server' in line:
             lines[i] = using_server_line
             break
-    with open(os.path.join('iodef.xml'), 'wt') as f:
+    with (run_dir / 'iodef.xml').open('wt') as f:
         f.writelines(lines)
 
 
@@ -641,7 +652,8 @@ def _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir):
     :param nemo_bin_dir: Absolute path of directory containing NEMO executable.
     :type nemo_bin_dir: :py:class:`pathlib.Path`
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param boolean nemo34: Make executable links for a NEMO-3.4 run
                            if :py:obj:`True`,
@@ -651,13 +663,13 @@ def _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir):
     :type xios_bin_dir: :py:class:`pathlib.Path`
     """
     nemo_exec = nemo_bin_dir / 'nemo.exe'
-    (Path(run_dir) / 'nemo.exe').symlink_to(nemo_exec)
+    (run_dir / 'nemo.exe').symlink_to(nemo_exec)
     iom_server_exec = nemo_bin_dir / 'server.exe'
     if nemo34 and iom_server_exec.exists():
-        (Path(run_dir) / 'server.exe').symlink_to(iom_server_exec)
+        (run_dir / 'server.exe').symlink_to(iom_server_exec)
     if not nemo34:
         xios_server_exec = xios_bin_dir / 'xios_server.exe'
-        (Path(run_dir) / 'xios_server.exe').symlink_to(xios_server_exec)
+        (run_dir / 'xios_server.exe').symlink_to(xios_server_exec)
 
 
 def _make_grid_links(run_desc, run_dir):
@@ -666,7 +678,8 @@ def _make_grid_links(run_desc, run_dir):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
@@ -686,7 +699,6 @@ def _make_grid_links(run_desc, run_dir):
         grid_dir = nemo_forcing_dir / 'grid'
         grid_paths = ((grid_dir / coords_path, 'coordinates.nc'),
                       (grid_dir / bathy_path, 'bathy_meter.nc'))
-    run_dir_path = Path(run_dir)
     for source, link_name in grid_paths:
         if not source.exists():
             logger.error(
@@ -696,7 +708,7 @@ def _make_grid_links(run_desc, run_dir):
             )
             _remove_run_dir(run_dir)
             raise SystemExit(2)
-        (run_dir_path / link_name).symlink_to(source)
+        (run_dir / link_name).symlink_to(source)
 
 
 def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
@@ -705,7 +717,8 @@ def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param boolean nemo34: Make forcing links for a NEMO-3.4 run
                            if :py:obj:`True`,
@@ -729,7 +742,8 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param boolean nocheck_init: Suppress initial condition link check;
                                  the default is to check
@@ -737,7 +751,6 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
     :raises: :py:exc:`SystemExit` if a symlink target does not exist
     """
     symlinks = []
-    run_dir_path = Path(run_dir)
     init_conditions = _resolve_forcing_path(
         run_desc, ('initial conditions',), run_dir
     )
@@ -770,7 +783,7 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
             )
             _remove_run_dir(run_dir)
             raise SystemExit(2)
-        (run_dir_path / link_name).symlink_to(source)
+        (run_dir / link_name).symlink_to(source)
     _check_atmos_files(run_desc, run_dir)
 
 
@@ -783,7 +796,8 @@ def _resolve_forcing_path(run_desc, keys, run_dir):
     If the path is relative, append it to the NEMO-forcing repo path from the
     run description.
 
-    :param dict run_desc: Run description dictionary.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param tuple keys: Key sequence in the :kbd:`forcing` section of the 
                        run description for which the resolved path calculated.
@@ -812,11 +826,11 @@ def _make_forcing_links_nemo36(run_desc, run_dir):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :raises: :py:exc:`SystemExit` if a symlink target does not exist
     """
-    run_dir_path = Path(run_dir)
     link_checkers = {'atmospheric': _check_atmospheric_forcing_link}
     link_names = get_run_desc_value(run_desc, ('forcing',), run_dir=run_dir)
     for link_name in link_names:
@@ -831,7 +845,7 @@ def _make_forcing_links_nemo36(run_desc, run_dir):
             )
             _remove_run_dir(run_dir)
             raise SystemExit(2)
-        (run_dir_path / link_name).symlink_to(source)
+        (run_dir / link_name).symlink_to(source)
         try:
             link_checker = get_run_desc_value(
                 run_desc, ('forcing', link_name, 'check link'),
@@ -866,7 +880,8 @@ def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
     
     :param :py:class:`pathlib.Path` link_path: Path of the atmospheric forcing
                                                files collection.
@@ -876,7 +891,7 @@ def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
 
     :raises: :py:exc:`SystemExit` if an atmospheric forcing file does not exist
     """
-    namelist = namelist2dict(os.path.join(run_dir, namelist_filename))
+    namelist = namelist2dict(fspath(run_dir / namelist_filename))
     if not namelist['namsbc'][0]['ln_blk_core']:
         return
     start_date = arrow.get(str(namelist['namrun'][0]['nn_date0']), 'YYYYMMDD')
@@ -921,7 +936,7 @@ def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
                     file_path = os.path.join(
                         v['dir'], '{basename}.nc'.format(basename=basename)
                     )
-                if not os.path.exists(os.path.join(run_dir, file_path)):
+                if not (run_dir / file_path).exists():
                     logger.error(
                         '{file_path} not found; '
                         'please confirm that atmospheric forcing files '
@@ -949,11 +964,12 @@ def _check_atmos_files(run_desc, run_dir):
     
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :raises: :py:exc:`SystemExit` if an atmospheric forcing file does not exist
     """
-    namelist = namelist2dict(os.path.join(run_dir, 'namelist'))
+    namelist = namelist2dict(fspath(run_dir / 'namelist'))
     if not namelist['namsbc'][0]['ln_blk_core']:
         return
     date0 = arrow.get(str(namelist['namrun'][0]['nn_date0']), 'YYYYMMDD')
@@ -999,7 +1015,7 @@ def _check_atmos_files(run_desc, run_dir):
                     file_path = os.path.join(
                         v['dir'], '{basename}.nc'.format(basename=basename)
                     )
-                if not os.path.exists(os.path.join(run_dir, file_path)):
+                if not (run_dir / file_path).exists():
                     nemo_forcing_dir = get_run_desc_value(
                         run_desc, ('paths', 'forcing'),
                         resolve_path=True,
@@ -1032,14 +1048,14 @@ def _make_restart_links(run_desc, run_dir, nocheck_init):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param boolean nocheck_init: Suppress restart file existence check;
                                  the default is to check
 
     :raises: :py:exc:`SystemExit` if a symlink target does not exist
     """
-    run_dir_path = Path(run_dir)
     try:
         link_names = get_run_desc_value(
             run_desc, ('restart',), run_dir=run_dir, fatal=False
@@ -1064,9 +1080,9 @@ def _make_restart_links(run_desc, run_dir, nocheck_init):
             _remove_run_dir(run_dir)
             raise SystemExit(2)
         if nocheck_init:
-            (run_dir_path / link_name).symlink_to(source)
+            (run_dir / link_name).symlink_to(source)
         else:
-            (run_dir_path / link_name).symlink_to(source.resolve())
+            (run_dir / link_name).symlink_to(source.resolve())
 
 
 def _record_vcs_revisions(run_desc, run_dir):
@@ -1075,7 +1091,8 @@ def _record_vcs_revisions(run_desc, run_dir):
 
     :param dict run_desc: Run description dictionary.
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
     """
     if 'vcs revisions' not in run_desc:
         return
@@ -1102,14 +1119,15 @@ def write_repo_rev_file(repo, run_dir, vcs_func):
                  information from.
     :type repo: :py:class:`pathlib.Path`
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :param vcs_func: Function to call to gather revision and status
                      information from repo.
     """
     repo_path = resolved_path(repo)
     repo_rev_file_lines = vcs_func(repo, run_dir)
-    rev_file = Path(run_dir) / '{repo.name}_rev.txt'.format(repo=repo_path)
+    rev_file = run_dir / '{repo.name}_rev.txt'.format(repo=repo_path)
     with rev_file.open('wt') as f:
         f.writelines(u'{}\n'.format(line) for line in repo_rev_file_lines)
 
@@ -1130,7 +1148,8 @@ def get_hg_revision(repo, run_dir):
                  information from.
     :type repo: :py:class:`pathlib.Path`
 
-    :param str run_dir: Path of the temporary run directory.
+    :param run_dir: Path of the temporary run directory.
+    :type run_dir: :py:class:`pathlib.Path`
 
     :returns: Mercurial repository revision and status information strings.
     :rtype: list
@@ -1200,7 +1219,7 @@ def get_hg_revision(repo, run_dir):
 
 # All of the namelists that NEMO-3.4 requires, but empty so that they result
 # in the defaults defined in the NEMO code being used.
-EMPTY_NAMELISTS = """
+EMPTY_NAMELISTS = u"""
 &namrun        !  Parameters of the run
 &end
 &nam_diaharm   !  Harmonic analysis of tidal constituents ('key_diaharm')
