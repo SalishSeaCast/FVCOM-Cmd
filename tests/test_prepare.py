@@ -14,7 +14,6 @@
 # limitations under the License.
 """NEMO-Cmd prepare sub-command plug-in unit tests
 """
-import os
 try:
     from pathlib import Path
 except ImportError:
@@ -346,12 +345,10 @@ class TestMakeRunDir:
 
     @patch('nemo_cmd.prepare.uuid.uuid1', return_value='uuid')
     def test_make_run_dir(self, m_uuid1, tmpdir):
-        """_make_run_dir() creates directory w/ UUID v1 name
-        """
         p_runs_dir = tmpdir.ensure_dir('SalishSea')
         run_desc = {'paths': {'runs directory': str(p_runs_dir)}}
         run_dir = nemo_cmd.prepare._make_run_dir(run_desc)
-        assert run_dir == os.path.join(str(p_runs_dir), m_uuid1())
+        assert run_dir == Path(str(p_runs_dir)) / m_uuid1()
 
 
 class TestRemoveRunDir:
@@ -360,19 +357,19 @@ class TestRemoveRunDir:
 
     def test_remove_run_dir(self, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        nemo_cmd.prepare._remove_run_dir(str(p_run_dir))
+        nemo_cmd.prepare._remove_run_dir(Path(str(p_run_dir)))
         assert not p_run_dir.check()
 
     def test_remove_run_dir_file(self, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
         p_run_dir.ensure('namelist')
-        nemo_cmd.prepare._remove_run_dir(str(p_run_dir))
+        nemo_cmd.prepare._remove_run_dir(Path(str(p_run_dir)))
         assert not p_run_dir.join('namelist').check()
         assert not p_run_dir.check()
 
     @patch('nemo_cmd.prepare.os.rmdir')
     def test_remove_run_dir_no_run_dir(self, m_rmdir):
-        nemo_cmd.prepare._remove_run_dir('run_dir')
+        nemo_cmd.prepare._remove_run_dir(Path('run_dir'))
         assert not m_rmdir.called
 
 
@@ -381,18 +378,24 @@ class TestMakeNamelists:
     """
 
     def test_nemo34(self):
+        run_desc = {}
         with patch('nemo_cmd.prepare._make_namelist_nemo34') as m_mn34:
             nemo_cmd.prepare._make_namelists(
-                'run_set_dir', 'run_desc', 'run_dir', nemo34=True
+                Path('run_set_dir'), run_desc, Path('run_dir'), nemo34=True
             )
-        m_mn34.assert_called_once_with('run_set_dir', 'run_desc', 'run_dir')
+        m_mn34.assert_called_once_with(
+            Path('run_set_dir'), run_desc, Path('run_dir')
+        )
 
     def test_nemo36(self):
+        run_desc = {}
         with patch('nemo_cmd.prepare._make_namelists_nemo36') as m_mn36:
             nemo_cmd.prepare._make_namelists(
-                'run_set_dir', 'run_desc', 'run_dir', nemo34=False
+                Path('run_set_dir'), run_desc, Path('run_dir'), nemo34=False
             )
-        m_mn36.assert_called_once_with('run_set_dir', 'run_desc', 'run_dir')
+        m_mn36.assert_called_once_with(
+            Path('run_set_dir'), run_desc, Path('run_dir')
+        )
 
 
 class TestMakeNamelistNEMO34:
@@ -406,7 +409,7 @@ class TestMakeNamelistNEMO34:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
             nemo_cmd.prepare._make_namelist_nemo34(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
         assert p_run_dir.join('namelist').check()
 
@@ -417,7 +420,7 @@ class TestMakeNamelistNEMO34:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_namelist_nemo34(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
 
     def test_namelist_ends_with_empty_namelists(self, tmpdir):
@@ -427,7 +430,7 @@ class TestMakeNamelistNEMO34:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
             nemo_cmd.prepare._make_namelist_nemo34(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
         namelist = p_run_dir.join('namelist').read()
         assert namelist.endswith(nemo_cmd.prepare.EMPTY_NAMELISTS)
@@ -468,7 +471,7 @@ class TestMakeNamelistNEMO36:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
             nemo_cmd.prepare._make_namelists_nemo36(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
         assert p_run_dir.join('namelist_cfg').check()
         assert p_run_dir.join('namelist_top_cfg').check()
@@ -499,7 +502,7 @@ class TestMakeNamelistNEMO36:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_namelists_nemo36(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
 
     @pytest.mark.parametrize(
@@ -535,7 +538,7 @@ class TestMakeNamelistNEMO36:
         p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_pisces_ref')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
             nemo_cmd.prepare._make_namelists_nemo36(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
         assert p_run_dir.join('namelist_ref').check(file=True, link=True)
         assert p_run_dir.join('namelist_top_ref').check(file=True, link=True)
@@ -570,9 +573,11 @@ class TestMakeNamelistNEMO36:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with patch('nemo_cmd.prepare._set_mpi_decomposition') as m_smd:
             nemo_cmd.prepare._make_namelists_nemo36(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
-        m_smd.assert_called_once_with('namelist_cfg', run_desc, str(p_run_dir))
+        m_smd.assert_called_once_with(
+            'namelist_cfg', run_desc, Path(str(p_run_dir))
+        )
 
     @pytest.mark.parametrize(
         'config_name_key, nemo_code_config_key',
@@ -600,7 +605,7 @@ class TestMakeNamelistNEMO36:
         p_run_dir = tmpdir.ensure_dir('run_dir')
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_namelists_nemo36(
-                Path(p_run_set_dir), run_desc, str(p_run_dir)
+                Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
 
 
@@ -626,7 +631,7 @@ class TestCopyRunSetFiles:
         pwd = Path.cwd()
         m_get_run_desc_value.return_value = pwd / 'iodef.xml'
         nemo_cmd.prepare._copy_run_set_files(
-            run_desc, desc_file, pwd, 'run_dir', nemo34=True
+            run_desc, desc_file, pwd, Path('run_dir'), nemo34=True
         )
         expected = [
             call(str(pwd / 'iodef.xml'), str(Path('run_dir') / 'iodef.xml')),
@@ -666,7 +671,7 @@ class TestCopyRunSetFiles:
             KeyError
         )
         nemo_cmd.prepare._copy_run_set_files(
-            run_desc, desc_file, pwd, 'run_dir', nemo34=False
+            run_desc, desc_file, pwd, Path('run_dir'), nemo34=False
         )
         expected = [
             call(str(pwd / 'iodef.xml'), str(Path('run_dir') / 'iodef.xml')),
@@ -700,7 +705,7 @@ class TestCopyRunSetFiles:
         pwd = Path.cwd()
         m_get_run_desc_value.return_value = (pwd / '../iodef.xml').resolve()
         nemo_cmd.prepare._copy_run_set_files(
-            run_desc, desc_file, pwd, 'run_dir', nemo34=True
+            run_desc, desc_file, pwd, Path('run_dir'), nemo34=True
         )
         expected = [
             call(
@@ -744,7 +749,7 @@ class TestCopyRunSetFiles:
             (pwd / '../field_def.xml').resolve(), KeyError
         )
         nemo_cmd.prepare._copy_run_set_files(
-            run_desc, desc_file, pwd, 'run_dir', nemo34=False
+            run_desc, desc_file, pwd, Path('run_dir'), nemo34=False
         )
         expected = [
             call(
@@ -784,7 +789,7 @@ class TestCopyRunSetFiles:
             (pwd / '../file_def.xml').resolve()
         )
         nemo_cmd.prepare._copy_run_set_files(
-            run_desc, desc_file, pwd, 'run_dir', nemo34=False
+            run_desc, desc_file, pwd, Path('run_dir'), nemo34=False
         )
         assert m_copy.call_args_list[-1] == call(
             str(pwd.parent / 'file_def.xml'),
@@ -805,7 +810,8 @@ class TestMakeExecutableLinks:
         p_xios_bin_dir = tmpdir.ensure_dir('XIOS/bin')
         p_run_dir = tmpdir.ensure_dir('run_dir')
         nemo_cmd.prepare._make_executable_links(
-            Path(p_nemo_bin_dir), str(p_run_dir), nemo34, Path(p_xios_bin_dir)
+            Path(p_nemo_bin_dir),
+            Path(str(p_run_dir)), nemo34, Path(p_xios_bin_dir)
         )
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
 
@@ -820,7 +826,8 @@ class TestMakeExecutableLinks:
             p_nemo_bin_dir.ensure('server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
         nemo_cmd.prepare._make_executable_links(
-            Path(p_nemo_bin_dir), str(p_run_dir), nemo34, Path(p_xios_bin_dir)
+            Path(p_nemo_bin_dir),
+            Path(str(p_run_dir)), nemo34, Path(p_xios_bin_dir)
         )
         assert p_run_dir.join('nemo.exe').check(file=True, link=True)
         if nemo34:
@@ -844,7 +851,8 @@ class TestMakeExecutableLinks:
             p_xios_bin_dir.ensure('xios_server.exe')
         p_run_dir = tmpdir.ensure_dir('run_dir')
         nemo_cmd.prepare._make_executable_links(
-            Path(p_nemo_bin_dir), str(p_run_dir), nemo34, Path(p_xios_bin_dir)
+            Path(p_nemo_bin_dir),
+            Path(str(p_run_dir)), nemo34, Path(p_xios_bin_dir)
         )
         if nemo34:
             assert not p_run_dir.join('xios_server.exe').check(
@@ -865,16 +873,16 @@ class TestMakeGridLinks:
     def test_no_grid_coordinates_key(self, m_logger, m_rm_run_dir):
         run_desc = {}
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
-        m_rm_run_dir.assert_called_once_with('run_dir')
+            nemo_cmd.prepare._make_grid_links(run_desc, Path('run_dir'))
+        m_rm_run_dir.assert_called_once_with(Path('run_dir'))
 
     @patch('nemo_cmd.prepare._remove_run_dir')
     @patch('nemo_cmd.prepare.logger')
     def test_no_grid_bathymetry_key(self, m_logger, m_rm_run_dir):
         run_desc = {'grid': {'coordinates': 'coords.nc'}}
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
-        m_rm_run_dir.assert_called_once_with('run_dir')
+            nemo_cmd.prepare._make_grid_links(run_desc, Path('run_dir'))
+        m_rm_run_dir.assert_called_once_with(Path('run_dir'))
 
     @patch('nemo_cmd.prepare._remove_run_dir')
     @patch('nemo_cmd.prepare.logger')
@@ -886,8 +894,8 @@ class TestMakeGridLinks:
             }
         }
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
-        m_rm_run_dir.assert_called_once_with('run_dir')
+            nemo_cmd.prepare._make_grid_links(run_desc, Path('run_dir'))
+        m_rm_run_dir.assert_called_once_with(Path('run_dir'))
 
     @patch('nemo_cmd.prepare._remove_run_dir')
     @patch('nemo_cmd.prepare.logger')
@@ -899,13 +907,13 @@ class TestMakeGridLinks:
             },
         }
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_grid_links(run_desc, 'run_dir')
+            nemo_cmd.prepare._make_grid_links(run_desc, Path('run_dir'))
         m_logger.error.assert_called_once_with(
             '/coords.nc not found; cannot create symlink - '
             'please check the forcing path and grid file names '
             'in your run description file'
         )
-        m_rm_run_dir.assert_called_once_with('run_dir')
+        m_rm_run_dir.assert_called_once_with(Path('run_dir'))
 
     @patch('nemo_cmd.prepare._remove_run_dir')
     @patch('nemo_cmd.prepare.logger')
@@ -925,13 +933,13 @@ class TestMakeGridLinks:
             },
         }
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_grid_links(run_desc, str(run_dir))
+            nemo_cmd.prepare._make_grid_links(run_desc, Path(str(run_dir)))
         m_logger.error.assert_called_once_with(
             '{}/coords.nc not found; cannot create symlink - '
             'please check the forcing path and grid file names '
             'in your run description file'.format(grid_dir)
         )
-        m_rm_run_dir.assert_called_once_with(run_dir)
+        m_rm_run_dir.assert_called_once_with(Path(str(run_dir)))
 
     @patch('nemo_cmd.prepare._remove_run_dir')
     @patch('nemo_cmd.prepare.logger')
@@ -950,7 +958,7 @@ class TestMakeGridLinks:
                 'bathymetry': 'bathy.nc'
             },
         }
-        nemo_cmd.prepare._make_grid_links(run_desc, str(run_dir))
+        nemo_cmd.prepare._make_grid_links(run_desc, Path(str(run_dir)))
         assert Path(str(run_dir), 'coordinates.nc').is_symlink()
         assert Path(str(run_dir), 'coordinates.nc'
                     ).samefile(str(grid_dir.join('coords.nc')))
@@ -969,9 +977,12 @@ class TestMakeForcingLinks:
         patch_mfl34 = patch('nemo_cmd.prepare._make_forcing_links_nemo34')
         with patch_mfl34 as m_mfl34:
             nemo_cmd.prepare._make_forcing_links(
-                run_desc, str(p_run_dir), nemo34=True, nocheck_init=False
+                run_desc,
+                Path(str(p_run_dir)),
+                nemo34=True,
+                nocheck_init=False
             )
-        m_mfl34.assert_called_once_with(run_desc, str(p_run_dir), False)
+        m_mfl34.assert_called_once_with(run_desc, Path(str(p_run_dir)), False)
 
     def test_nemo36(self, tmpdir):
         p_run_dir = tmpdir.ensure_dir('run_dir')
@@ -979,9 +990,12 @@ class TestMakeForcingLinks:
         patch_mfl36 = patch('nemo_cmd.prepare._make_forcing_links_nemo36')
         with patch_mfl36 as m_mfl36:
             nemo_cmd.prepare._make_forcing_links(
-                run_desc, str(p_run_dir), nemo34=False, nocheck_init=False
+                run_desc,
+                Path(str(p_run_dir)),
+                nemo34=False,
+                nocheck_init=False
             )
-        m_mfl36.assert_called_once_with(run_desc, str(p_run_dir))
+        m_mfl36.assert_called_once_with(run_desc, Path(str(p_run_dir)))
 
 
 class TestMakeForcingLinksNEMO34:
@@ -996,8 +1010,9 @@ class TestMakeForcingLinksNEMO34:
     )
     @patch('nemo_cmd.prepare._check_atmos_files')
     @patch('nemo_cmd.prepare.logger')
+    @patch('nemo_cmd.prepare._remove_run_dir')
     def test_make_forcing_links_no_restart_path(
-        self, m_log, m_caf, link_path, expected, tmpdir
+        self, m_rm_run_dir, m_log, m_caf, link_path, expected, tmpdir
     ):
         forcing_dir = tmpdir.ensure_dir('foo')
         run_desc = {
@@ -1011,17 +1026,16 @@ class TestMakeForcingLinksNEMO34:
                 'rivers': 'rivers/',
             },
         }
-        nemo_cmd.prepare._remove_run_dir = Mock()
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_forcing_links_nemo34(
-                run_desc, 'run_dir', nocheck_init=False
+                run_desc, Path('run_dir'), nocheck_init=False
             )
         m_log.error.assert_called_once_with(
             '{} not found; cannot create symlink - '
             'please check the forcing path and initial conditions file names '
             'in your run description file'.format(forcing_dir.join(expected))
         )
-        nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+        m_rm_run_dir.assert_called_once_with(Path('run_dir'))
 
     @patch('nemo_cmd.prepare._check_atmos_files')
     @patch('nemo_cmd.prepare.logger')
@@ -1039,7 +1053,7 @@ class TestMakeForcingLinksNEMO34:
         }
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_forcing_links_nemo34(
-                run_desc, 'run_dir', nocheck_init=False
+                run_desc, Path('run_dir'), nocheck_init=False
             )
 
 
@@ -1062,7 +1076,7 @@ class TestResolveForcingPath:
     def test_absolute_path(self, keys, forcing_dict):
         run_desc = {'forcing': forcing_dict}
         path = nemo_cmd.prepare._resolve_forcing_path(
-            run_desc, keys, 'run_dir'
+            run_desc, keys, Path('run_dir')
         )
         assert path == Path('/foo')
 
@@ -1083,7 +1097,7 @@ class TestResolveForcingPath:
         run_desc = {'paths': {'forcing': '/foo'}, 'forcing': forcing_dict}
         m_get_run_desc_value.side_effect = (Path('bar'), Path('/foo'))
         path = nemo_cmd.prepare._resolve_forcing_path(
-            run_desc, keys, 'run_dir'
+            run_desc, keys, Path('run_dir')
         )
         assert path == Path('/foo/bar')
 
@@ -1109,7 +1123,9 @@ class TestMakeForcingLinksNEMO36:
         }
         patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
         with patch_symlink_to as m_symlink_to:
-            nemo_cmd.prepare._make_forcing_links_nemo36(run_desc, 'run_dir')
+            nemo_cmd.prepare._make_forcing_links_nemo36(
+                run_desc, Path('run_dir')
+            )
         m_symlink_to.assert_called_once_with(Path(p_atmos_ops))
 
     def test_rel_path_link(self, tmpdir):
@@ -1127,13 +1143,16 @@ class TestMakeForcingLinksNEMO36:
         }
         patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
         with patch_symlink_to as m_symlink_to:
-            nemo_cmd.prepare._make_forcing_links_nemo36(run_desc, 'run_dir')
+            nemo_cmd.prepare._make_forcing_links_nemo36(
+                run_desc, Path('run_dir')
+            )
         m_symlink_to.assert_called_once_with(
             Path(p_nemo_forcing.join('rivers'))
         )
 
     @patch('nemo_cmd.prepare.logger')
-    def test_no_link_path(self, m_log, tmpdir):
+    @patch('nemo_cmd.prepare._remove_run_dir')
+    def test_no_link_path(self, m_rm_run_dir, m_log, tmpdir):
         p_nemo_forcing = tmpdir.ensure_dir('NEMO-forcing')
         run_desc = {
             'paths': {
@@ -1145,16 +1164,17 @@ class TestMakeForcingLinksNEMO36:
                 }
             }
         }
-        nemo_cmd.prepare._remove_run_dir = Mock()
         with pytest.raises(SystemExit):
-            nemo_cmd.prepare._make_forcing_links_nemo36(run_desc, 'run_dir')
+            nemo_cmd.prepare._make_forcing_links_nemo36(
+                run_desc, Path('run_dir')
+            )
         m_log.error.assert_called_once_with(
             '{} not found; cannot create symlink - '
             'please check the forcing paths and file names '
             'in your run description file'
             .format(p_nemo_forcing.join('rivers'))
         )
-        nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+        m_rm_run_dir.assert_called_once_with(Path('run_dir'))
 
     @patch('nemo_cmd.prepare._check_atmospheric_forcing_link')
     def test_link_checker(self, m_chk_atmos_frc_link, tmpdir):
@@ -1178,9 +1198,11 @@ class TestMakeForcingLinksNEMO36:
         }
         patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
         with patch_symlink_to as m_symlink_to:
-            nemo_cmd.prepare._make_forcing_links_nemo36(run_desc, 'run_dir')
+            nemo_cmd.prepare._make_forcing_links_nemo36(
+                run_desc, Path('run_dir')
+            )
         m_chk_atmos_frc_link.assert_called_once_with(
-            run_desc, 'run_dir', Path(p_atmos_ops), 'namelist_cfg'
+            run_desc, Path('run_dir'), Path(p_atmos_ops), 'namelist_cfg'
         )
 
     def test_unknown_link_checker(self, tmpdir):
@@ -1207,7 +1229,7 @@ class TestMakeForcingLinksNEMO36:
         with patch_symlink_to as m_symlink_to:
             with pytest.raises(SystemExit):
                 nemo_cmd.prepare._make_forcing_links_nemo36(
-                    run_desc, 'run_dir'
+                    run_desc, Path('run_dir')
                 )
 
 
@@ -1219,7 +1241,7 @@ class TestMakeRestartLinks:
     def test_no_restart_key(self, m_logger):
         run_desc = {}
         nemo_cmd.prepare._make_restart_links(
-            run_desc, 'run_dir', nocheck_init=False
+            run_desc, Path('run_dir'), nocheck_init=False
         )
         m_logger.warning.assert_called_once_with(
             'No restart section found in run description YAML file, '
@@ -1235,21 +1257,21 @@ class TestMakeRestartLinks:
         patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
         with patch_symlink_to as m_symlink_to:
             nemo_cmd.prepare._make_restart_links(
-                run_desc, 'run_dir', nocheck_init=False
+                run_desc, Path('run_dir'), nocheck_init=False
             )
         m_symlink_to.assert_called_once_with(Path(p_results))
 
     @patch('nemo_cmd.prepare.logger')
-    def test_no_link_path(self, m_logger, tmpdir):
+    @patch('nemo_cmd.prepare._remove_run_dir')
+    def test_no_link_path(self, m_rm_run_dir, m_logger, tmpdir):
         run_desc = {
             'restart': {
                 'restart.nc': 'SalishSea/nowcast/SalishSea_00475200_restart.nc'
             }
         }
-        nemo_cmd.prepare._remove_run_dir = Mock()
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_restart_links(
-                run_desc, 'run_dir', nocheck_init=False
+                run_desc, Path('run_dir'), nocheck_init=False
             )
         m_logger.error.assert_called_once_with(
             '{} not found; cannot create symlink - '
@@ -1257,7 +1279,7 @@ class TestMakeRestartLinks:
             'in your run description file'
             .format('SalishSea/nowcast/SalishSea_00475200_restart.nc')
         )
-        nemo_cmd.prepare._remove_run_dir.assert_called_once_with('run_dir')
+        m_rm_run_dir.assert_called_once_with(Path('run_dir'))
 
     def test_nocheck_init(self, tmpdir):
         run_desc = {
@@ -1268,7 +1290,7 @@ class TestMakeRestartLinks:
         patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
         with patch_symlink_to as m_symlink_to:
             nemo_cmd.prepare._make_restart_links(
-                run_desc, 'run_dir', nocheck_init=True
+                run_desc, Path('run_dir'), nocheck_init=True
             )
         m_symlink_to.assert_called_once_with(
             Path('SalishSea/nowcast/SalishSea_00475200_restart.nc')
@@ -1281,7 +1303,7 @@ class TestRecordVcsRevision:
 
     @patch('nemo_cmd.prepare.get_hg_revision')
     def test_no_vcs_revisions_stanza_in_run_desc(self, m_get_hg_rev):
-        nemo_cmd.prepare._record_vcs_revisions({}, 'tmp_run_dir')
+        nemo_cmd.prepare._record_vcs_revisions({}, Path('tmp_run_dir'))
         assert not m_get_hg_rev.called
 
     @patch('nemo_cmd.prepare.write_repo_rev_file')
@@ -1295,8 +1317,8 @@ class TestRecordVcsRevision:
                 'hg': [str(nemo_code_repo)]
             }
         }
-        nemo_cmd.prepare._record_vcs_revisions(run_desc, 'run_dir')
+        nemo_cmd.prepare._record_vcs_revisions(run_desc, Path('tmp_run_dir'))
         assert m_write.call_args_list[-1] == call(
-            Path(str(nemo_code_repo)), 'run_dir',
-            nemo_cmd.prepare.get_hg_revision
+            Path(str(nemo_code_repo)),
+            Path('tmp_run_dir'), nemo_cmd.prepare.get_hg_revision
         )

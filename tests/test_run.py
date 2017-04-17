@@ -155,7 +155,7 @@ class TestRun:
         xios_servers, tmpdir
     ):
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        m_prepare.return_value = str(p_run_dir)
+        m_prepare.return_value = Path(str(p_run_dir))
         p_results_dir = tmpdir.ensure_dir('results_dir')
         if not nemo34:
             m_lrd.return_value = {
@@ -165,14 +165,14 @@ class TestRun:
                 }
             }
         qsb_msg = nemo_cmd.run.run(
-            'nemo.yaml', str(p_results_dir), nemo34=nemo34
+            Path('nemo.yaml'), str(p_results_dir), nemo34=nemo34
         )
-        m_prepare.assert_called_once_with('nemo.yaml', nemo34, False)
-        m_lrd.assert_called_once_with('nemo.yaml')
+        m_prepare.assert_called_once_with(Path('nemo.yaml'), nemo34, False)
+        m_lrd.assert_called_once_with(Path('nemo.yaml'))
         m_gnp.assert_called_once_with(m_lrd())
         m_bbs.assert_called_once_with(
             m_lrd(), 'nemo.yaml', 144, xios_servers, 4,
-            Path(str(p_results_dir)), str(p_run_dir)
+            Path(str(p_results_dir)), Path(str(p_run_dir))
         )
         m_sco.assert_called_once_with(['qsub', 'NEMO.sh'],
                                       universal_newlines=True)
@@ -190,7 +190,7 @@ class TestRun:
         xios_servers, tmpdir
     ):
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        m_prepare.return_value = str(p_run_dir)
+        m_prepare.return_value = Path(str(p_run_dir))
         p_results_dir = tmpdir.ensure_dir('results_dir')
         if not nemo34:
             m_lrd.return_value = {
@@ -200,14 +200,17 @@ class TestRun:
                 }
             }
         qsb_msg = nemo_cmd.run.run(
-            'nemo.yaml', str(p_results_dir), nemo34=nemo34, no_submit=True
+            Path('nemo.yaml'),
+            str(p_results_dir),
+            nemo34=nemo34,
+            no_submit=True
         )
-        m_prepare.assert_called_once_with('nemo.yaml', nemo34, False)
-        m_lrd.assert_called_once_with('nemo.yaml')
+        m_prepare.assert_called_once_with(Path('nemo.yaml'), nemo34, False)
+        m_lrd.assert_called_once_with(Path('nemo.yaml'))
         m_gnp.assert_called_once_with(m_lrd())
         m_bbs.assert_called_once_with(
             m_lrd(), 'nemo.yaml', 144, xios_servers, 4,
-            Path(str(p_results_dir)), str(p_run_dir)
+            Path(str(p_results_dir)), Path(str(p_run_dir))
         )
         assert not m_sco.called
         assert qsb_msg is None
