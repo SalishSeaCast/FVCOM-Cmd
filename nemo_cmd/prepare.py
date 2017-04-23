@@ -209,8 +209,7 @@ def get_run_desc_value(
 
 
 def _check_nemo_exec(run_desc, nemo34):
-    """Calculate absolute paths of NEMO code configuration directory
-    and NEMO executable directory.
+    """Calculate absolute path of the NEMO executable's directory.
 
     Confirm that the NEMO executable exists, raising a SystemExit
     exception if it does not.
@@ -264,8 +263,7 @@ def _check_nemo_exec(run_desc, nemo34):
 
 
 def _check_xios_exec(run_desc):
-    """Calculate absolute path of XIOS code repo & XIOS executable's
-    directory.
+    """Calculate absolute path of the XIOS executable's directory.
 
     Confirm that the XIOS executable exists, raising a SystemExit
     exception if it does not.
