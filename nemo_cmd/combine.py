@@ -82,9 +82,39 @@ def combine(run_desc_file):
         run_desc = yaml.safe_load(f)
     name_roots = _get_results_files()
     if name_roots:
-        rebuild_nemo_script = _find_rebuild_nemo_script(run_desc)
+        rebuild_nemo_script = find_rebuild_nemo_script(run_desc)
         _combine_results_files(rebuild_nemo_script, name_roots)
         _delete_results_files(name_roots)
+
+
+def find_rebuild_nemo_script(run_desc):
+    """Calculate absolute path of the rebuild_nemo script.
+
+    Confirm that the rebuild_nemo executable exists, raising a SystemExit
+    exception if it does not.
+    
+    :param dict run_desc: Run description dictionary.
+
+    :return: Resolved path of :file:`rebuild_nemo` script.
+    :rtype: :py:class:`pathlib.Path`
+
+    :raises: :py:exc:`SystemExit` if the :file:`rebuild_nemo` script does not
+             exist.
+    """
+    nemo_code_config = Path(
+        os.path.expandvars(run_desc['paths']['NEMO code config'])
+    ).expanduser().resolve()
+    rebuild_nemo_exec = (
+        nemo_code_config / '..' / 'TOOLS' / 'REBUILD_NEMO' / 'rebuild_nemo.exe'
+    )
+    if not rebuild_nemo_exec.exists():
+        logger.error(
+            '{} not found - did you forget to build it?'
+            .format(rebuild_nemo_exec)
+        )
+        raise SystemExit(2)
+    rebuild_nemo_script = rebuild_nemo_exec.with_suffix('').resolve()
+    return rebuild_nemo_script
 
 
 def _get_results_files():
@@ -97,23 +127,6 @@ def _get_results_files():
             'no files found that match the {} pattern'.format(result_pattern)
         )
     return name_roots
-
-
-def _find_rebuild_nemo_script(run_desc):
-    nemo_code_config = Path(
-        os.path.expandvars(run_desc['paths']['NEMO code config'])
-    ).expanduser().resolve()
-    rebuild_nemo_exec = (
-        nemo_code_config / '..' / 'TOOLS' / 'REBUILD_NEMO' / 'rebuild_nemo.exe'
-    )
-    if not rebuild_nemo_exec.exists():
-        logger.error(
-            '{} not found - did you forget to build it?'
-            .format(rebuild_nemo_exec)
-        )
-        raise SystemExit
-    rebuild_nemo_script = rebuild_nemo_exec.with_suffix('').resolve()
-    return rebuild_nemo_script
 
 
 def _combine_results_files(rebuild_nemo_script, name_roots):
