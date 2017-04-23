@@ -108,7 +108,7 @@ class TestFindRebuildNemoScript:
             '../TOOLS/REBUILD_NEMO/rebuild_nemo'
         )
         run_desc = {'paths': {'NEMO code config': str(nemo_code_config)}}
-        rebuild_nemo_script = nemo_cmd.combine._find_rebuild_nemo_script(
+        rebuild_nemo_script = nemo_cmd.combine.find_rebuild_nemo_script(
             run_desc
         )
         assert rebuild_nemo_script == Path(str(script_path))
@@ -123,7 +123,7 @@ class TestFindRebuildNemoScript:
         nemo_code_config = tmpdir.ensure_dir(nemo_code_config)
         run_desc = {'paths': {'NEMO code config': str(nemo_code_config)}}
         with pytest.raises(SystemExit):
-            nemo_cmd.combine._find_rebuild_nemo_script(run_desc)
+            nemo_cmd.combine.find_rebuild_nemo_script(run_desc)
         assert m_logger.error.called
 
 
