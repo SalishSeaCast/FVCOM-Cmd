@@ -36,6 +36,7 @@ from dateutil import tz
 import hglib
 
 from nemo_cmd import lib, fspath, resolved_path, expanded_path
+from nemo_cmd.combine import find_rebuild_nemo_script
 from nemo_cmd.namelist import namelist2dict, get_namelist_value
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,7 @@ def prepare(desc_file, nemo34, nocheck_init):
     run_desc = lib.load_run_desc(desc_file)
     nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
     xios_bin_dir = _check_xios_exec(run_desc) if not nemo34 else ''
+    find_rebuild_nemo_script(run_desc)
     run_set_dir = resolved_path(desc_file).parent
     run_dir = _make_run_dir(run_desc)
     _make_namelists(run_set_dir, run_desc, run_dir, nemo34)

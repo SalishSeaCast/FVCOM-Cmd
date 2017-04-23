@@ -5,6 +5,14 @@ Change Log
 Next Release
 ============
 
+* Confirm that the ``rebuild_nemo.exe`` executable in the ``prepare`` plug-in
+  so that a run is not executed without it only to fail when the ``combine``
+  plug-in is run.
+  See https://bitbucket.org/salishsea/nemo-cmd/issues/19.
+
+* Add find_rebuild_nemo_script() to the API.
+  See https://bitbucket.org/salishsea/nemo-cmd/issues/20.
+
 * For NEMO-3.6 only,
   restart file paths/filenames are now specified in a new ``restart`` section
   instead of in the ``forcing`` section.
