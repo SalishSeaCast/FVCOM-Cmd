@@ -80,6 +80,23 @@ def deflate(filepaths, max_concurrent_jobs):
         )
 
 
+def find_rebuild_nemo_script(run_desc):
+    """Calculate absolute path of the rebuild_nemo script.
+
+    Confirm that the rebuild_nemo executable exists, raising a SystemExit
+    exception if it does not.
+
+    :param dict run_desc: Run description dictionary.
+
+    :return: Resolved path of :file:`rebuild_nemo` script.
+    :rtype: :py:class:`pathlib.Path`
+
+    :raises: :py:exc:`SystemExit` if the :file:`rebuild_nemo` script does not
+             exist.
+    """
+    return combine_plugin.find_rebuild_nemo_script(run_desc)
+
+
 def gather(results_dir):
     """Move all of the files and directories from the present working directory
     into results_dir.
@@ -116,7 +133,7 @@ def prepare(run_desc_file, nemo34=False, nocheck_init=False):
     :type nocheck_init: boolean
 
     :returns: Path of the temporary run directory
-    :rtype: str
+    :rtype: :py:class:`pathlib.Path`
     """
     return prepare_plugin.prepare(run_desc_file, nemo34, nocheck_init)
 
@@ -133,7 +150,7 @@ def run_description(
     forcing=None,
     init_conditions=None,
     namelists=None,
-    nemo34=False,
+    nemo34=False
 ):
     """Return a NEMO run description dict template.
 
