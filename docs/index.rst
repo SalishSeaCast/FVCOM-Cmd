@@ -40,7 +40,7 @@ Contents
 
    installation
    subcommands
-   run_description_file
+   run_description_file/index
    api
    development
    CHANGES
