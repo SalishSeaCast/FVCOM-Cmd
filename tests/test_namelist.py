@@ -29,8 +29,14 @@ class TestNameList(unittest.TestCase):
             "    float = 0.75\n"
             "    integer = 700\n"
             "    string = 'test'\n"
-            "    true = .TRUE.\n"
-            "    false = .FALSE.\n"
+            "    truth = .TRUE.\n"
+            "    untruth = .FALSE.\n"
+            "    lowercase_truth = .true.\n"
+            "    lowercase_untruth = .false.\n"
+            "    undotted_true = TRUE\n"
+            "    undotted_false = FALSE\n"
+            "    lowercase_undotted_true = true\n"
+            "    lowercase_undotted_false = false\n"
             "/"
         )
         namelist_dict = namelist2dict(StringIO(group))
@@ -40,8 +46,14 @@ class TestNameList(unittest.TestCase):
                     "float": 0.75,
                     "integer": 700,
                     "string": "test",
-                    "true": True,
-                    "false": False
+                    "truth": True,
+                    "untruth": False,
+                    "lowercase_truth": True,
+                    "lowercase_untruth": False,
+                    "undotted_true": True,
+                    "undotted_false": False,
+                    "lowercase_undotted_true": True,
+                    "lowercase_undotted_false": False
                 }]
             }
         )
@@ -202,8 +214,8 @@ class TestNameList(unittest.TestCase):
             "    float = 0.75\n"
             "    integer = 700\n"
             "    string = 'test'\n"
-            "    true = .TRUE.\n"
-            "    false = .FALSE.\n"
+            "    truth = .TRUE.\n"
+            "    untruth = .FALSE.\n"
             "/\n"
             "\n"
             "&list a=1, b=1,2 c='12 / !' / \n"
@@ -228,8 +240,8 @@ class TestNameList(unittest.TestCase):
                     "float": 0.75,
                     "integer": 700,
                     "string": "test",
-                    "true": True,
-                    "false": False
+                    "truth": True,
+                    "untruth": False
                 }],
                 "list": [{
                     "a": 1,
