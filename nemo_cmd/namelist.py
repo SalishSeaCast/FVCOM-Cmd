@@ -104,7 +104,7 @@ def auto_token(value):
         )
     elif value.lower() == ".true." or value.lower() == 'true':
         return BooleanToken(True)
-    elif value.lower() == ".false."  or value.lower() == 'false':
+    elif value.lower() == ".false." or value.lower() == 'false':
         return BooleanToken(False)
     try:
         return IntegerToken(int(value))
