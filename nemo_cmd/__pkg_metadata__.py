@@ -16,5 +16,5 @@
 """
 PROJECT = 'NEMO-Cmd'
 DESCRIPTION = 'NEMO Command Processor'
-VERSION = '0.9'
-DEV_STATUS = '3 - Alpha'
+VERSION = '1.0'
+DEV_STATUS = '5 - Production'
