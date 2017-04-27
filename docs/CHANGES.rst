@@ -2,8 +2,11 @@
 Change Log
 **********
 
-Next Release
-============
+1.0
+===
+
+* Enable ``namelist.namelist2dict()`` to handle Fortran boolean values ``true``
+  and ``false`` (no leading/trailing dots).
 
 * Confirm that the ``rebuild_nemo.exe`` executable in the ``prepare`` plug-in
   so that a run is not executed without it only to fail when the ``combine``
