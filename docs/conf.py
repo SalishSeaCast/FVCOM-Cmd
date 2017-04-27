@@ -38,6 +38,17 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3/', None)}
 
 todo_include_todos = True
 
+autodoc_mock_imports = [
+    'arrow',
+    'attr',
+    'cliff',
+    'cliff.command',
+    'cliff.commandmanager',
+    'dateutil',
+    'hglib',
+    'yaml',
+]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

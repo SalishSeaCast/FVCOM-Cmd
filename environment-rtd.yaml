@@ -7,11 +7,11 @@ channels:
   - gomss-nowcast
 
 dependencies:
-  - arrow
-  - attrs
-  - pip
+#  - arrow
+#  - attrs
+#  - pip
   - python=3.5
-  - pyyaml
-  - pip:
-    - cliff
-    - python-hglib
+#  - pyyaml
+#  - pip:
+#    - cliff
+#    - python-hglib
