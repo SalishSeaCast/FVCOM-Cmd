@@ -1,17 +1,9 @@
 # conda environment description file for readthedocs build environment
 
-name: gomss-nowcast
+name: gomss-nowcast-rtd
 
 channels:
   - defaults
-  - gomss-nowcast
 
 dependencies:
-#  - arrow
-#  - attrs
-#  - pip
   - python=3.5
-#  - pyyaml
-#  - pip:
-#    - cliff
-#    - python-hglib
