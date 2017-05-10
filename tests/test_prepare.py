@@ -1204,7 +1204,7 @@ class TestMakeForcingLinksNEMO36:
                 run_desc, Path('run_dir')
             )
         m_chk_atmos_frc_link.assert_called_once_with(
-            run_desc, Path('run_dir'), Path(p_atmos_ops), 'namelist_cfg'
+            Path('run_dir'), Path(p_atmos_ops), 'namelist_cfg'
         )
 
     def test_unknown_link_checker(self, tmpdir):

@@ -2,6 +2,12 @@
 Change Log
 **********
 
+Next Release
+============
+
+* Fix bug in atmospheric forcing file links checking function call.
+
+
 1.0
 ===
 

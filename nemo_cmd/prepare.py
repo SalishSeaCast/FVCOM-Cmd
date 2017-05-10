@@ -853,7 +853,7 @@ def _make_forcing_links_nemo36(run_desc, run_dir):
                 fatal=False
             )
             link_checkers[link_checker['type']](
-                run_desc, run_dir, source, link_checker['namelist filename']
+                run_dir, source, link_checker['namelist filename']
             )
         except KeyError:
             if 'check link' not in link_names[link_name]:
