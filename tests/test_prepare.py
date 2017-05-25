@@ -471,13 +471,23 @@ class TestMakeNamelistNEMO36:
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_ref')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_top_ref')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_pisces_ref')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
             nemo_cmd.prepare._make_namelists_nemo36(
                 Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
-        assert p_run_dir.join('namelist_cfg').check()
-        assert p_run_dir.join('namelist_top_cfg').check()
-        assert p_run_dir.join('namelist_pisces_cfg').check()
+        assert p_run_dir.join('namelist_cfg').check(file=True, link=False)
+        assert p_run_dir.join('namelist_top_cfg').check(file=True, link=False)
+        assert p_run_dir.join('namelist_pisces_cfg').check(
+            file=True, link=False
+        )
+        assert p_run_dir.join('namelist_ref').check(file=True, link=False)
+        assert p_run_dir.join('namelist_top_ref').check(file=True, link=False)
+        assert p_run_dir.join('namelist_pisces_ref').check(
+            file=True, link=False
+        )
 
     @pytest.mark.parametrize(
         'config_name_key, nemo_code_config_key',
@@ -513,7 +523,7 @@ class TestMakeNamelistNEMO36:
             ('NEMO-3.6/CONFIG', 'GoMSS_NOWCAST'),
         ]
     )
-    def test_namelist_ref_symlinks(
+    def test_namelist_ref_not_shared(
         self, nemo_code_config, config_name, tmpdir
     ):
         p_nemo_config_dir = tmpdir.ensure_dir('NEMO-3.6/NEMOGCM/CONFIG')
@@ -521,6 +531,9 @@ class TestMakeNamelistNEMO36:
         p_run_set_dir.join('namelist.time').write('&namrun\n&end\n')
         p_run_set_dir.join('namelist_top').write('&namtrc\n&end\n')
         p_run_set_dir.join('namelist_pisces').write('&nampisbio\n&end\n')
+        p_run_set_dir.join('namelist_ref').write('&namrun\n&end\n')
+        p_run_set_dir.join('namelist_top_ref').write('&namtrc\n&end\n')
+        p_run_set_dir.join('namelist_pisces_ref').write('&nampisbio\n&end\n')
         run_desc = {
             'config name': 'SalishSea',
             'paths': {
@@ -532,20 +545,23 @@ class TestMakeNamelistNEMO36:
                 'namelist_pisces_cfg': [
                     str(p_run_set_dir.join('namelist_pisces')),
                 ],
+                'namelist_ref': [str(p_run_set_dir.join('namelist_ref'))],
+                'namelist_top_ref':
+                [str(p_run_set_dir.join('namelist_top_ref'))],
+                'namelist_pisces_ref': [
+                    str(p_run_set_dir.join('namelist_pisces_ref')),
+                ],
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
-        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_ref')
-        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_top_ref')
-        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_pisces_ref')
         with patch('nemo_cmd.prepare._set_mpi_decomposition'):
             nemo_cmd.prepare._make_namelists_nemo36(
                 Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
             )
-        assert p_run_dir.join('namelist_ref').check(file=True, link=True)
-        assert p_run_dir.join('namelist_top_ref').check(file=True, link=True)
+        assert p_run_dir.join('namelist_ref').check(file=True, link=False)
+        assert p_run_dir.join('namelist_top_ref').check(file=True, link=False)
         assert p_run_dir.join('namelist_pisces_ref').check(
-            file=True, link=True
+            file=True, link=False
         )
 
     @pytest.mark.parametrize(
@@ -573,6 +589,9 @@ class TestMakeNamelistNEMO36:
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_ref')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_top_ref')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_pisces_ref')
         with patch('nemo_cmd.prepare._set_mpi_decomposition') as m_smd:
             nemo_cmd.prepare._make_namelists_nemo36(
                 Path(p_run_set_dir), run_desc, Path(str(p_run_dir))
@@ -605,6 +624,9 @@ class TestMakeNamelistNEMO36:
             }
         }
         p_run_dir = tmpdir.ensure_dir('run_dir')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_ref')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_top_ref')
+        p_nemo_config_dir.ensure('SalishSea/EXP00/namelist_pisces_ref')
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._make_namelists_nemo36(
                 Path(p_run_set_dir), run_desc, Path(str(p_run_dir))

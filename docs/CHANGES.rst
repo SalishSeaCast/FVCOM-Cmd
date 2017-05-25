@@ -5,6 +5,9 @@ Change Log
 Next Release
 ============
 
+* Change to copy ref namelists to temporary run dir instead of symlinking them;
+  facilitates easier run result archeology and reproducibility.
+
 * Fix bug in atmospheric forcing file links checking function call.
 
 
