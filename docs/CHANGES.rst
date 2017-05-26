@@ -5,6 +5,9 @@ Change Log
 Next Release
 ============
 
+* Use resolved repo path in VCS revisions recording message about uncommitted
+  changes.
+
 * Change to copy ref namelists to temporary run dir instead of symlinking them;
   facilitates easier run result archeology and reproducibility.
 

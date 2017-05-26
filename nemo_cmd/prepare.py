@@ -1210,7 +1210,9 @@ def get_hg_revision(repo, run_dir):
         if s[1].decode().endswith(ignore):
             status.remove(s)
     if status:
-        logger.warning('There are uncommitted changes in {}'.format(repo))
+        logger.warning(
+            'There are uncommitted changes in {}'.format(resolved_path(repo))
+        )
         repo_rev_file_lines.append('uncommitted changes:')
         repo_rev_file_lines.extend(
             '{code} {path}'.format(code=s[0].decode(), path=s[1].decode())
