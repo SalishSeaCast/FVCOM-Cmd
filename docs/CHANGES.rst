@@ -5,6 +5,8 @@ Change Log
 Next Release
 ============
 
+* Expand shell and user variables in namelist file paths.
+
 * Use resolved repo path in VCS revisions recording message about uncommitted
   changes.
 
