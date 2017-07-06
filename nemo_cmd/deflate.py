@@ -27,6 +27,7 @@ except ImportError:
 import shlex
 import subprocess
 import time
+import os
 
 import attr
 import cliff.command
@@ -99,7 +100,7 @@ class DeflateJob(object):
 
         Cache the subprocess object and its process id as job attributes.
         """
-        cmd = 'ncks -4 -L{0.dfl_lvl} -O {0.filepath} {0.filepath}'.format(self)
+        cmd = 'nccopy -s -4 -d{0.dfl_lvl} {0.filepath} {0.filepath}.nccopy.tmp'.format(self)
         self.process = subprocess.Popen(
             shlex.split(cmd),
             stdout=subprocess.PIPE,
@@ -119,6 +120,7 @@ class DeflateJob(object):
         self.returncode = self.process.poll()
         if self.returncode is not None:
             finished = True
+            os.rename('{0.filepath}.nccopy.tmp'.format(self), '{0.filepath}'.format(self))
             logger.debug(
                 'deflating {0.filepath} finished '
                 'with return code {0.returncode}'.format(self)
