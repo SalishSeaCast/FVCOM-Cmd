@@ -118,7 +118,8 @@ class DeflateJob(object):
         finished = False
         self.returncode = self.process.poll()
         if self.returncode is not None:
-            Path('{0.filepath}.nccopy.tmp'.format(self)).rename(self.filepath)
+            if self.returncode == 0:
+                Path('{0.filepath}.nccopy.tmp'.format(self)).rename(self.filepath)
             finished = True
             logger.debug(
                 'deflating {0.filepath} finished '
