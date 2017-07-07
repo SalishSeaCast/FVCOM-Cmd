@@ -27,7 +27,6 @@ except ImportError:
 import shlex
 import subprocess
 import time
-import os
 
 import attr
 import cliff.command
@@ -119,8 +118,8 @@ class DeflateJob(object):
         finished = False
         self.returncode = self.process.poll()
         if self.returncode is not None:
+            Path('{0.filepath}.nccopy.tmp'.format(self)).rename(self.filepath)
             finished = True
-            os.rename('{0.filepath}.nccopy.tmp'.format(self), '{0.filepath}'.format(self))
             logger.debug(
                 'deflating {0.filepath} finished '
                 'with return code {0.returncode}'.format(self)
