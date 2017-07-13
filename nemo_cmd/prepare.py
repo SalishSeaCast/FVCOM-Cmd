@@ -136,6 +136,8 @@ def prepare(desc_file, nemo34, nocheck_init):
     if not nemo34:
         _make_restart_links(run_desc, run_dir, nocheck_init)
     _record_vcs_revisions(run_desc, run_dir)
+    if not nemo34:
+        _add_agrif_files(run_desc, run_dir)
     return run_dir
 
 
@@ -1222,6 +1224,26 @@ def get_hg_revision(repo, run_dir):
             for s in status
         )
     return repo_rev_file_lines
+
+
+def _add_agrif_files(run_desc, run_dir):
+    """Add file copies and symlinks to temporary run directory for
+    AGRIF runs.
+
+    :param run_dir:
+    :param dict run_desc: Run description dictionary.
+
+    :raises: SystemExit
+    """
+    try:
+        get_run_desc_value(run_desc, ('AGRIF',), fatal=False)
+    except KeyError:
+        # Not an AGRIF run
+        return
+    fixed_grids = get_run_desc_value(
+        run_desc, ('AGRIF', 'fixed grids'), run_dir, resolve_path=True
+    )
+    shutil.copy2(fspath(fixed_grids), fspath(run_dir / 'AGRIF_FixedGrids.in'))
 
 
 # All of the namelists that NEMO-3.4 requires, but empty so that they result
