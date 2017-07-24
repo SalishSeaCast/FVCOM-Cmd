@@ -76,6 +76,7 @@ class TestParser:
 @patch('nemo_cmd.prepare._make_forcing_links')
 @patch('nemo_cmd.prepare._make_restart_links')
 @patch('nemo_cmd.prepare._record_vcs_revisions')
+@patch('nemo_cmd.prepare._add_agrif_files')
 class TestPrepare:
     """Unit tests for `nemo prepare` prepare() function.
     """
@@ -87,7 +88,7 @@ class TestPrepare:
         ]
     )
     def test_prepare(
-        self, m_rvr, m_mrl, m_mfl, m_mgl, m_mel, m_crsf, m_mnl, m_mrd,
+        self, m_aaf, m_rvr, m_mrl, m_mfl, m_mgl, m_mel, m_crsf, m_mnl, m_mrd,
         m_resolved_path, m_frns, m_cxe, m_cne, m_lrd, nemo34, m_cne_return,
         m_cxe_return
     ):
@@ -119,8 +120,10 @@ class TestPrepare:
         m_mfl.assert_called_once_with(m_lrd(), m_mrd(), nemo34, False)
         if nemo34:
             assert not m_mrl.called
+            assert not m_aaf.called
         else:
             m_mrl.assert_called_once_with(m_lrd(), m_mrd(), False)
+            m_aaf.assert_called_once_with(m_lrd(), m_mrd())
         m_rvr.assert_called_once_with(m_lrd(), m_mrd())
         assert run_dir == m_mrd()
 
@@ -967,7 +970,7 @@ class TestMakeGridLinks:
 
     @patch('nemo_cmd.prepare._remove_run_dir')
     @patch('nemo_cmd.prepare.logger')
-    def test_link_path(self, m_logger, m_rm_run_dir, tmpdir):
+    def test_link_paths(self, m_logger, m_rm_run_dir, tmpdir):
         forcing_dir = tmpdir.ensure_dir('foo')
         grid_dir = forcing_dir.ensure_dir('grid')
         grid_dir.ensure('coords.nc')
@@ -989,6 +992,35 @@ class TestMakeGridLinks:
         assert Path(str(run_dir), 'bathy_meter.nc').is_symlink()
         assert Path(str(run_dir),
                     'bathy_meter.nc').samefile(str(grid_dir.join('bathy.nc')))
+
+    @patch('nemo_cmd.prepare._remove_run_dir')
+    @patch('nemo_cmd.prepare.logger')
+    def test_agrif_link_paths(self, m_logger, m_rm_run_dir, tmpdir):
+        forcing_dir = tmpdir.ensure_dir('foo')
+        grid_dir = forcing_dir.ensure_dir('grid')
+        grid_dir.ensure('coords.nc')
+        grid_dir.ensure('bathy.nc')
+        run_dir = tmpdir.ensure_dir('runs')
+        run_desc = {
+            'paths': {
+                'forcing': str(forcing_dir)
+            },
+            'grid': {
+                'AGRIF_1': {
+                    'coordinates': 'coords.nc',
+                    'bathymetry': 'bathy.nc'
+                }
+            }
+        }
+        nemo_cmd.prepare._make_grid_links(
+            run_desc, Path(str(run_dir)), agrif_n=1
+        )
+        assert Path(str(run_dir), '1_coordinates.nc').is_symlink()
+        assert Path(str(run_dir), '1_coordinates.nc'
+                    ).samefile(str(grid_dir.join('coords.nc')))
+        assert Path(str(run_dir), '1_bathy_meter.nc').is_symlink()
+        assert Path(str(run_dir), '1_bathy_meter.nc'
+                    ).samefile(str(grid_dir.join('bathy.nc')))
 
 
 class TestMakeForcingLinks:
@@ -1285,6 +1317,30 @@ class TestMakeRestartLinks:
             )
         m_symlink_to.assert_called_once_with(Path(p_results))
 
+    def test_agrif_link(self, tmpdir):
+        p_results = tmpdir.ensure(
+            'results/SalishSea/nowcast/SalishSea_00475200_restart.nc'
+        )
+        p_agrif_results = tmpdir.ensure(
+            'results/SalishSea/nowcast/1_SalishSea_00475200_restart.nc'
+        )
+        run_desc = {
+            'restart': {
+                'AGRIF_1': {
+                    'restart.nc': str(p_agrif_results),
+                },
+            },
+        }
+        patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
+        with patch_symlink_to as m_symlink_to:
+            nemo_cmd.prepare._make_restart_links(
+                run_desc,
+                Path('run_dir'),
+                nocheck_init=False,
+                agrif_n=1,
+            )
+        m_symlink_to.assert_called_once_with(Path(str(p_agrif_results)))
+
     @patch('nemo_cmd.prepare.logger')
     @patch('nemo_cmd.prepare._remove_run_dir')
     def test_no_link_path(self, m_rm_run_dir, m_logger, tmpdir):
@@ -1346,3 +1402,121 @@ class TestRecordVcsRevision:
             Path(str(nemo_code_repo)),
             Path('tmp_run_dir'), nemo_cmd.prepare.get_hg_revision
         )
+
+
+@patch('nemo_cmd.prepare.logger')
+@patch('nemo_cmd.prepare._make_grid_links')
+@patch('nemo_cmd.prepare._make_restart_links')
+class TestAddAgrifFiles:
+    """Unit tests for `nemo prepare` _add_agrid_files() function.
+    """
+
+    @patch('nemo_cmd.prepare.get_run_desc_value', side_effect=KeyError)
+    def test_no_agrif(
+        self, m_get_run_desc_value, mk_restart_links, m_mk_grid_links, m_logger
+    ):
+        run_desc = {}
+        nemo_cmd.prepare._add_agrif_files(run_desc, Path('run_dir'))
+        assert m_get_run_desc_value.call_args_list == [
+            call(run_desc, ('AGRIF',), fatal=False)
+        ]
+
+    def test_no_fixed_grids_file(
+        self, mk_restart_links, m_mk_grid_links, m_logger
+    ):
+        run_desc = {'AGRIF': {}}
+        with pytest.raises(SystemExit):
+            nemo_cmd.prepare._add_agrif_files(run_desc, Path('run_dir'))
+
+    def test_fixed_grids_file(
+        self, mk_restart_links, m_mk_grid_links, m_logger, tmpdir
+    ):
+        p_run_dir = tmpdir.ensure_dir('run_dir')
+        p_fixed_grids = tmpdir.ensure('AGRIF_FixedGrids.in')
+        run_desc = {
+            'AGRIF': {
+                'fixed grids': str(p_fixed_grids)
+            },
+            'grid': {
+                'AGRIF_1': {}
+            },
+            'restart': {
+                'AGRIF_1': {}
+            },
+        }
+        nemo_cmd.prepare._add_agrif_files(run_desc, Path(str(p_run_dir)))
+        assert p_run_dir.join('AGRIF_FixedGrids.in').check(file=True)
+
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    def test_make_grid_links(
+        self, m_copy2, mk_restart_links, m_mk_grid_links, m_logger, tmpdir
+    ):
+        p_fixed_grids = tmpdir.ensure('AGRIF_FixedGrids.in')
+        run_desc = {
+            'AGRIF': {
+                'fixed grids': str(p_fixed_grids)
+            },
+            'grid': {
+                'coordinates': 'coords.nc',
+                'bathymetry': 'bathy.nc',
+                'AGRIF_1': {},
+                'AGRIF_2': {},
+            },
+            'restart': {
+                'AGRIF_1': {},
+                'AGRIF_2': {},
+            },
+        }
+        nemo_cmd.prepare._add_agrif_files(run_desc, Path('run_dir'))
+        assert m_mk_grid_links.call_args_list == [
+            call(run_desc, Path('run_dir'), agrif_n=1),
+            call(run_desc, Path('run_dir'), agrif_n=2),
+        ]
+
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    def test_make_restart_links(
+        self, m_copy2, m_mk_restart_links, m_mk_grid_links, m_logger, tmpdir
+    ):
+        p_fixed_grids = tmpdir.ensure('AGRIF_FixedGrids.in')
+        run_desc = {
+            'AGRIF': {
+                'fixed grids': str(p_fixed_grids)
+            },
+            'grid': {
+                'coordinates': 'coords.nc',
+                'bathymetry': 'bathy.nc',
+                'AGRIF_1': {},
+                'AGRIF_2': {},
+            },
+            'restart': {
+                'AGRIF_1': {},
+                'AGRIF_2': {},
+            },
+        }
+        nemo_cmd.prepare._add_agrif_files(run_desc, Path('run_dir'))
+        assert m_mk_restart_links.call_args_list == [
+            call(run_desc, Path('run_dir'), agrif_n=1),
+            call(run_desc, Path('run_dir'), agrif_n=2),
+        ]
+
+    @patch('nemo_cmd.prepare.shutil.copy2')
+    def test_grid_restart_sub_grids_mismatch(
+        self, m_copy2, m_mk_restart_links, m_mk_grid_links, m_logger, tmpdir
+    ):
+        p_fixed_grids = tmpdir.ensure('AGRIF_FixedGrids.in')
+        run_desc = {
+            'AGRIF': {
+                'fixed grids': str(p_fixed_grids)
+            },
+            'grid': {
+                'coordinates': 'coords.nc',
+                'bathymetry': 'bathy.nc',
+                'AGRIF_1': {},
+                'AGRIF_2': {},
+            },
+            'restart': {
+                'AGRIF_1': {},
+            },
+        }
+        with pytest.raises(SystemExit):
+            nemo_cmd.prepare._add_agrif_files(run_desc, Path('run_dir'))

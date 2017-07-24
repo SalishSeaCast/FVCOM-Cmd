@@ -136,6 +136,8 @@ def prepare(desc_file, nemo34, nocheck_init):
     if not nemo34:
         _make_restart_links(run_desc, run_dir, nocheck_init)
     _record_vcs_revisions(run_desc, run_dir)
+    if not nemo34:
+        _add_agrif_files(run_desc, run_dir)
     return run_dir
 
 
@@ -677,33 +679,56 @@ def _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir):
         (run_dir / 'xios_server.exe').symlink_to(xios_server_exec)
 
 
-def _make_grid_links(run_desc, run_dir):
+def _make_grid_links(run_desc, run_dir, agrif_n=None):
     """Create symlinks in run_dir to the file names that NEMO expects
     to the bathymetry and coordinates files given in the run_desc dict.
+
+    For AGRIF sub-grids, the symlink names are prefixed with the agrif_n;
+    e.g. 1_coordinates.nc.
 
     :param dict run_desc: Run description dictionary.
 
     :param run_dir: Path of the temporary run directory.
     :type run_dir: :py:class:`pathlib.Path`
 
+    :param int agrif_n: AGRIF sub-grid number.
+
     :raises: SystemExit
     """
+
+    ##TODO: Refactor this into a public function that can be used by prepare
+    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+
+    if agrif_n is None:
+        coords_keys = ('grid', 'coordinates')
+        coords_filename = 'coordinates.nc'
+        bathy_keys = ('grid', 'bathymetry')
+        bathy_filename = 'bathy_meter.nc'
+    else:
+        coords_keys = (
+            'grid', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n), 'coordinates'
+        )
+        coords_filename = '{agrif_n}_coordinates.nc'.format(agrif_n=agrif_n)
+        bathy_keys = (
+            'grid', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n), 'bathymetry'
+        )
+        bathy_filename = '{agrif_n}_bathy_meter.nc'.format(agrif_n=agrif_n)
     coords_path = get_run_desc_value(
-        run_desc, ('grid', 'coordinates'), expand_path=True, run_dir=run_dir
+        run_desc, coords_keys, expand_path=True, run_dir=run_dir
     )
     bathy_path = get_run_desc_value(
-        run_desc, ('grid', 'bathymetry'), expand_path=True, run_dir=run_dir
+        run_desc, bathy_keys, expand_path=True, run_dir=run_dir
     )
     if coords_path.is_absolute() and bathy_path.is_absolute():
-        grid_paths = ((coords_path, 'coordinates.nc'),
-                      (bathy_path, 'bathy_meter.nc'))
+        grid_paths = ((coords_path, coords_filename),
+                      (bathy_path, bathy_filename))
     else:
         nemo_forcing_dir = get_run_desc_value(
             run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
         )
         grid_dir = nemo_forcing_dir / 'grid'
-        grid_paths = ((grid_dir / coords_path, 'coordinates.nc'),
-                      (grid_dir / bathy_path, 'bathy_meter.nc'))
+        grid_paths = ((grid_dir / coords_path, coords_filename),
+                      (grid_dir / bathy_path, bathy_filename))
     for source, link_name in grid_paths:
         if not source.exists():
             logger.error(
@@ -1047,7 +1072,7 @@ def _check_atmos_files(run_desc, run_dir):
                     raise SystemExit(2)
 
 
-def _make_restart_links(run_desc, run_dir, nocheck_init):
+def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
     """For a NEMO-3.6 run, create symlinks in run_dir to the restart
     files given in the run description restart section.
 
@@ -1059,11 +1084,21 @@ def _make_restart_links(run_desc, run_dir, nocheck_init):
     :param boolean nocheck_init: Suppress restart file existence check;
                                  the default is to check
 
+    :param int agrif_n: AGRIF sub-grid number.
+
     :raises: :py:exc:`SystemExit` if a symlink target does not exist
     """
+
+    ##TODO: Refactor this into a public function that can be used by prepare
+    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+
+    if agrif_n is None:
+        keys = ('restart',)
+    else:
+        keys = ('restart', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n))
     try:
         link_names = get_run_desc_value(
-            run_desc, ('restart',), run_dir=run_dir, fatal=False
+            run_desc, keys, run_dir=run_dir, fatal=False
         )
     except KeyError:
         logger.warning(
@@ -1071,11 +1106,18 @@ def _make_restart_links(run_desc, run_dir, nocheck_init):
             'so proceeding on the assumption that initial conditions '
             'have been provided'
         )
-        link_names = {}
+        return
     for link_name in link_names:
-        source = get_run_desc_value(
-            run_desc, ('restart', link_name), expand_path=True
-        )
+        if agrif_n is None:
+            keys = ('restart', link_name)
+        else:
+            keys = (
+                'restart', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n), link_name
+            )
+            link_name = '{agrif_n}_{link_name}'.format(
+                agrif_n=agrif_n, link_name=link_name
+            )
+        source = get_run_desc_value(run_desc, keys, expand_path=True)
         if not source.exists() and not nocheck_init:
             logger.error(
                 '{} not found; cannot create symlink - '
@@ -1222,6 +1264,54 @@ def get_hg_revision(repo, run_dir):
             for s in status
         )
     return repo_rev_file_lines
+
+
+def _add_agrif_files(run_desc, run_dir):
+    """Add file copies and symlinks to temporary run directory for
+    AGRIF runs.
+
+    :param run_dir:
+    :param dict run_desc: Run description dictionary.
+
+    :raises: SystemExit
+    """
+
+    ##TODO: Refactor this into a public function that can be used by prepare
+    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+
+    try:
+        get_run_desc_value(run_desc, ('AGRIF',), fatal=False)
+    except KeyError:
+        # Not an AGRIF run
+        return
+    fixed_grids = get_run_desc_value(
+        run_desc, ('AGRIF', 'fixed grids'), run_dir, resolve_path=True
+    )
+    shutil.copy2(fspath(fixed_grids), fspath(run_dir / 'AGRIF_FixedGrids.in'))
+    n_sub_grids = 0
+    grid = get_run_desc_value(run_desc, ('grid',))
+    for key in grid:
+        if key.startswith('AGRIF'):
+            n_sub_grids += 1
+            agrif_n = int(key.split('_')[1])
+            _make_grid_links(run_desc, run_dir, agrif_n=agrif_n)
+    sub_grids_count = 0
+    restart = get_run_desc_value(run_desc, ('restart',))
+    for key in restart:
+        if key.startswith('AGRIF'):
+            sub_grids_count += 1
+            agrif_n = int(key.split('_')[1])
+            _make_restart_links(run_desc, run_dir, agrif_n=agrif_n)
+    if sub_grids_count != n_sub_grids:
+        logger.error(
+            'Found {n_sub_grids} AGRIF sub-grids in grid section, '
+            'but {sub_grids_count} in restart section - '
+            'please check your run description file'.format(
+                n_sub_grids=n_sub_grids, sub_grids_count=sub_grids_count
+            )
+        )
+        _remove_run_dir(run_dir)
+        raise SystemExit(2)
 
 
 # All of the namelists that NEMO-3.4 requires, but empty so that they result
