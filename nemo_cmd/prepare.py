@@ -699,12 +699,11 @@ def _make_grid_links(run_desc, run_dir, agrif_n=None):
     ##TODO: Refactor this into a public function that can be used by prepare
     ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
 
-    if agrif_n is None:
-        coords_keys = ('grid', 'coordinates')
-        coords_filename = 'coordinates.nc'
-        bathy_keys = ('grid', 'bathymetry')
-        bathy_filename = 'bathy_meter.nc'
-    else:
+    coords_keys = ('grid', 'coordinates')
+    coords_filename = 'coordinates.nc'
+    bathy_keys = ('grid', 'bathymetry')
+    bathy_filename = 'bathy_meter.nc'
+    if agrif_n is not None:
         coords_keys = (
             'grid', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n), 'coordinates'
         )
@@ -1092,9 +1091,8 @@ def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
     ##TODO: Refactor this into a public function that can be used by prepare
     ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
 
-    if agrif_n is None:
-        keys = ('restart',)
-    else:
+    keys = ('restart',)
+    if agrif_n is not None:
         keys = ('restart', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n))
     try:
         link_names = get_run_desc_value(
@@ -1108,9 +1106,10 @@ def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
         )
         return
     for link_name in link_names:
-        if agrif_n is None:
-            keys = ('restart', link_name)
-        else:
+        if agrif_n is None and link_name.startswith('AGRIF'):
+            continue
+        keys = ('restart', link_name)
+        if agrif_n is not None:
             keys = (
                 'restart', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n), link_name
             )
