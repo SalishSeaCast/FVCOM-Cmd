@@ -1172,7 +1172,7 @@ def write_repo_rev_file(repo, run_dir, vcs_func):
                      information from repo.
     """
     repo_path = resolved_path(repo)
-    repo_rev_file_lines = vcs_func(repo, run_dir)
+    repo_rev_file_lines = vcs_func(repo_path, run_dir)
     if repo_rev_file_lines:
         rev_file = run_dir / '{repo.name}_rev.txt'.format(repo=repo_path)
         with rev_file.open('wt') as f:
