@@ -1173,9 +1173,10 @@ def write_repo_rev_file(repo, run_dir, vcs_func):
     """
     repo_path = resolved_path(repo)
     repo_rev_file_lines = vcs_func(repo, run_dir)
-    rev_file = run_dir / '{repo.name}_rev.txt'.format(repo=repo_path)
-    with rev_file.open('wt') as f:
-        f.writelines(u'{}\n'.format(line) for line in repo_rev_file_lines)
+    if repo_rev_file_lines:
+        rev_file = run_dir / '{repo.name}_rev.txt'.format(repo=repo_path)
+        with rev_file.open('wt') as f:
+            f.writelines(u'{}\n'.format(line) for line in repo_rev_file_lines)
 
 
 def get_hg_revision(repo, run_dir):
@@ -1200,6 +1201,12 @@ def get_hg_revision(repo, run_dir):
     :returns: Mercurial repository revision and status information strings.
     :rtype: list
     """
+    if not repo.exists():
+        logger.warning(
+            'revision and status requested for non-existent repo: {repo}'
+            .format(repo=repo)
+        )
+        return []
     repo_path = copy(repo)
     while str(repo) != repo_path.root:
         try:
