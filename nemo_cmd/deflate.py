@@ -99,7 +99,9 @@ class DeflateJob(object):
 
         Cache the subprocess object and its process id as job attributes.
         """
-        cmd = 'nccopy -s -4 -d{0.dfl_lvl} {0.filepath} {0.filepath}.nccopy.tmp'.format(self)
+        cmd = 'nccopy -s -4 -d{0.dfl_lvl} {0.filepath} {0.filepath}.nccopy.tmp'.format(
+            self
+        )
         self.process = subprocess.Popen(
             shlex.split(cmd),
             stdout=subprocess.PIPE,
@@ -119,7 +121,8 @@ class DeflateJob(object):
         self.returncode = self.process.poll()
         if self.returncode is not None:
             if self.returncode == 0:
-                Path('{0.filepath}.nccopy.tmp'.format(self)).rename(self.filepath)
+                Path('{0.filepath}.nccopy.tmp'.format(self)
+                     ).rename(self.filepath)
             finished = True
             logger.debug(
                 'deflating {0.filepath} finished '
