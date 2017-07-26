@@ -1309,13 +1309,23 @@ class TestMakeRestartLinks:
         p_results = tmpdir.ensure(
             'results/SalishSea/nowcast/SalishSea_00475200_restart.nc'
         )
-        run_desc = {'restart': {'restart.nc': str(p_results)}}
+        p_agrif_results = tmpdir.ensure(
+            'results/SalishSea/nowcast/1_SalishSea_00475200_restart.nc'
+        )
+        run_desc = {
+            'restart': {
+                'restart.nc': str(p_results),
+                'AGRIF_1': {
+                    'restart.nc': str(p_agrif_results),
+                },
+            },
+        }
         patch_symlink_to = patch('nemo_cmd.prepare.Path.symlink_to')
         with patch_symlink_to as m_symlink_to:
             nemo_cmd.prepare._make_restart_links(
                 run_desc, Path('run_dir'), nocheck_init=False
             )
-        m_symlink_to.assert_called_once_with(Path(p_results))
+        m_symlink_to.assert_called_once_with(Path(str(p_results)))
 
     def test_agrif_link(self, tmpdir):
         p_results = tmpdir.ensure(
@@ -1326,6 +1336,7 @@ class TestMakeRestartLinks:
         )
         run_desc = {
             'restart': {
+                'restart.nc': str(p_results),
                 'AGRIF_1': {
                     'restart.nc': str(p_agrif_results),
                 },
