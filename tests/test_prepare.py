@@ -125,7 +125,7 @@ class TestPrepare:
             m_mrl.assert_called_once_with(m_lrd(), m_mrd(), False)
             m_aaf.assert_called_once_with(
                 m_lrd(),
-                Path('run_desc.yaml'), m_resolved_path().parent, m_mrd()
+                Path('run_desc.yaml'), m_resolved_path().parent, m_mrd(), False
             )
         m_rvr.assert_called_once_with(m_lrd(), m_mrd())
         assert run_dir == m_mrd()
@@ -1574,8 +1574,8 @@ class TestRecordVcsRevision:
 
 
 @patch('nemo_cmd.prepare.logger')
-@patch('nemo_cmd.prepare._make_grid_links')
-@patch('nemo_cmd.prepare._make_restart_links')
+@patch('nemo_cmd.prepare._make_grid_links', autospec=True)
+@patch('nemo_cmd.prepare._make_restart_links', autospec=True)
 @patch('nemo_cmd.prepare._copy_run_set_files')
 class TestAddAgrifFiles:
     """Unit tests for `nemo prepare` _add_agrid_files() function.
@@ -1588,7 +1588,11 @@ class TestAddAgrifFiles:
     ):
         run_desc = {}
         nemo_cmd.prepare._add_agrif_files(
-            run_desc, Path('foo.yaml'), Path('run_set_dir'), Path('run_dir')
+            run_desc,
+            Path('foo.yaml'),
+            Path('run_set_dir'),
+            Path('run_dir'),
+            nocheck_init=False
         )
         assert m_get_run_desc_value.call_args_list == [
             call(run_desc, ('AGRIF',), fatal=False)
@@ -1601,7 +1605,10 @@ class TestAddAgrifFiles:
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._add_agrif_files(
                 run_desc,
-                Path('foo.yaml'), Path('run_set_dir'), Path('run_dir')
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path('run_dir'),
+                nocheck_init=False
             )
 
     def test_fixed_grids_file(
@@ -1626,7 +1633,10 @@ class TestAddAgrifFiles:
         }
         nemo_cmd.prepare._add_agrif_files(
             run_desc,
-            Path('foo.yaml'), Path('run_set_dir'), Path(str(p_run_dir))
+            Path('foo.yaml'),
+            Path('run_set_dir'),
+            Path(str(p_run_dir)),
+            nocheck_init=False
         )
         assert p_run_dir.join('AGRIF_FixedGrids.in').check(file=True)
 
@@ -1656,7 +1666,11 @@ class TestAddAgrifFiles:
             },
         }
         nemo_cmd.prepare._add_agrif_files(
-            run_desc, Path('foo.yaml'), Path('run_set_dir'), Path('run_dir')
+            run_desc,
+            Path('foo.yaml'),
+            Path('run_set_dir'),
+            Path('run_dir'),
+            nocheck_init=False
         )
         assert m_mk_grid_links.call_args_list == [
             call(run_desc, Path('run_dir'), agrif_n=1),
@@ -1689,11 +1703,15 @@ class TestAddAgrifFiles:
             },
         }
         nemo_cmd.prepare._add_agrif_files(
-            run_desc, Path('foo.yaml'), Path('run_set_dir'), Path('run_dir')
+            run_desc,
+            Path('foo.yaml'),
+            Path('run_set_dir'),
+            Path('run_dir'),
+            nocheck_init=False
         )
         assert m_mk_restart_links.call_args_list == [
-            call(run_desc, Path('run_dir'), agrif_n=1),
-            call(run_desc, Path('run_dir'), agrif_n=2),
+            call(run_desc, Path('run_dir'), False, agrif_n=1),
+            call(run_desc, Path('run_dir'), False, agrif_n=2),
         ]
 
     @patch('nemo_cmd.prepare.shutil.copy2')
@@ -1722,7 +1740,10 @@ class TestAddAgrifFiles:
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._add_agrif_files(
                 run_desc,
-                Path('foo.yaml'), Path('run_set_dir'), Path('run_dir')
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path('run_dir'),
+                nocheck_init=False
             )
 
     @patch('nemo_cmd.prepare.shutil.copy2')
@@ -1751,7 +1772,11 @@ class TestAddAgrifFiles:
             },
         }
         nemo_cmd.prepare._add_agrif_files(
-            run_desc, Path('foo.yaml'), Path('run_set_dir'), Path('run_dir')
+            run_desc,
+            Path('foo.yaml'),
+            Path('run_set_dir'),
+            Path('run_dir'),
+            nocheck_init=False
         )
         assert m_cp_run_set_files.call_args_list == [
             call(
@@ -1796,5 +1821,8 @@ class TestAddAgrifFiles:
         with pytest.raises(SystemExit):
             nemo_cmd.prepare._add_agrif_files(
                 run_desc,
-                Path('foo.yaml'), Path('run_set_dir'), Path('run_dir')
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path('run_dir'),
+                nocheck_init=False
             )
