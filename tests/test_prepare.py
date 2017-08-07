@@ -1788,13 +1788,18 @@ class TestAddAgrifFiles:
                 'AGRIF_1': {},
             },
         }
-        nemo_cmd.prepare._add_agrif_files(
-            run_desc,
-            Path('foo.yaml'),
-            Path('run_set_dir'),
-            Path(str(p_run_dir)),
-            nocheck_init=False
-        )
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '1\n40 70 2 30 3 3 3 43 \n'.splitlines()
+            )
+            nemo_cmd.prepare._add_agrif_files(
+                run_desc,
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path(str(p_run_dir)),
+                nocheck_init=False
+            )
         assert p_run_dir.join('AGRIF_FixedGrids.in').check(file=True)
 
     @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
@@ -1826,17 +1831,65 @@ class TestAddAgrifFiles:
                 'AGRIF_2': {},
             },
         }
-        nemo_cmd.prepare._add_agrif_files(
-            run_desc,
-            Path('foo.yaml'),
-            Path('run_set_dir'),
-            Path('run_dir'),
-            nocheck_init=False
-        )
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '2\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
+            )
+            nemo_cmd.prepare._add_agrif_files(
+                run_desc,
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path('run_dir'),
+                nocheck_init=False
+            )
         assert m_mk_grid_links.call_args_list == [
             call(run_desc, Path('run_dir'), agrif_n=1),
             call(run_desc, Path('run_dir'), agrif_n=2),
         ]
+
+    @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
+    def test_grid_sub_grids_mismatch(
+        self, m_copy2, m_mk_nl_36, m_cp_run_set_files, m_mk_restart_links,
+        m_mk_grid_links, m_logger, tmpdir
+    ):
+        p_fixed_grids = tmpdir.ensure('AGRIF_FixedGrids.in')
+        run_desc = {
+            'AGRIF': {
+                'fixed grids': str(p_fixed_grids)
+            },
+            'grid': {
+                'coordinates': 'coords.nc',
+                'bathymetry': 'bathy.nc',
+                'AGRIF_1': {},
+            },
+            'restart': {
+                'AGRIF_1': {},
+            },
+            'namelists': {
+                'AGRIF_1': {},
+                'AGRIF_2': {},
+            },
+            'output': {
+                'AGRIF_1': {},
+                'AGRIF_2': {},
+            },
+        }
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '1\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
+            )
+            with pytest.raises(SystemExit):
+                nemo_cmd.prepare._add_agrif_files(
+                    run_desc,
+                    Path('foo.yaml'),
+                    Path('run_set_dir'),
+                    Path('run_dir'),
+                    nocheck_init=False
+                )
 
     @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
     def test_make_restart_links(
@@ -1867,20 +1920,26 @@ class TestAddAgrifFiles:
                 'AGRIF_2': {},
             },
         }
-        nemo_cmd.prepare._add_agrif_files(
-            run_desc,
-            Path('foo.yaml'),
-            Path('run_set_dir'),
-            Path('run_dir'),
-            nocheck_init=False
-        )
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '2\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
+            )
+            nemo_cmd.prepare._add_agrif_files(
+                run_desc,
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path('run_dir'),
+                nocheck_init=False
+            )
         assert m_mk_restart_links.call_args_list == [
             call(run_desc, Path('run_dir'), False, agrif_n=1),
             call(run_desc, Path('run_dir'), False, agrif_n=2),
         ]
 
     @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
-    def test_grid_restart_sub_grids_mismatch(
+    def test_restart_sub_grids_mismatch(
         self, m_copy2, m_mk_nl_36, m_cp_run_set_files, m_mk_restart_links,
         m_mk_grid_links, m_logger, tmpdir
     ):
@@ -1906,14 +1965,20 @@ class TestAddAgrifFiles:
                 'AGRIF_1': {},
             },
         }
-        with pytest.raises(SystemExit):
-            nemo_cmd.prepare._add_agrif_files(
-                run_desc,
-                Path('foo.yaml'),
-                Path('run_set_dir'),
-                Path('run_dir'),
-                nocheck_init=False
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '2\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
             )
+            with pytest.raises(SystemExit):
+                nemo_cmd.prepare._add_agrif_files(
+                    run_desc,
+                    Path('foo.yaml'),
+                    Path('run_set_dir'),
+                    Path('run_dir'),
+                    nocheck_init=False
+                )
 
     @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
     def test_make_namelists_nemo36(
@@ -1944,20 +2009,26 @@ class TestAddAgrifFiles:
                 'AGRIF_2': {},
             },
         }
-        nemo_cmd.prepare._add_agrif_files(
-            run_desc,
-            Path('foo.yaml'),
-            Path('run_set_dir'),
-            Path('run_dir'),
-            nocheck_init=False
-        )
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '2\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
+            )
+            nemo_cmd.prepare._add_agrif_files(
+                run_desc,
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path('run_dir'),
+                nocheck_init=False
+            )
         assert m_mk_nl_36.call_args_list == [
             call(Path('run_set_dir'), run_desc, Path('run_dir'), agrif_n=1),
             call(Path('run_set_dir'), run_desc, Path('run_dir'), agrif_n=2),
         ]
 
     @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
-    def test_grid_namelist_sub_grids_mismatch(
+    def test_namelist_sub_grids_mismatch(
         self, m_copy2, m_mk_nl_36, m_cp_run_set_files, m_mk_restart_links,
         m_mk_grid_links, m_logger, tmpdir
     ):
@@ -1984,14 +2055,20 @@ class TestAddAgrifFiles:
                 'AGRIF_2': {},
             },
         }
-        with pytest.raises(SystemExit):
-            nemo_cmd.prepare._add_agrif_files(
-                run_desc,
-                Path('foo.yaml'),
-                Path('run_set_dir'),
-                Path('run_dir'),
-                nocheck_init=False
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '2\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
             )
+            with pytest.raises(SystemExit):
+                nemo_cmd.prepare._add_agrif_files(
+                    run_desc,
+                    Path('foo.yaml'),
+                    Path('run_set_dir'),
+                    Path('run_dir'),
+                    nocheck_init=False
+                )
 
     @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
     def test_copy_run_set_files(
@@ -2022,13 +2099,19 @@ class TestAddAgrifFiles:
                 'AGRIF_2': {},
             },
         }
-        nemo_cmd.prepare._add_agrif_files(
-            run_desc,
-            Path('foo.yaml'),
-            Path('run_set_dir'),
-            Path('run_dir'),
-            nocheck_init=False
-        )
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '2\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
+            )
+            nemo_cmd.prepare._add_agrif_files(
+                run_desc,
+                Path('foo.yaml'),
+                Path('run_set_dir'),
+                Path('run_dir'),
+                nocheck_init=False
+            )
         assert m_cp_run_set_files.call_args_list == [
             call(
                 run_desc,
@@ -2049,7 +2132,7 @@ class TestAddAgrifFiles:
         ]
 
     @patch('nemo_cmd.prepare.shutil.copy2', autospec=True)
-    def test_grid_output_sub_grids_mismatch(
+    def test_output_sub_grids_mismatch(
         self, m_copy2, m_mk_nl_36, m_cp_run_set_files, m_mk_restart_links,
         m_mk_grid_links, m_logger, tmpdir
     ):
@@ -2075,11 +2158,17 @@ class TestAddAgrifFiles:
                 'AGRIF_1': {},
             },
         }
-        with pytest.raises(SystemExit):
-            nemo_cmd.prepare._add_agrif_files(
-                run_desc,
-                Path('foo.yaml'),
-                Path('run_set_dir'),
-                Path('run_dir'),
-                nocheck_init=False
+        p_open = patch('nemo_cmd.prepare.Path.open')
+        with p_open as m_open:
+            m_open().__enter__.return_value = (
+                '2\n40 70 2 30 3 3 3 43 \n110 130 50 80 3 3 3 42\n'.
+                splitlines()
             )
+            with pytest.raises(SystemExit):
+                nemo_cmd.prepare._add_agrif_files(
+                    run_desc,
+                    Path('foo.yaml'),
+                    Path('run_set_dir'),
+                    Path('run_dir'),
+                    nocheck_init=False
+                )
