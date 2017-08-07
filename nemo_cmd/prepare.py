@@ -393,7 +393,7 @@ def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
     _set_mpi_decomposition(namelist_filename, run_desc, run_dir)
 
 
-def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
+def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, agrif_n=None):
     """Build the namelist files for the NEMO-3.6 run in run_dir by
     concatenating the lists of namelist section files provided in run_desc.
 
@@ -410,8 +410,14 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
     :param run_dir: Path of the temporary run directory.
     :type run_dir: :py:class:`pathlib.Path`
 
+    :param int agrif_n: AGRIF sub-grid number.
+
     :raises: SystemExit
     """
+
+    ##TODO: Refactor this into a public function that can be used by prepare
+    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+
     try:
         nemo_code_config = run_desc['paths']['NEMO code config']
     except KeyError:
@@ -423,11 +429,26 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
     except KeyError:
         # Alternate key spelling for backward compatibility
         config_name = run_desc['config_name']
-    namelists = get_run_desc_value(run_desc, ('namelists',), run_dir=run_dir)
+    keys = ('namelists',)
+    if agrif_n is not None:
+        keys = ('namelists', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n))
+    namelists = get_run_desc_value(run_desc, keys, run_dir=run_dir)
     for namelist_filename in namelists:
-        with (run_dir / namelist_filename).open('wt') as namelist:
+        if namelist_filename.startswith('AGRIF'):
+            continue
+        namelist_dest = namelist_filename
+        keys = ('namelists', namelist_filename)
+        if agrif_n is not None:
+            namelist_dest = '{agrif_n}_{namelist_filename}'.format(
+                agrif_n=agrif_n, namelist_filename=namelist_filename
+            )
+            keys = (
+                'namelists', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n),
+                namelist_filename
+            )
+        with (run_dir / namelist_dest).open('wt') as namelist:
             namelist_files = get_run_desc_value(
-                run_desc, ('namelists', namelist_filename), run_dir=run_dir
+                run_desc, keys, run_dir=run_dir
             )
             for nl in namelist_files:
                 nl_path = expanded_path(nl)
@@ -447,7 +468,8 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir):
                 nemo_config_dir / config_name / 'EXP00' / ref_namelist
             )
             shutil.copy2(
-                fspath(ref_namelist_source), fspath(run_dir / ref_namelist)
+                fspath(ref_namelist_source),
+                fspath(run_dir / namelist_dest.replace('_cfg', '_ref'))
             )
     if 'namelist_cfg' in namelists:
         _set_mpi_decomposition('namelist_cfg', run_desc, run_dir)
@@ -1137,7 +1159,7 @@ def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
         )
         return
     for link_name in link_names:
-        if agrif_n is None and link_name.startswith('AGRIF'):
+        if link_name.startswith('AGRIF'):
             continue
         keys = ('restart', link_name)
         if agrif_n is not None:
@@ -1385,6 +1407,26 @@ def _add_agrif_files(run_desc, desc_file, run_set_dir, run_dir, nocheck_init):
         logger.error(
             'Found {n_sub_grids} AGRIF sub-grids in grid section, '
             'but {sub_grids_count} in output section - '
+            'please check your run description file'.format(
+                n_sub_grids=n_sub_grids, sub_grids_count=sub_grids_count
+            )
+        )
+        _remove_run_dir(run_dir)
+        raise SystemExit(2)
+    # sub-grid namelist files
+    sub_grids_count = 0
+    namelists = get_run_desc_value(run_desc, ('namelists',))
+    for key in namelists:
+        if key.startswith('AGRIF'):
+            sub_grids_count += 1
+            agrif_n = int(key.split('_')[1])
+            _make_namelists_nemo36(
+                run_set_dir, run_desc, run_dir, agrif_n=agrif_n
+            )
+    if sub_grids_count != n_sub_grids:
+        logger.error(
+            'Found {n_sub_grids} AGRIF sub-grids in grid section, '
+            'but {sub_grids_count} in namelists section - '
             'please check your run description file'.format(
                 n_sub_grids=n_sub_grids, sub_grids_count=sub_grids_count
             )
