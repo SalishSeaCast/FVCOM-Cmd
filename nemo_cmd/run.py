@@ -215,7 +215,7 @@ def run(
     if waitjob:
         cmd = 'qsub -W depend=afterok:{} NEMO.sh'.format(waitjob)
     else:
-        cmd = 'qsub NEMO.sh'
+        cmd = 'jobsub -c gpsc2.science.gc.ca NEMO.sh'
     qsub_msg = subprocess.check_output(cmd.split(), universal_newlines=True)
     os.chdir(fspath(starting_dir))
     return qsub_msg
@@ -281,7 +281,7 @@ def _build_batch_script(
     if 'modules to load' in run_desc:
         script = u'\n'.join((
             script, u'{modules}\n'.format(
-                modules=_modules(run_desc['modules to load']),
+                modules=_modules(run_desc['modules to load'],loadcmd=u'. ssmuse-sh -d'),
             )
         ))
     script = u'\n'.join((
@@ -330,17 +330,17 @@ def _definitions(run_desc, run_desc_file, run_dir, results_dir):
     return defns
 
 
-def _modules(modules_to_load):
+def _modules(modules_to_load, loadcmd=u'module load'):
     modules = u''
     for module in modules_to_load:
         modules = u''.join(
-            (modules, u'module load {module}\n'.format(module=module))
+            (modules, u'{loadcmd} {module}\n'.format(loadcmd=loadcmd,module=module))
         )
     return modules
 
 
 def _execute(nemo_processors, xios_processors, max_deflate_jobs):
-    mpirun = u'mpirun -np {procs} ./nemo.exe'.format(procs=nemo_processors)
+    mpirun = u'time mpirun -np {procs} --report-bindings --bind-to-core --bycore -loadbalance ./nemo.exe'.format(procs=nemo_processors)
     if xios_processors:
         mpirun = u' '.join(
             (mpirun, ':', '-np', str(xios_processors), './xios_server.exe')
