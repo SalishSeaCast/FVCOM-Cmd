@@ -28,7 +28,7 @@ except ImportError:
     from pathlib2 import Path
 import shutil
 import time
-import uuid
+from datetime import datetime
 import xml.etree.ElementTree
 
 import arrow
@@ -309,7 +309,7 @@ def _make_run_dir(run_desc):
     runs_dir = get_run_desc_value(
         run_desc, ('paths', 'runs directory'), resolve_path=True
     )
-    run_dir = runs_dir / str(uuid.uuid1())
+    run_dir = runs_dir / datetime.utcnow().strftime('%Y%m%d-%Hh%Mm%S.%fs')
     run_dir.mkdir()
     return run_dir
 
