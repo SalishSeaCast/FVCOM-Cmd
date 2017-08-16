@@ -199,6 +199,7 @@ def run(
     else:
         xios_processors = 0
     results_dir = Path(results_dir)
+    results_dir.mkdir()
     batch_script = _build_batch_script(
         run_desc,
         fspath(desc_file), nemo_processors, xios_processors, max_deflate_jobs,
@@ -253,21 +254,21 @@ def _build_batch_script(
     script = u'#!/bin/bash\n'
     email = get_run_desc_value(run_desc, ('email',))
     script = u'\n'.join((
-        script, u'{pbs_common}\n'.format(
-            pbs_common=api.pbs_common(
-                run_desc, nemo_processors + xios_processors, email, results_dir
+        script, u'{sge_common}\n'.format(
+            sge_common=api.sge_common(
+                run_desc, email, results_dir
             )
         )
     ))
-    if 'PBS resources' in run_desc:
+    if 'SGE resources' in run_desc:
         script = u''.join((
             script[:-1],
             '# resource(s) requested in run description YAML file\n'
         ))
         script = u''.join((
-            script, u'{pbs_resources}\n'.format(
-                pbs_resources=_pbs_resources(
-                    run_desc['PBS resources'],
+            script, u'{sge_resources}\n'.format(
+                sge_resources=_sge_resources(
+                    run_desc['SGE resources'],
                     nemo_processors + xios_processors
                 )
             )
@@ -296,20 +297,18 @@ def _build_batch_script(
     ))
     return script
 
-
-def _pbs_resources(resources, n_processors):
-    pbs_directives = u''
+def _sge_resources(resources, n_processors):
+    sge_directives = u''
     for resource in resources:
-        if 'nodes=' in resource and ':ppn=' in resource:
+        if 'res_cpus' in resource:
             _, ppn = resource.rsplit('=', 1)
             nodes = math.ceil(n_processors / int(ppn))
-            resource = 'nodes={nodes}:ppn={ppn}'.format(
-                nodes=int(nodes), ppn=ppn
-            )
-        pbs_directives = u''.join((
-            pbs_directives, u'#PBS -l {resource}\n'.format(resource=resource)
+            sge_directives = u''.join((
+                sge_directives, u'#$ -pe dev {nodes}\n'.format(nodes=int(nodes))))
+        sge_directives = u''.join((
+            sge_directives, u'#$ -l {resource}\n'.format(resource=resource)
         ))
-    return pbs_directives
+    return sge_directives
 
 
 def _definitions(run_desc, run_desc_file, run_dir, results_dir):
@@ -326,7 +325,7 @@ def _definitions(run_desc, run_desc_file, run_dir, results_dir):
         run_desc_file=run_desc_file,
         run_dir=run_dir,
         results_dir=results_dir,
-        nemo_cmd=Path('${PBS_O_HOME}/.local/bin/nemo'),
+        nemo_cmd=Path('${HOME}/.local/bin/nemo'),
     )
     return defns
 
