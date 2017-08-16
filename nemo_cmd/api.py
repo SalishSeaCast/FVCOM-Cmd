@@ -382,26 +382,19 @@ def _run_subcommand(app, app_args, argv):
     return result
 
 
-def pbs_common(
+def sge_common(
     run_description,
-    n_processors,
     email,
-    results_dir,
-    pmem='2000mb',
+    results_dir
 ):
-    """Return the common PBS directives used to run NEMO in a TORQUE/PBS
+    """Return the common SGE directives used to run NEMO in a SGE
     multiple processor context.
 
     The string that is returned is intended for inclusion in a bash script
-    that will be to the TORQUE/PBS queue manager via the :command:`qsub`
+    that will be given to the SGE queue manager via the :command:`qsub`
     command.
 
     :arg dict run_description: Run description data structure.
-
-    :arg int n_processors: Number of processors that the run will be
-                           executed on.
-                           For NEMO-3.6 runs this is the sum of NMEO and
-                           XIOS processors.
 
     :arg str email: Email address to send job begin, end & abort
                     notifications to.
@@ -409,9 +402,7 @@ def pbs_common(
     :arg results_dir: Directory to store results into.
     :type results_dir: str or :py:class:`pathlib.Path`
 
-    :arg str pmem: Memory per processor.
-
-    :returns: PBS directives for run script.
+    :returns: SGE directives for run script.
     :rtype: Unicode str
     """
     try:
@@ -424,28 +415,24 @@ def pbs_common(
             hours=t.hour, minutes=t.minute, seconds=t.second
         )
     walltime = td2hms(td)
-    pbs_directives = (
-        u'#PBS -N {run_id}\n'
-        u'#PBS -S /bin/bash\n'
-        u'#PBS -l procs={procs}\n'
-        u'# memory per processor\n'
-        u'#PBS -l pmem={pmem}\n'
-        u'#PBS -l walltime={walltime}\n'
+    sge_directives = (
+        u'#$ -N {run_id}\n'
+        u'#$ -S /bin/bash\n'
         u'# email when the job [b]egins and [e]nds, or is [a]borted\n'
-        u'#PBS -m bea\n'
-        u'#PBS -M {email}\n'
+        u'#$ -m bea\n'
+        u'#$ -M {email}\n'
         u'# stdout and stderr file paths/names\n'
-        u'#PBS -o {results_dir}/stdout\n'
-        u'#PBS -e {results_dir}/stderr\n'
+        u'#$ -o {results_dir}/stdout\n'
+        u'#$ -e {results_dir}/stderr\n'
+        u'# job runtime\n'
+        u'#$ -l h_rt={walltime}\n'
     ).format(
         run_id=run_description['run_id'],
-        procs=n_processors,
-        pmem=pmem,
-        walltime=walltime,
         email=email,
         results_dir=results_dir,
+        walltime=walltime,
     )
-    return pbs_directives
+    return sge_directives
 
 
 def td2hms(timedelta):
