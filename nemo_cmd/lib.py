@@ -33,15 +33,4 @@ def load_run_desc(desc_file):
     return run_desc
 
 
-def get_n_processors(run_desc):
-    """Return the total number of processors required for the run as
-    specified by the MPI decomposition key in the run description.
 
-    :arg run_desc: Run description dictionary.
-    :type run_desc: dict
-
-    :returns: Number of processors required for the run.
-    :rtype: int
-    """
-    jpni, jpnj = map(int, run_desc['MPI decomposition'].split('x'))
-    return jpni * jpnj
