@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Make fspath.fspath() and fspath.resolved_path() available in the nemo_cmd
+# Make fspath.fspath() and fspath.resolved_path() available in the fvcom_cmd
 # namespace
-from nemo_cmd.fspath import fspath, expanded_path, resolved_path
+from fvcom_cmd.fspath import fspath, expanded_path, resolved_path

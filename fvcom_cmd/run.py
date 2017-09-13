@@ -12,9 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""NEMO-Cmd command plug-in for run sub-command.
+"""FVCOM-Cmd command plug-in for run sub-command.
 
-Prepare for, execute, and gather the results of a run of the NEMO model.
+Prepare for, execute, and gather the results of a run of the FVCOM model.
 """
 from __future__ import division
 
@@ -30,21 +30,21 @@ import subprocess
 
 import cliff.command
 
-from nemo_cmd import api, lib
-from nemo_cmd.fspath import fspath
-from nemo_cmd.prepare import get_run_desc_value, get_n_processors
+from fvcom_cmd import api, lib
+from fvcom_cmd.fspath import fspath
+from fvcom_cmd.prepare import get_run_desc_value, get_n_processors
 
 logger = logging.getLogger(__name__)
 
 
 class Run(cliff.command.Command):
-    """Prepare, execute, and gather results from a NEMO model run.
+    """Prepare, execute, and gather results from a FVCOM model run.
     """
 
     def get_parser(self, prog_name):
         parser = super(Run, self).get_parser(prog_name)
         parser.description = '''
-            Prepare, execute, and gather the results from a NEMO
+            Prepare, execute, and gather the results from a FVCOM
             run described in DESC_FILE.
             The results files from the run are gathered in RESULTS_DIR.
 
@@ -71,12 +71,12 @@ class Run(cliff.command.Command):
             use for netCDF deflating. Defaults to 4.'''
         )
         parser.add_argument(
-            '--nemo3.4',
-            dest='nemo34',
+            '--fvcom3.4',
+            dest='fvcom34',
             action='store_true',
             help='''
-            Do a NEMO-3.4 run;
-            the default is to do a NEMO-3.6 run'''
+            Do a FVCOM-3.4 run;
+            the default is to do a FVCOM-3.6 run'''
         )
         parser.add_argument(
             '--nocheck-initial-conditions',
@@ -93,7 +93,7 @@ class Run(cliff.command.Command):
             action='store_true',
             help='''
             Prepare the temporary run directory, and the bash script to execute
-            the NEMO run, but don't submit the run to the queue.
+            the FVCOM run, but don't submit the run to the queue.
             This is useful during development runs when you want to hack on the
             bash script and/or use the same temporary run directory more than
             once.
@@ -117,7 +117,7 @@ class Run(cliff.command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        """Execute the `nemo run` sub-coomand.
+        """Execute the `fvcom run` sub-coomand.
 
         The message generated upon submission of the run to the queue
         manager is logged to the console.
@@ -127,7 +127,7 @@ class Run(cliff.command.Command):
         """
         qsub_msg = run(
             parsed_args.desc_file, parsed_args.results_dir,
-            parsed_args.max_deflate_jobs, parsed_args.nemo34,
+            parsed_args.max_deflate_jobs, parsed_args.fvcom34,
             parsed_args.nocheck_init, parsed_args.no_submit,
             parsed_args.waitjob, parsed_args.quiet
         )
@@ -139,7 +139,7 @@ def run(
     desc_file,
     results_dir,
     max_deflate_jobs=4,
-    nemo34=False,
+    fvcom34=False,
     nocheck_init=False,
     no_submit=False,
     waitjob=0,
@@ -149,8 +149,8 @@ def run(
     and submit the run to the queue manager.
 
     The temporary run directory is created and populated via the
-    :func:`nemo_cmd.api.prepare` API function.
-    The system-specific run script is stored in :file:`NEMO.sh`
+    :func:`fvcom_cmd.api.prepare` API function.
+    The system-specific run script is stored in :file:`FVCOM.sh`
     in the run directory.
     That script is submitted to the queue manager in a subprocess.
 
@@ -164,14 +164,14 @@ def run(
     :param int max_deflate_jobs: Maximum number of concurrent sub-processes to
                                  use for netCDF deflating.
 
-    :param boolean nemo34: Prepare a NEMO-3.4 run;
-                           the default is to prepare a NEMO-3.6 run
+    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
+                           the default is to prepare a FVCOM-3.6 run
 
     :param boolean nocheck_init: Suppress initial condition link check
                                  the default is to check
 
     :param boolean no_submit: Prepare the temporary run directory,
-                              and the bash script to execute the NEMO run,
+                              and the bash script to execute the FVCOM run,
                               but don't submit the run to the queue.
 
     :param int waitjob: Use -W waitjob in call to qsub, to make current job
@@ -184,15 +184,15 @@ def run(
               run script.
     :rtype: str
     """
-    run_dir = api.prepare(desc_file, nemo34, nocheck_init)
+    run_dir = api.prepare(desc_file, fvcom34, nocheck_init)
     if not quiet:
         logger.info('Created run directory {}'.format(run_dir))
     run_desc = lib.load_run_desc(desc_file)
-    nemo_processors = get_n_processors(run_desc,run_dir)
+    fvcom_processors = get_n_processors(run_desc,run_dir)
     separate_xios_server = get_run_desc_value(
         run_desc, ('output', 'separate XIOS server')
     )
-    if not nemo34 and separate_xios_server:
+    if not fvcom34 and separate_xios_server:
         xios_processors = get_run_desc_value(
             run_desc, ('output', 'XIOS servers')
         )
@@ -202,10 +202,10 @@ def run(
     results_dir.mkdir()
     batch_script = _build_batch_script(
         run_desc,
-        fspath(desc_file), nemo_processors, xios_processors, max_deflate_jobs,
+        fspath(desc_file), fvcom_processors, xios_processors, max_deflate_jobs,
         results_dir, run_dir
     )
-    batch_file = run_dir / 'NEMO.sh'
+    batch_file = run_dir / 'FVCOM.sh'
     with batch_file.open('wt') as f:
         f.write(batch_script)
     if no_submit:
@@ -213,16 +213,16 @@ def run(
     starting_dir = Path.cwd()
     os.chdir(fspath(run_dir))
     if waitjob:
-        cmd = 'qsub -W depend=afterok:{} NEMO.sh'.format(waitjob)
+        cmd = 'qsub -W depend=afterok:{} FVCOM.sh'.format(waitjob)
     else:
-        cmd = 'jobsub -c gpsc2.science.gc.ca NEMO.sh'
+        cmd = 'jobsub -c gpsc2.science.gc.ca FVCOM.sh'
     qsub_msg = subprocess.check_output(cmd.split(), universal_newlines=True)
     os.chdir(fspath(starting_dir))
     return qsub_msg
 
 
 def _build_batch_script(
-    run_desc, desc_file, nemo_processors, xios_processors, max_deflate_jobs,
+    run_desc, desc_file, fvcom_processors, xios_processors, max_deflate_jobs,
     results_dir, run_dir
 ):
     """Build the Bash script that will execute the run.
@@ -231,7 +231,7 @@ def _build_batch_script(
 
     :param str desc_file: File path/name of the YAML run description file.
 
-    :param int nemo_processors: Number of processors that NEMO will be executed
+    :param int fvcom_processors: Number of processors that FVCOM will be executed
                                 on.
 
     :param int xios_processors: Number of processors that XIOS will be executed
@@ -269,7 +269,7 @@ def _build_batch_script(
             script, u'{sge_resources}\n'.format(
                 sge_resources=_sge_resources(
                     run_desc['SGE resources'],
-                    nemo_processors + xios_processors
+                    fvcom_processors + xios_processors
                 )
             )
         ))
@@ -289,7 +289,7 @@ def _build_batch_script(
         u'{fix_permissions}\n'
         u'{cleanup}'.format(
             execute=_execute(
-                nemo_processors, xios_processors, max_deflate_jobs
+                fvcom_processors, xios_processors, max_deflate_jobs
             ),
             fix_permissions=_fix_permissions(),
             cleanup=_cleanup(),
@@ -317,15 +317,15 @@ def _definitions(run_desc, run_desc_file, run_dir, results_dir):
         u'RUN_DESC="{run_desc_file}"\n'
         u'WORK_DIR="{run_dir}"\n'
         u'RESULTS_DIR="{results_dir}"\n'
-        u'COMBINE="{nemo_cmd} combine"\n'
-        u'DEFLATE="{nemo_cmd} deflate"\n'
-        u'GATHER="{nemo_cmd} gather"\n'
+        u'COMBINE="{fvcom_cmd} combine"\n'
+        u'DEFLATE="{fvcom_cmd} deflate"\n'
+        u'GATHER="{fvcom_cmd} gather"\n'
     ).format(
         run_id=get_run_desc_value(run_desc, ('run_id',)),
         run_desc_file=run_desc_file,
         run_dir=run_dir,
         results_dir=results_dir,
-        nemo_cmd=Path('${HOME}/.local/bin/nemo'),
+        fvcom_cmd=Path('${HOME}/.local/bin/fvcom'),
     )
     return defns
 
@@ -339,8 +339,8 @@ def _modules(modules_to_load, loadcmd=u'module load'):
     return modules
 
 
-def _execute(nemo_processors, xios_processors, max_deflate_jobs):
-    mpirun = u'time mpirun -np {procs} --report-bindings --bind-to-core --bycore -loadbalance ./nemo.exe'.format(procs=nemo_processors)
+def _execute(fvcom_processors, xios_processors, max_deflate_jobs):
+    mpirun = u'time mpirun -np {procs} --report-bindings --bind-to-core --bycore -loadbalance ./fvcom.exe'.format(procs=fvcom_processors)
     if xios_processors:
         mpirun = u' '.join(
             (mpirun, ':', '-np', str(xios_processors), './xios_server.exe')

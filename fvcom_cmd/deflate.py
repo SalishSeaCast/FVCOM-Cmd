@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""NEMO-Cmd command plug-in for deflate sub-command.
+"""FVCOM-Cmd command plug-in for deflate sub-command.
 
 Deflate variables in netCDF files using Lempel-Ziv compression.
 """
@@ -68,7 +68,7 @@ class Deflate(cliff.command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        """Execute the :command:`nemo deflate` sub-command.
+        """Execute the :command:`fvcom deflate` sub-command.
 
         Deflate variables in netCDF files using Lempel-Ziv compression.
         Converts files to netCDF-4 format.

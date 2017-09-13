@@ -12,9 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""NEMO command processor API
+"""FVCOM command processor API
 
-Application programming interface for the NEMO command processor.
+Application programming interface for the FVCOM command processor.
 Provides Python function interfaces to command processor sub-commands
 for use in other sub-command processor modules,
 and by other software.
@@ -32,10 +32,10 @@ import subprocess
 import cliff.commandmanager
 import yaml
 
-from nemo_cmd import combine as combine_plugin
-from nemo_cmd import deflate as deflate_plugin
-from nemo_cmd import gather as gather_plugin
-from nemo_cmd import prepare as prepare_plugin
+from fvcom_cmd import combine as combine_plugin
+from fvcom_cmd import deflate as deflate_plugin
+from fvcom_cmd import gather as gather_plugin
+from fvcom_cmd import prepare as prepare_plugin
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -47,10 +47,10 @@ log.addHandler(handler)
 
 
 def combine(run_desc_file):
-    """Run the NEMO :program:`rebuild_nemo` tool for each set of
+    """Run the FVCOM :program:`rebuild_fvcom` tool for each set of
     per-processor results files.
 
-    The output of :program:`rebuild_nemo` for each file set is logged
+    The output of :program:`rebuild_fvcom` for each file set is logged
     at the INFO level.
 
     :param run_desc_file: File path/name of the run description YAML file.
@@ -80,21 +80,21 @@ def deflate(filepaths, max_concurrent_jobs):
         )
 
 
-def find_rebuild_nemo_script(run_desc):
-    """Calculate absolute path of the rebuild_nemo script.
+def find_rebuild_fvcom_script(run_desc):
+    """Calculate absolute path of the rebuild_fvcom script.
 
-    Confirm that the rebuild_nemo executable exists, raising a SystemExit
+    Confirm that the rebuild_fvcom executable exists, raising a SystemExit
     exception if it does not.
 
     :param dict run_desc: Run description dictionary.
 
-    :return: Resolved path of :file:`rebuild_nemo` script.
+    :return: Resolved path of :file:`rebuild_fvcom` script.
     :rtype: :py:class:`pathlib.Path`
 
-    :raises: :py:exc:`SystemExit` if the :file:`rebuild_nemo` script does not
+    :raises: :py:exc:`SystemExit` if the :file:`rebuild_fvcom` script does not
              exist.
     """
-    return combine_plugin.find_rebuild_nemo_script(run_desc)
+    return combine_plugin.find_rebuild_fvcom_script(run_desc)
 
 
 def gather(results_dir):
@@ -112,21 +112,21 @@ def gather(results_dir):
     return gather_plugin.gather(results_dir)
 
 
-def prepare(run_desc_file, nemo34=False, nocheck_init=False):
-    """Prepare a NEMO run.
+def prepare(run_desc_file, fvcom34=False, nocheck_init=False):
+    """Prepare a FVCOM run.
 
     A UUID named temporary run directory is created and symbolic links
     are created in the directory to the files and directories specifed
-    to run NEMO.
+    to run FVCOM.
     The output of :command:`hg parents` is recorded in the directory
-    for the NEMO-code and NEMO-forcing repos that the symlinks point to.
+    for the FVCOM-code and FVCOM-forcing repos that the symlinks point to.
     The path to the run directory is returned.
 
     :param run_desc_file: File path/name of the YAML run description file.
     :type run_desc_file: :py:class:`pathlib.Path`
 
-    :arg boolean nemo34: Prepare a NEMO-3.4 run;
-                         the default is to prepare a NEMO-3.6 run
+    :arg boolean fvcom34: Prepare a FVCOM-3.4 run;
+                         the default is to prepare a FVCOM-3.6 run
 
     :arg nocheck_init: Suppress initial condition link check the
                        default is to check
@@ -135,7 +135,7 @@ def prepare(run_desc_file, nemo34=False, nocheck_init=False):
     :returns: Path of the temporary run directory
     :rtype: :py:class:`pathlib.Path`
     """
-    return prepare_plugin.prepare(run_desc_file, nemo34, nocheck_init)
+    return prepare_plugin.prepare(run_desc_file, fvcom34, nocheck_init)
 
 
 def run_description(
@@ -143,16 +143,16 @@ def run_description(
     run_id=None,
     walltime=None,
     mpi_decomposition='8x18',
-    NEMO_code=None,
+    FVCOM_code=None,
     XIOS_code=None,
     forcing_path=None,
     runs_dir=None,
     forcing=None,
     init_conditions=None,
     namelists=None,
-    nemo34=False
+    fvcom34=False
 ):
-    """Return a NEMO run description dict template.
+    """Return a FVCOM run description dict template.
 
     Value may be passed for the keyword arguments to set the value of the
     corresponding items.
@@ -167,7 +167,7 @@ def run_description(
         appropriate for runs on :kbd:`salish`, but needs to be changed for runs
         on WestGrid.
 
-    :arg str config_name: NEMO configuration name to use for the run.
+    :arg str config_name: FVCOM configuration name to use for the run.
 
     :arg str run_id: Job identifier that appears in the :command:`qstat`
                      listing.
@@ -176,8 +176,8 @@ def run_description(
 
     :arg str mpi_decomposition: MPI decomposition to use for the run.
 
-    :arg str NEMO_code: Path to the :file:`NEMO-code/` directory where the
-                        NEMO executable, etc. for the run are to be found.
+    :arg str FVCOM_code: Path to the :file:`FVCOM-code/` directory where the
+                        FVCOM executable, etc. for the run are to be found.
                         If a relative path is used it will start from the
                         current directory.
 
@@ -186,7 +186,7 @@ def run_description(
                         If a relative path is used it will start from the
                         current directory.
 
-    :arg str forcing_path: Path to the :file:`NEMO-forcing/` directory
+    :arg str forcing_path: Path to the :file:`FVCOM-forcing/` directory
                            where the netCDF files for the grid coordinates,
                            bathymetry, initial conditions, open boundary
                            conditions, etc. are found.
@@ -200,13 +200,13 @@ def run_description(
 
     :arg dict forcing: Forcing link data structure.
                        The default of :py:obj:`None` produces "sensible
-                       defaults" for NEMO-3.4,
-                       but :py:obj:`None` for NEMO-3.6.
+                       defaults" for FVCOM-3.4,
+                       but :py:obj:`None` for FVCOM-3.6.
                        See the :ref:`RunDescriptionFileStructure` docs
-                       for the version of NEMO that you are using for
+                       for the version of FVCOM that you are using for
                        details of the data structure.
 
-    :arg str init_conditions: Name of sub-directory in :file:`NEMO-forcing/`
+    :arg str init_conditions: Name of sub-directory in :file:`FVCOM-forcing/`
                               where initial conditions files are to be found,
                               or the path to and name of a restart file.
                               If a relative path is used for a restart file
@@ -214,16 +214,16 @@ def run_description(
 
     :arg dict namelists: Namelists data structure.
                          The default of :py:obj:`None` produces "sensible
-                         defaults" for a physics-only run for both NEMO-3.4,
-                         annd NEMO-3.6.
+                         defaults" for a physics-only run for both FVCOM-3.4,
+                         annd FVCOM-3.6.
                          See the :ref:`RunDescriptionFileStructure` docs
-                         for the version of NEMO that you are using for
+                         for the version of FVCOM that you are using for
                          details of the data structure.
 
-    :arg boolean nemo34: Return run description dict template a NEMO-3.4
+    :arg boolean fvcom34: Return run description dict template a FVCOM-3.4
                          run;
                          the default is to return the dict for a
-                         NEMO-3.6 run.
+                         FVCOM-3.6 run.
     """
     run_description = {
         'config_name': config_name,
@@ -231,7 +231,7 @@ def run_description(
         'run_id': run_id,
         'walltime': walltime,
         'paths': {
-            'NEMO-code': NEMO_code,
+            'FVCOM-code': FVCOM_code,
             'forcing': forcing_path,
             'runs directory': runs_dir,
         },
@@ -243,7 +243,7 @@ def run_description(
             'files': 'iodef.xml',
         }
     }
-    if nemo34:
+    if fvcom34:
         if forcing is None:
             run_description['forcing'] = {
                 'atmospheric':
@@ -292,15 +292,15 @@ def run_description(
             'separate XIOS server': True,
             'XIOS servers': 1,
         }
-        if NEMO_code is not None:
+        if FVCOM_code is not None:
             run_description['output']['fields'] = os.path.join(
-                NEMO_code, 'NEMOGCM/CONFIG/SHARED/field_def.xml'
+                FVCOM_code, 'FVCOMGCM/CONFIG/SHARED/field_def.xml'
             )
     return run_description
 
 
-def run_in_subprocess(run_id, run_desc, results_dir, nemo34=False):
-    """Execute `nemo run` in a subprocess.
+def run_in_subprocess(run_id, run_desc, results_dir, fvcom34=False):
+    """Execute `fvcom run` in a subprocess.
 
     :arg str run_id: Job identifier that appears in the :command:`qstat`
                      listing.
@@ -310,8 +310,8 @@ def run_in_subprocess(run_id, run_desc, results_dir, nemo34=False):
     :arg dict run_desc: Run description data structure that will be
                         written to the temporary YAML file.
 
-    :arg boolean nemo34: Execute a NEMO-3.4 run;
-                         the default is to execute a NEMO-3.6 run
+    :arg boolean fvcom34: Execute a FVCOM-3.4 run;
+                         the default is to execute a FVCOM-3.6 run
 
     :arg results_dir: Directory to store results into.
     :type results_dir: str
@@ -320,8 +320,8 @@ def run_in_subprocess(run_id, run_desc, results_dir, nemo34=False):
     with open(yaml_file, 'wt') as f:
         yaml.dump(run_desc, f, default_flow_style=False)
     cmd = ['salishsea', 'run']
-    if nemo34:
-        cmd.append('--nemo3.4')
+    if fvcom34:
+        cmd.append('--fvcom3.4')
     cmd.extend([yaml_file, results_dir])
     try:
         output = subprocess.check_output(
@@ -387,7 +387,7 @@ def sge_common(
     email,
     results_dir
 ):
-    """Return the common SGE directives used to run NEMO in a SGE
+    """Return the common SGE directives used to run FVCOM in a SGE
     multiple processor context.
 
     The string that is returned is intended for inclusion in a bash script

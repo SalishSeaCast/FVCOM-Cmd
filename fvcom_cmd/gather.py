@@ -12,9 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""NEMO-Cmd command plug-in for gather sub-command.
+"""FVCOM-Cmd command plug-in for gather sub-command.
 
-Gather results files from a NEMO run into a specified directory.
+Gather results files from a FVCOM run into a specified directory.
 """
 import logging
 import shutil
@@ -26,19 +26,19 @@ except ImportError:
 
 import cliff.command
 
-from nemo_cmd.fspath import fspath
+from fvcom_cmd.fspath import fspath
 
 logger = logging.getLogger(__name__)
 
 
 class Gather(cliff.command.Command):
-    """Gather results from a NEMO run.
+    """Gather results from a FVCOM run.
     """
 
     def get_parser(self, prog_name):
         parser = super(Gather, self).get_parser(prog_name)
         parser.description = '''
-            Gather the results files from the NEMO run in the present working
+            Gather the results files from the FVCOM run in the present working
             directory into files in RESULTS_DIR.
             The run description file,
             namelist(s),
@@ -56,9 +56,9 @@ class Gather(cliff.command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        """Execute the `nemo gather` sub-command.
+        """Execute the `fvcom gather` sub-command.
 
-        Gather the results files from a NEMO run into a results directory.
+        Gather the results files from a FVCOM run into a results directory.
 
         The run description file,
         namelist(s),

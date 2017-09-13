@@ -14,7 +14,7 @@
 # limitations under the License.
 """SalishSeaCmd command plug-in for combine sub-command.
 
-Combine per-processor files from an MPI Salish Sea NEMO run into single
+Combine per-processor files from an MPI Salish Sea FVCOM run into single
 files with the same name-root.
 """
 import logging
@@ -31,20 +31,20 @@ import subprocess
 import cliff.command
 import yaml
 
-from nemo_cmd.fspath import fspath
+from fvcom_cmd.fspath import fspath
 
 logger = logging.getLogger(__name__)
 
 
 class Combine(cliff.command.Command):
-    """Combine per-processor files from an MPI NEMO run into single files
+    """Combine per-processor files from an MPI FVCOM run into single files
     """
 
     def get_parser(self, prog_name):
         parser = super(Combine, self).get_parser(prog_name)
         parser.description = '''
             Combine the per-processor results and/or restart files from an MPI
-            NEMO run described in DESC_FILE using the the NEMO rebuild_nemo
+            FVCOM run described in DESC_FILE using the the FVCOM rebuild_fvcom
             tool.
             Delete the per-processor files.
         '''
@@ -59,20 +59,20 @@ class Combine(cliff.command.Command):
     def take_action(self, parsed_args):
         """Execute the `salishsea combine` sub-command
 
-        Run the NEMO `rebuild_nemo` tool for each set of per-processor
+        Run the FVCOM `rebuild_fvcom` tool for each set of per-processor
         results files.
 
-        The output of `rebuild_nemo` for each file set is logged
+        The output of `rebuild_fvcom` for each file set is logged
         at the INFO level.
         """
         combine(parsed_args.run_desc_file)
 
 
 def combine(run_desc_file):
-    """Run the NEMO :program:`rebuild_nemo` tool for each set of
+    """Run the FVCOM :program:`rebuild_fvcom` tool for each set of
     per-processor results files.
 
-    The output of :program:`rebuild_nemo` for each file set is logged
+    The output of :program:`rebuild_fvcom` for each file set is logged
     at the INFO level.
 
     :param run_desc_file: File path/name of the run description YAML file.
@@ -82,39 +82,39 @@ def combine(run_desc_file):
         run_desc = yaml.safe_load(f)
     name_roots = _get_results_files()
     if name_roots:
-        rebuild_nemo_script = find_rebuild_nemo_script(run_desc)
-        _combine_results_files(rebuild_nemo_script, name_roots)
+        rebuild_fvcom_script = find_rebuild_fvcom_script(run_desc)
+        _combine_results_files(rebuild_fvcom_script, name_roots)
         _delete_results_files(name_roots)
 
 
-def find_rebuild_nemo_script(run_desc):
-    """Calculate absolute path of the rebuild_nemo script.
+def find_rebuild_fvcom_script(run_desc):
+    """Calculate absolute path of the rebuild_fvcom script.
 
-    Confirm that the rebuild_nemo executable exists, raising a SystemExit
+    Confirm that the rebuild_fvcom executable exists, raising a SystemExit
     exception if it does not.
     
     :param dict run_desc: Run description dictionary.
 
-    :return: Resolved path of :file:`rebuild_nemo` script.
+    :return: Resolved path of :file:`rebuild_fvcom` script.
     :rtype: :py:class:`pathlib.Path`
 
-    :raises: :py:exc:`SystemExit` if the :file:`rebuild_nemo` script does not
+    :raises: :py:exc:`SystemExit` if the :file:`rebuild_fvcom` script does not
              exist.
     """
-    nemo_code_config = Path(
-        os.path.expandvars(run_desc['paths']['NEMO code config'])
+    fvcom_code_config = Path(
+        os.path.expandvars(run_desc['paths']['FVCOM code config'])
     ).expanduser().resolve()
-    rebuild_nemo_exec = (
-        nemo_code_config / '..' / 'TOOLS' / 'REBUILD_NEMO' / 'rebuild_nemo.exe'
+    rebuild_fvcom_exec = (
+        fvcom_code_config / '..' / 'TOOLS' / 'REBUILD_FVCOM' / 'rebuild_fvcom.exe'
     )
-    if not rebuild_nemo_exec.exists():
+    if not rebuild_fvcom_exec.exists():
         logger.error(
             '{} not found - did you forget to build it?'
-            .format(rebuild_nemo_exec)
+            .format(rebuild_fvcom_exec)
         )
         raise SystemExit(2)
-    rebuild_nemo_script = rebuild_nemo_exec.with_suffix('').resolve()
-    return rebuild_nemo_script
+    rebuild_fvcom_script = rebuild_fvcom_exec.with_suffix('').resolve()
+    return rebuild_fvcom_script
 
 
 def _get_results_files():
@@ -129,7 +129,7 @@ def _get_results_files():
     return name_roots
 
 
-def _combine_results_files(rebuild_nemo_script, name_roots):
+def _combine_results_files(rebuild_fvcom_script, name_roots):
     for fn in name_roots:
         files = Path.cwd().glob('{fn}_[0-9][0-9][0-9][0-9].nc'.format(fn=fn))
         # Count the number of items yielded by the glob generator
@@ -140,8 +140,8 @@ def _combine_results_files(rebuild_nemo_script, name_roots):
             logger.info('{fn}_0000.nc renamed to {fn}.nc'.format(fn=fn))
         else:
             cmd = (
-                '{rebuild_nemo_script} {fn} {nfiles}'.format(
-                    rebuild_nemo_script=rebuild_nemo_script,
+                '{rebuild_fvcom_script} {fn} {nfiles}'.format(
+                    rebuild_fvcom_script=rebuild_fvcom_script,
                     fn=fn,
                     nfiles=nfiles
                 )
