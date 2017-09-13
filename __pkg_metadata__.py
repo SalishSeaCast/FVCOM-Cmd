@@ -1,1 +1,1 @@
-nemo_cmd/__pkg_metadata__.py
+fvcom_cmd/__pkg_metadata__.py

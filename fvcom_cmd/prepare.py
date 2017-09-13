@@ -12,9 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""NEMO-Cmd command plug-in for prepare sub-command.
+"""FVCOM-Cmd command plug-in for prepare sub-command.
 
-Sets up the necessary symbolic links for a NEMO run
+Sets up the necessary symbolic links for a FVCOM run
 in a specified directory and changes the pwd to that directory.
 """
 from copy import copy
@@ -36,22 +36,22 @@ import cliff.command
 from dateutil import tz
 import hglib
 
-from nemo_cmd import lib, fspath, resolved_path, expanded_path
-from nemo_cmd.combine import find_rebuild_nemo_script
-from nemo_cmd.namelist import namelist2dict, get_namelist_value
+from fvcom_cmd import lib, fspath, resolved_path, expanded_path
+from fvcom_cmd.combine import find_rebuild_fvcom_script
+from fvcom_cmd.namelist import namelist2dict, get_namelist_value
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
 class Prepare(cliff.command.Command):
-    """Prepare a NEMO run
+    """Prepare a FVCOM run
     """
 
     def get_parser(self, prog_name):
         parser = super(Prepare, self).get_parser(prog_name)
         parser.description = '''
-            Set up the NEMO run described in DESC_FILE
+            Set up the FVCOM run described in DESC_FILE
             and print the path to the run directory.
         '''
         parser.add_argument(
@@ -71,12 +71,12 @@ class Prepare(cliff.command.Command):
             '''
         )
         parser.add_argument(
-            '--nemo3.4',
-            dest='nemo34',
+            '--fvcom3.4',
+            dest='fvcom34',
             action='store_true',
             help='''
-            Prepare a NEMO-3.4 run;
-            the default is to prepare a NEMO-3.6 run.
+            Prepare a FVCOM-3.4 run;
+            the default is to prepare a FVCOM-3.6 run.
             '''
         )
         parser.add_argument(
@@ -88,34 +88,34 @@ class Prepare(cliff.command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        """Execute the `nemo prepare` sub-command.
+        """Execute the `fvcom prepare` sub-command.
 
         A UUID named directory is created and symbolic links are created
-        in the directory to the files and directories specified to run NEMO.
+        in the directory to the files and directories specified to run FVCOM.
         The path to the run directory is logged to the console on completion
         of the set-up.
         """
         run_dir = prepare(
-            parsed_args.desc_file, parsed_args.nemo34, parsed_args.nocheck_init
+            parsed_args.desc_file, parsed_args.fvcom34, parsed_args.nocheck_init
         )
         if not parsed_args.quiet:
             logger.info('Created run directory {}'.format(run_dir))
         return run_dir
 
 
-def prepare(desc_file, nemo34, nocheck_init):
+def prepare(desc_file, fvcom34, nocheck_init):
     """Create and prepare the temporary run directory.
 
     The temporary run directory is created with a UUID as its name.
     Symbolic links are created in the directory to the files and
-    directories specified to run NEMO.
+    directories specified to run FVCOM.
     The path to the run directory is returned.
 
     :param desc_file: File path/name of the YAML run description file.
     :type desc_file: :py:class:`pathlib.Path`
 
-    :param boolean nemo34: Prepare a NEMO-3.4 run;
-                           the default is to prepare a NEMO-3.6 run
+    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
+                           the default is to prepare a FVCOM-3.6 run
 
     :param boolean nocheck_init: Suppress initial condition link check;
                                  the default is to check
@@ -124,20 +124,20 @@ def prepare(desc_file, nemo34, nocheck_init):
     :rtype: :py:class:`pathlib.Path`
     """
     run_desc = lib.load_run_desc(desc_file)
-    nemo_bin_dir = _check_nemo_exec(run_desc, nemo34)
-    xios_bin_dir = _check_xios_exec(run_desc) if not nemo34 else ''
-    find_rebuild_nemo_script(run_desc)
+    fvcom_bin_dir = _check_fvcom_exec(run_desc, fvcom34)
+    xios_bin_dir = _check_xios_exec(run_desc) if not fvcom34 else ''
+    find_rebuild_fvcom_script(run_desc)
     run_set_dir = resolved_path(desc_file).parent
     run_dir = _make_run_dir(run_desc)
-    _make_namelists(run_set_dir, run_desc, run_dir, nemo34)
-    _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, nemo34)
-    _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir)
+    _make_namelists(run_set_dir, run_desc, run_dir, fvcom34)
+    _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, fvcom34)
+    _make_executable_links(fvcom_bin_dir, run_dir, fvcom34, xios_bin_dir)
     _make_grid_links(run_desc, run_dir)
-    _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init)
-    if not nemo34:
+    _make_forcing_links(run_desc, run_dir, fvcom34, nocheck_init)
+    if not fvcom34:
         _make_restart_links(run_desc, run_dir, nocheck_init)
     _record_vcs_revisions(run_desc, run_dir)
-    if not nemo34:
+    if not fvcom34:
         _add_agrif_files(
             run_desc, desc_file, run_set_dir, run_dir, nocheck_init
         )
@@ -161,13 +161,13 @@ def get_run_desc_value(
     :param boolean expand_path: When :py:obj:`True`, return the value as a
                                 :class:`pathlib.Path` object with shell and
                                 user variables expanded via
-                                :func:`nemo_cmd.expanded_path`.
+                                :func:`fvcom_cmd.expanded_path`.
 
     :param boolean resolve_path: When :py:obj:`True`, return the value as an
                                  absolute :class:`pathlib.Path` object with
                                  shell and user variables expanded and symbolic
                                  links resolved via
-                                 :func:`nemo_cmd.resolved_path`.
+                                 :func:`fvcom_cmd.resolved_path`.
                                  Also confirm that the path exists,
                                  otherwise,
                                  raise a :py:exc:`SystemExit` exception.
@@ -215,35 +215,35 @@ def get_run_desc_value(
     return value
 
 
-def _check_nemo_exec(run_desc, nemo34):
-    """Calculate absolute path of the NEMO executable's directory.
+def _check_fvcom_exec(run_desc, fvcom34):
+    """Calculate absolute path of the FVCOM executable's directory.
 
-    Confirm that the NEMO executable exists, raising a SystemExit
+    Confirm that the FVCOM executable exists, raising a SystemExit
     exception if it does not.
 
-    For NEMO-3.4 runs, confirm check that the IOM server executable
+    For FVCOM-3.4 runs, confirm check that the IOM server executable
     exists, issuing a warning if it does not.
 
     :param dict run_desc: Run description dictionary.
 
-    :param boolean nemo34: Prepare a NEMO-3.4 run;
-                           the default is to prepare a NEMO-3.6 run
+    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
+                           the default is to prepare a FVCOM-3.6 run
 
-    :returns: Absolute path of NEMO executable's directory.
+    :returns: Absolute path of FVCOM executable's directory.
     :rtype: :py:class:`pathlib.Path`
 
     :raises: SystemExit
     """
     try:
-        nemo_config_dir = get_run_desc_value(
-            run_desc, ('paths', 'NEMO code config'),
+        fvcom_config_dir = get_run_desc_value(
+            run_desc, ('paths', 'FVCOM code config'),
             resolve_path=True,
             fatal=False
         )
     except KeyError:
         # Alternate key spelling for backward compatibility
-        nemo_config_dir = get_run_desc_value(
-            run_desc, ('paths', 'NEMO-code-config'), resolve_path=True
+        fvcom_config_dir = get_run_desc_value(
+            run_desc, ('paths', 'FVCOM-code-config'), resolve_path=True
         )
     try:
         config_name = get_run_desc_value(
@@ -252,21 +252,21 @@ def _check_nemo_exec(run_desc, nemo34):
     except KeyError:
         # Alternate key spelling for backward compatibility
         config_name = get_run_desc_value(run_desc, ('config_name',))
-    nemo_bin_dir = nemo_config_dir / config_name / 'BLD' / 'bin'
-    nemo_exec = nemo_bin_dir / 'nemo.exe'
-    if not nemo_exec.exists():
+    fvcom_bin_dir = fvcom_config_dir / config_name / 'BLD' / 'bin'
+    fvcom_exec = fvcom_bin_dir / 'fvcom.exe'
+    if not fvcom_exec.exists():
         logger.error(
-            '{} not found - did you forget to build it?'.format(nemo_exec)
+            '{} not found - did you forget to build it?'.format(fvcom_exec)
         )
         raise SystemExit(2)
-    if nemo34:
-        iom_server_exec = nemo_bin_dir / 'server.exe'
+    if fvcom34:
+        iom_server_exec = fvcom_bin_dir / 'server.exe'
         if not iom_server_exec.exists():
             logger.warning(
                 '{} not found - are you running without key_iomput?'
                 .format(iom_server_exec)
             )
-    return nemo_bin_dir
+    return fvcom_bin_dir
 
 
 def _check_xios_exec(run_desc):
@@ -296,7 +296,7 @@ def _check_xios_exec(run_desc):
 
 
 def _make_run_dir(run_desc):
-    """Create the directory from which NEMO will be run.
+    """Create the directory from which FVCOM will be run.
 
     The location is the directory comes from the run description,
     and its name is a hostname- and time-based UUID.
@@ -333,7 +333,7 @@ def _remove_run_dir(run_dir):
         pass
 
 
-def _make_namelists(run_set_dir, run_desc, run_dir, nemo34):
+def _make_namelists(run_set_dir, run_desc, run_dir, fvcom34):
     """Build the namelist file(s) for the run in run_dir by concatenating
     the list(s) of namelist section files provided in run_desc.
 
@@ -350,19 +350,19 @@ def _make_namelists(run_set_dir, run_desc, run_dir, nemo34):
     :param run_dir: Path of the temporary run directory.
     :type run_dir: :py:class:`pathlib.Path`
 
-    :param boolean nemo34: Prepare a NEMO-3.4 run;
-                           the default is to prepare a NEMO-3.6 run
+    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
+                           the default is to prepare a FVCOM-3.6 run
 
     :raises: SystemExit
     """
-    if nemo34:
-        _make_namelist_nemo34(run_set_dir, run_desc, run_dir)
+    if fvcom34:
+        _make_namelist_fvcom34(run_set_dir, run_desc, run_dir)
     else:
-        _make_namelists_nemo36(run_set_dir, run_desc, run_dir)
+        _make_namelists_fvcom36(run_set_dir, run_desc, run_dir)
 
 
-def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
-    """Build the namelist file for the NEMO-3.4 run in run_dir by
+def _make_namelist_fvcom34(run_set_dir, run_desc, run_dir):
+    """Build the namelist file for the FVCOM-3.4 run in run_dir by
     concatenating the list of namelist section files provided in run_desc.
 
     If any of the required namelist section files are missing,
@@ -394,8 +394,8 @@ def _make_namelist_nemo34(run_set_dir, run_desc, run_dir):
     _set_mpi_decomposition(namelist_filename, run_desc, run_dir)
 
 
-def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, agrif_n=None):
-    """Build the namelist files for the NEMO-3.6 run in run_dir by
+def _make_namelists_fvcom36(run_set_dir, run_desc, run_dir, agrif_n=None):
+    """Build the namelist files for the FVCOM-3.6 run in run_dir by
     concatenating the lists of namelist section files provided in run_desc.
 
     If any of the required namelist section files are missing,
@@ -417,14 +417,14 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, agrif_n=None):
     """
 
     ##TODO: Refactor this into a public function that can be used by prepare
-    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+    ## plug-ins in packages like SalishSeaCmd that extend FVCOM-Cmd
 
     try:
-        nemo_code_config = run_desc['paths']['NEMO code config']
+        fvcom_code_config = run_desc['paths']['FVCOM code config']
     except KeyError:
         # Alternate key spelling for backward compatibility
-        nemo_code_config = run_desc['paths']['NEMO-code-config']
-    nemo_config_dir = resolved_path(nemo_code_config)
+        fvcom_code_config = run_desc['paths']['FVCOM-code-config']
+    fvcom_config_dir = resolved_path(fvcom_code_config)
     try:
         config_name = run_desc['config name']
     except KeyError:
@@ -466,7 +466,7 @@ def _make_namelists_nemo36(run_set_dir, run_desc, run_dir, agrif_n=None):
         ref_namelist = namelist_filename.replace('_cfg', '_ref')
         if ref_namelist not in namelists:
             ref_namelist_source = (
-                nemo_config_dir / config_name / 'EXP00' / ref_namelist
+                fvcom_config_dir / config_name / 'EXP00' / ref_namelist
             )
             shutil.copy2(
                 fspath(ref_namelist_source),
@@ -523,21 +523,21 @@ def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
 
 
 def _copy_run_set_files(
-    run_desc, desc_file, run_set_dir, run_dir, nemo34, agrif_n=None
+    run_desc, desc_file, run_set_dir, run_dir, fvcom34, agrif_n=None
 ):
     """Copy the run-set files given into run_dir.
 
-    For all versions of NEMO the YAML run description file 
+    For all versions of FVCOM the YAML run description file 
     (from the command-line) is copied.
     The IO defs file is also copied.
     The file path/name of the IO defs file is taken from the :kbd:`output`
     stanza of the YAML run description file.
     The IO defs file is copied as :file:`iodef.xml` because that is the
-    name that NEMO-3.4 or XIOS expects.
+    name that FVCOM-3.4 or XIOS expects.
 
-    For NEMO-3.4, the :file:`xmlio_server.def` file is also copied.
+    For FVCOM-3.4, the :file:`xmlio_server.def` file is also copied.
 
-    For NEMO-3.6, the domain defs and field defs files used by XIOS
+    For FVCOM-3.6, the domain defs and field defs files used by XIOS
     are also copied.
     Those file paths/names of those file are taken from the :kbd:`output`
     stanza of the YAML run description file.
@@ -561,8 +561,8 @@ def _copy_run_set_files(
     :param run_dir: Path of the temporary run directory.
     :type run_dir: :py:class:`pathlib.Path`
 
-    :param boolean nemo34: Prepare a NEMO-3.4 run;
-                           the default is to prepare a NEMO-3.6 run
+    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
+                           the default is to prepare a FVCOM-3.6 run
 
     :param int agrif_n: AGRIF sub-grid number.
     """
@@ -582,7 +582,7 @@ def _copy_run_set_files(
         (iodefs, 'iodef.xml'),
         (run_set_dir / desc_file.name, desc_file.name),
     ]
-    if nemo34:
+    if fvcom34:
         run_set_files.append(
             (run_set_dir / 'xmlio_server.def', 'xmlio_server.def')
         )
@@ -658,7 +658,7 @@ def _copy_run_set_files(
             pass
     for source, dest_name in run_set_files:
         shutil.copy2(fspath(source), fspath(run_dir / dest_name))
-    if not nemo34:
+    if not fvcom34:
         _set_xios_server_mode(run_desc, run_dir)
 
 
@@ -707,35 +707,35 @@ def _set_xios_server_mode(run_desc, run_dir):
         f.writelines(lines)
 
 
-def _make_executable_links(nemo_bin_dir, run_dir, nemo34, xios_bin_dir):
-    """Create symlinks in run_dir to the NEMO and I/O server executables
+def _make_executable_links(fvcom_bin_dir, run_dir, fvcom34, xios_bin_dir):
+    """Create symlinks in run_dir to the FVCOM and I/O server executables
     and record the code repository revision(s) used for the run.
 
-    :param nemo_bin_dir: Absolute path of directory containing NEMO executable.
-    :type nemo_bin_dir: :py:class:`pathlib.Path`
+    :param fvcom_bin_dir: Absolute path of directory containing FVCOM executable.
+    :type fvcom_bin_dir: :py:class:`pathlib.Path`
 
     :param run_dir: Path of the temporary run directory.
     :type run_dir: :py:class:`pathlib.Path`
 
-    :param boolean nemo34: Make executable links for a NEMO-3.4 run
+    :param boolean fvcom34: Make executable links for a FVCOM-3.4 run
                            if :py:obj:`True`,
-                           otherwise make links for a NEMO-3.6 run.
+                           otherwise make links for a FVCOM-3.6 run.
 
     :param xios_bin_dir: Absolute path of directory containing XIOS executable.
     :type xios_bin_dir: :py:class:`pathlib.Path`
     """
-    nemo_exec = nemo_bin_dir / 'nemo.exe'
-    (run_dir / 'nemo.exe').symlink_to(nemo_exec)
-    iom_server_exec = nemo_bin_dir / 'server.exe'
-    if nemo34 and iom_server_exec.exists():
+    fvcom_exec = fvcom_bin_dir / 'fvcom.exe'
+    (run_dir / 'fvcom.exe').symlink_to(fvcom_exec)
+    iom_server_exec = fvcom_bin_dir / 'server.exe'
+    if fvcom34 and iom_server_exec.exists():
         (run_dir / 'server.exe').symlink_to(iom_server_exec)
-    if not nemo34:
+    if not fvcom34:
         xios_server_exec = xios_bin_dir / 'xios_server.exe'
         (run_dir / 'xios_server.exe').symlink_to(xios_server_exec)
 
 
 def _make_grid_links(run_desc, run_dir, agrif_n=None):
-    """Create symlinks in run_dir to the file names that NEMO expects
+    """Create symlinks in run_dir to the file names that FVCOM expects
     to the bathymetry and coordinates files given in the run_desc dict.
 
     For AGRIF sub-grids, the symlink names are prefixed with the agrif_n;
@@ -752,7 +752,7 @@ def _make_grid_links(run_desc, run_dir, agrif_n=None):
     """
 
     ##TODO: Refactor this into a public function that can be used by prepare
-    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+    ## plug-ins in packages like SalishSeaCmd that extend FVCOM-Cmd
 
     coords_keys = ('grid', 'coordinates')
     coords_filename = 'coordinates.nc'
@@ -777,10 +777,10 @@ def _make_grid_links(run_desc, run_dir, agrif_n=None):
         grid_paths = ((coords_path, coords_filename),
                       (bathy_path, bathy_filename))
     else:
-        nemo_forcing_dir = get_run_desc_value(
+        fvcom_forcing_dir = get_run_desc_value(
             run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
         )
-        grid_dir = nemo_forcing_dir / 'grid'
+        grid_dir = fvcom_forcing_dir / 'grid'
         grid_paths = ((grid_dir / coords_path, coords_filename),
                       (grid_dir / bathy_path, bathy_filename))
     for source, link_name in grid_paths:
@@ -795,33 +795,33 @@ def _make_grid_links(run_desc, run_dir, agrif_n=None):
         (run_dir / link_name).symlink_to(source)
 
 
-def _make_forcing_links(run_desc, run_dir, nemo34, nocheck_init):
+def _make_forcing_links(run_desc, run_dir, fvcom34, nocheck_init):
     """Create symlinks in run_dir to the forcing directory/file names,
-    and record the NEMO-forcing repo revision used for the run.
+    and record the FVCOM-forcing repo revision used for the run.
 
     :param dict run_desc: Run description dictionary.
 
     :param run_dir: Path of the temporary run directory.
     :type run_dir: :py:class:`pathlib.Path`
 
-    :param boolean nemo34: Make forcing links for a NEMO-3.4 run
+    :param boolean fvcom34: Make forcing links for a FVCOM-3.4 run
                            if :py:obj:`True`,
-                           otherwise make links for a NEMO-3.6 run.
+                           otherwise make links for a FVCOM-3.6 run.
 
     :param boolean nocheck_init: Suppress initial condition link check
                                  the default is to check
 
-    :raises: :py:exc:`SystemExit` if the NEMO-forcing repo path does not
+    :raises: :py:exc:`SystemExit` if the FVCOM-forcing repo path does not
              exist
     """
-    if nemo34:
-        _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init)
+    if fvcom34:
+        _make_forcing_links_fvcom34(run_desc, run_dir, nocheck_init)
     else:
-        _make_forcing_links_nemo36(run_desc, run_dir)
+        _make_forcing_links_fvcom36(run_desc, run_dir)
 
 
-def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
-    """For a NEMO-3.4 run, create symlinks in run_dir to the forcing
+def _make_forcing_links_fvcom34(run_desc, run_dir, nocheck_init):
+    """For a FVCOM-3.4 run, create symlinks in run_dir to the forcing
     directory/file names that the Salish Sea model uses by convention.
 
     :param dict run_desc: Run description dictionary.
@@ -856,7 +856,7 @@ def _make_forcing_links_nemo34(run_desc, run_dir, nocheck_init):
         run_desc, ('open boundaries',), run_dir
     )
     rivers = _resolve_forcing_path(run_desc, ('rivers',), run_dir)
-    forcing_dirs = ((atmospheric, 'NEMO-atmos'),
+    forcing_dirs = ((atmospheric, 'FVCOM-atmos'),
                     (open_boundaries, 'open_boundaries'), (rivers, 'rivers'))
     for source, link_name in forcing_dirs:
         if not source.exists():
@@ -877,7 +877,7 @@ def _resolve_forcing_path(run_desc, keys, run_dir):
     If the path in the run description is absolute, resolve any symbolic links,
     etc. in it.
 
-    If the path is relative, append it to the NEMO-forcing repo path from the
+    If the path is relative, append it to the FVCOM-forcing repo path from the
     run description.
 
     :param run_dir: Path of the temporary run directory.
@@ -891,21 +891,21 @@ def _resolve_forcing_path(run_desc, keys, run_dir):
     :return: Resolved path
     :rtype: :py:class:`pathlib.Path`
 
-    :raises: :py:exc:`SystemExit` if the NEMO-forcing repo path does not exist
+    :raises: :py:exc:`SystemExit` if the FVCOM-forcing repo path does not exist
     """
     path = get_run_desc_value(
         run_desc, (('forcing',) + keys), expand_path=True, fatal=False
     )
     if path.is_absolute():
         return path.resolve()
-    nemo_forcing_dir = get_run_desc_value(
+    fvcom_forcing_dir = get_run_desc_value(
         run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
     )
-    return nemo_forcing_dir / path
+    return fvcom_forcing_dir / path
 
 
-def _make_forcing_links_nemo36(run_desc, run_dir):
-    """For a NEMO-3.6 run, create symlinks in run_dir to the forcing
+def _make_forcing_links_fvcom36(run_desc, run_dir):
+    """For a FVCOM-3.6 run, create symlinks in run_dir to the forcing
     directory/file names given in the run description forcing section.
 
     :param dict run_desc: Run description dictionary.
@@ -960,7 +960,7 @@ def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
     Sections of the namelist file are parsed to determine
     the necessary files, and the date ranges required for the run.
     
-    This is the atmospheric forcing link check function used for NEMO-3.6 runs.
+    This is the atmospheric forcing link check function used for FVCOM-3.6 runs.
 
     :param dict run_desc: Run description dictionary.
 
@@ -1044,7 +1044,7 @@ def _check_atmos_files(run_desc, run_dir):
     are present. Sections of the namelist file are parsed to determine
     the necessary files, and the date ranges required for the run.
 
-    This is the atmospheric forcing link check function used for NEMO-3.4 runs.
+    This is the atmospheric forcing link check function used for FVCOM-3.4 runs.
     
     :param dict run_desc: Run description dictionary.
 
@@ -1100,7 +1100,7 @@ def _check_atmos_files(run_desc, run_dir):
                         v['dir'], '{basename}.nc'.format(basename=basename)
                     )
                 if not (run_dir / file_path).exists():
-                    nemo_forcing_dir = get_run_desc_value(
+                    fvcom_forcing_dir = get_run_desc_value(
                         run_desc, ('paths', 'forcing'),
                         resolve_path=True,
                         run_dir=run_dir
@@ -1119,7 +1119,7 @@ def _check_atmos_files(run_desc, run_dir):
                             file_path=file_path,
                             startm1=startm1.format('YYYY-MM-DD'),
                             end=end_date.format('YYYY-MM-DD'),
-                            dir=nemo_forcing_dir / atmos_dir,
+                            dir=fvcom_forcing_dir / atmos_dir,
                         )
                     )
                     _remove_run_dir(run_dir)
@@ -1127,7 +1127,7 @@ def _check_atmos_files(run_desc, run_dir):
 
 
 def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
-    """For a NEMO-3.6 run, create symlinks in run_dir to the restart
+    """For a FVCOM-3.6 run, create symlinks in run_dir to the restart
     files given in the run description restart section.
 
     :param dict run_desc: Run description dictionary.
@@ -1144,7 +1144,7 @@ def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
     """
 
     ##TODO: Refactor this into a public function that can be used by prepare
-    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+    ## plug-ins in packages like SalishSeaCmd that extend FVCOM-Cmd
 
     keys = ('restart',)
     if agrif_n is not None:
@@ -1244,7 +1244,7 @@ def get_hg_revision(repo, run_dir):
     Files named :file:`CONFIG/cfg.txt` and 
     :file:`TOOLS/COMPILE/full_key_list.txt` are ignored because they change
     frequently but the changes generally of no consequence;
-    see https://bitbucket.org/salishsea/nemo-cmd/issues/18.
+    see https://bitbucket.org/salishsea/fvcom-cmd/issues/18.
 
     :param repo: Path of Mercurial repository to get revision and status
                  information from.
@@ -1351,7 +1351,7 @@ def _add_agrif_files(run_desc, desc_file, run_set_dir, run_dir, nocheck_init):
     """
 
     ##TODO: Refactor this into a public function that can be used by prepare
-    ## plug-ins in packages like SalishSeaCmd that extend NEMO-Cmd
+    ## plug-ins in packages like SalishSeaCmd that extend FVCOM-Cmd
 
     try:
         get_run_desc_value(run_desc, ('AGRIF',), fatal=False)
@@ -1381,7 +1381,7 @@ def _add_agrif_files(run_desc, desc_file, run_set_dir, run_dir, nocheck_init):
         # sub-grid namelist files
         'namelists':
         functools.partial(
-            _make_namelists_nemo36, run_set_dir, run_desc, run_dir
+            _make_namelists_fvcom36, run_set_dir, run_desc, run_dir
         ),
         # sub-grid output files
         'output':
@@ -1391,7 +1391,7 @@ def _add_agrif_files(run_desc, desc_file, run_set_dir, run_dir, nocheck_init):
             desc_file,
             run_set_dir,
             run_dir,
-            nemo34=False
+            fvcom34=False
         ),
     }
     for run_desc_section, func in run_desc_sections.items():
@@ -1467,10 +1467,10 @@ def get_n_processors(run_desc, run_dir):
             run_dir=run_dir
         )
     if not mpi_lpe_mapping.is_absolute():
-        nemo_forcing_dir = get_run_desc_value(
+        fvcom_forcing_dir = get_run_desc_value(
             run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
         )
-        mpi_lpe_mapping = nemo_forcing_dir / 'grid' / mpi_lpe_mapping
+        mpi_lpe_mapping = fvcom_forcing_dir / 'grid' / mpi_lpe_mapping
     n_processors = _lookup_lpe_n_processors(mpi_lpe_mapping, jpni, jpnj)
     if n_processors is None:
         msg = (
@@ -1491,8 +1491,8 @@ def _lookup_lpe_n_processors(mpi_lpe_mapping, jpni, jpnj):
             if jpni == cjpni and jpnj == cjpnj:
                 return cnw
 
-# All of the namelists that NEMO-3.4 requires, but empty so that they result
-# in the defaults defined in the NEMO code being used.
+# All of the namelists that FVCOM-3.4 requires, but empty so that they result
+# in the defaults defined in the FVCOM code being used.
 EMPTY_NAMELISTS = u"""
 &namrun        !  Parameters of the run
 &end

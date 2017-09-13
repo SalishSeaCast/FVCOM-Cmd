@@ -12,11 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""NEMO_Cmd application
+"""FVCOM_Cmd application
 
-NEMO Command Processor
+FVCOM Command Processor
 
-This module is connected to the `nemo` command via a console_scripts
+This module is connected to the `fvcom` command via a console_scripts
 entry point in setup.py.
 """
 import sys
@@ -24,25 +24,25 @@ import sys
 import cliff.app
 import cliff.commandmanager
 
-from nemo_cmd import __pkg_metadata__
+from fvcom_cmd import __pkg_metadata__
 
 
-class NEMO_App(cliff.app.App):
+class FVCOM_App(cliff.app.App):
     CONSOLE_MESSAGE_FORMAT = '%(name)s %(levelname)s: %(message)s'
 
     def __init__(self):
-        super(NEMO_App, self).__init__(
+        super(FVCOM_App, self).__init__(
             description=__pkg_metadata__.DESCRIPTION,
             version=__pkg_metadata__.VERSION,
             command_manager=cliff.commandmanager.CommandManager(
-                'nemo.app', convert_underscores=False
+                'fvcom.app', convert_underscores=False
             ),
             stderr=sys.stdout,
         )
 
 
 def main(argv=sys.argv[1:]):
-    app = NEMO_App()
+    app = FVCOM_App()
     return app.run(argv)
 
 

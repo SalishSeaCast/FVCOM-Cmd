@@ -1,7 +1,7 @@
 [run]
 branch = True
 source =
-    nemo_cmd
+    fvcom_cmd
     tests
 
 [report]

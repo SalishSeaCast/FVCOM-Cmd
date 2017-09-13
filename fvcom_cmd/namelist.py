@@ -293,7 +293,7 @@ def get_namelist_value(key, lines):
     """Return the value corresponding to key in lines, and the index
     at which key was found.
 
-    lines is expected to be a NEMO namelist in the form of a list of strings.
+    lines is expected to be a FVCOM namelist in the form of a list of strings.
 
     :param str key: The namelist key to find the value and line number of.
 

@@ -17,3 +17,4 @@
 PROJECT = 'FVCOM-Cmd'
 DESCRIPTION = 'FVCOM Command Processor'
 VERSION = '0.1'
+DEV_STATUS = '1 - Development'
