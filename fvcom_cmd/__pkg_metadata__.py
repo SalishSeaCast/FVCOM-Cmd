@@ -12,9 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""NEMO-Cmd -- NEMO command processor
+"""FVCOM-Cmd -- FVCOM command processor
 """
-PROJECT = 'NEMO-Cmd'
-DESCRIPTION = 'NEMO Command Processor'
-VERSION = '1.1.dev0'
-DEV_STATUS = '5 - Production'
+PROJECT = 'FVCOM-Cmd'
+DESCRIPTION = 'FVCOM Command Processor'
+VERSION = '0.1'
