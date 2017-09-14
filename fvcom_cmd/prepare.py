@@ -37,7 +37,6 @@ from dateutil import tz
 import hglib
 
 from fvcom_cmd import lib, fspath, resolved_path, expanded_path
-from fvcom_cmd.combine import find_rebuild_fvcom_script
 from fvcom_cmd.namelist import namelist2dict, get_namelist_value
 
 logger = logging.getLogger(__name__)
@@ -71,15 +70,6 @@ class Prepare(cliff.command.Command):
             '''
         )
         parser.add_argument(
-            '--fvcom3.4',
-            dest='fvcom34',
-            action='store_true',
-            help='''
-            Prepare a FVCOM-3.4 run;
-            the default is to prepare a FVCOM-3.6 run.
-            '''
-        )
-        parser.add_argument(
             '-q',
             '--quiet',
             action='store_true',
@@ -96,14 +86,14 @@ class Prepare(cliff.command.Command):
         of the set-up.
         """
         run_dir = prepare(
-            parsed_args.desc_file, parsed_args.fvcom34, parsed_args.nocheck_init
+            parsed_args.desc_file, parsed_args.nocheck_init
         )
         if not parsed_args.quiet:
             logger.info('Created run directory {}'.format(run_dir))
         return run_dir
 
 
-def prepare(desc_file, fvcom34, nocheck_init):
+def prepare(desc_file, nocheck_init):
     """Create and prepare the temporary run directory.
 
     The temporary run directory is created with a UUID as its name.
@@ -124,175 +114,37 @@ def prepare(desc_file, fvcom34, nocheck_init):
     :rtype: :py:class:`pathlib.Path`
     """
     run_desc = lib.load_run_desc(desc_file)
-    fvcom_bin_dir = _check_fvcom_exec(run_desc, fvcom34)
-    xios_bin_dir = _check_xios_exec(run_desc) if not fvcom34 else ''
-    find_rebuild_fvcom_script(run_desc)
+    fvcom_exec = _get_fvcom_exec(run_desc)
     run_set_dir = resolved_path(desc_file).parent
     run_dir = _make_run_dir(run_desc)
-    _make_namelists(run_set_dir, run_desc, run_dir, fvcom34)
-    _copy_run_set_files(run_desc, desc_file, run_set_dir, run_dir, fvcom34)
-    _make_executable_links(fvcom_bin_dir, run_dir, fvcom34, xios_bin_dir)
-    _make_grid_links(run_desc, run_dir)
-    _make_forcing_links(run_desc, run_dir, fvcom34, nocheck_init)
-    if not fvcom34:
-        _make_restart_links(run_desc, run_dir, nocheck_init)
+    _make_namelists(run_set_dir, run_desc, run_dir)
+    _make_executable_links(fvcom_exec, run_dir)
+    _make_input_links(run_desc, run_dir)
+    #_make_forcing_links(run_desc, run_dir, nocheck_init)
+    #_make_restart_links(run_desc, run_dir, nocheck_init)
     _record_vcs_revisions(run_desc, run_dir)
-    if not fvcom34:
-        _add_agrif_files(
-            run_desc, desc_file, run_set_dir, run_dir, nocheck_init
-        )
     return run_dir
 
-
-def get_run_desc_value(
-    run_desc,
-    keys,
-    expand_path=False,
-    resolve_path=False,
-    run_dir=None,
-    fatal=True
-):
-    """Get the run description value defined by the sequence of keys.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param sequence keys: Keys that lead to the value to be returned.
-
-    :param boolean expand_path: When :py:obj:`True`, return the value as a
-                                :class:`pathlib.Path` object with shell and
-                                user variables expanded via
-                                :func:`fvcom_cmd.expanded_path`.
-
-    :param boolean resolve_path: When :py:obj:`True`, return the value as an
-                                 absolute :class:`pathlib.Path` object with
-                                 shell and user variables expanded and symbolic
-                                 links resolved via
-                                 :func:`fvcom_cmd.resolved_path`.
-                                 Also confirm that the path exists,
-                                 otherwise,
-                                 raise a :py:exc:`SystemExit` exception.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param boolean fatal: When :py:obj:`True`, delete the under construction
-                          temporary run directory, and raise a
-                          :py:exc:`SystemExit` exception.
-                          Otherwise, raise a :py:exc:`KeyError` exception.
-
-    :raises: :py:exc:`SystemExit` or :py:exc:`KeyError`
-
-    :returns: Run description value defined by the sequence of keys.
+def _get_fvcom_exec(run_desc):
     """
-    try:
-        value = run_desc
-        for key in keys:
-            value = value[key]
-    except KeyError:
-        if not fatal:
-            raise
-        logger.error(
-            '"{}" key not found - please check your run description YAML file'
-            .format(': '.join(keys))
-        )
-        if run_dir:
-            _remove_run_dir(run_dir)
-        raise SystemExit(2)
-    if expand_path:
-        value = expanded_path(value)
-    if resolve_path:
-        value = resolved_path(value)
-        if not value.exists():
-            logger.error(
-                '{path} path from "{keys}" key not found - please check your '
-                'run description YAML file'.format(
-                    path=value, keys=': '.join(keys)
-                )
-            )
-            if run_dir:
-                _remove_run_dir(run_dir)
-            raise SystemExit(2)
-    return value
-
-
-def _check_fvcom_exec(run_desc, fvcom34):
-    """Calculate absolute path of the FVCOM executable's directory.
-
-    Confirm that the FVCOM executable exists, raising a SystemExit
-    exception if it does not.
-
-    For FVCOM-3.4 runs, confirm check that the IOM server executable
-    exists, issuing a warning if it does not.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
-                           the default is to prepare a FVCOM-3.6 run
-
-    :returns: Absolute path of FVCOM executable's directory.
-    :rtype: :py:class:`pathlib.Path`
-
-    :raises: SystemExit
+    Find absolute path of the FVCOM executable.
     """
-    try:
-        fvcom_config_dir = get_run_desc_value(
-            run_desc, ('paths', 'FVCOM code config'),
+    fvcom_path = lib.get_run_desc_value(
+            run_desc, ('paths', 'FVCOM'),
             resolve_path=True,
             fatal=False
         )
-    except KeyError:
-        # Alternate key spelling for backward compatibility
-        fvcom_config_dir = get_run_desc_value(
-            run_desc, ('paths', 'FVCOM-code-config'), resolve_path=True
-        )
-    try:
-        config_name = get_run_desc_value(
-            run_desc, ('config name',), fatal=False
-        )
-    except KeyError:
-        # Alternate key spelling for backward compatibility
-        config_name = get_run_desc_value(run_desc, ('config_name',))
-    fvcom_bin_dir = fvcom_config_dir / config_name / 'BLD' / 'bin'
-    fvcom_exec = fvcom_bin_dir / 'fvcom.exe'
+    if fvcom_path.is_dir():
+        fvcom_exec = fvcom_path / 'FVCOM_source' / 'fvcom'
+    else:
+        fvcom_exec = fvcom_path
+    
     if not fvcom_exec.exists():
         logger.error(
             '{} not found - did you forget to build it?'.format(fvcom_exec)
         )
         raise SystemExit(2)
-    if fvcom34:
-        iom_server_exec = fvcom_bin_dir / 'server.exe'
-        if not iom_server_exec.exists():
-            logger.warning(
-                '{} not found - are you running without key_iomput?'
-                .format(iom_server_exec)
-            )
-    return fvcom_bin_dir
-
-
-def _check_xios_exec(run_desc):
-    """Calculate absolute path of the XIOS executable's directory.
-
-    Confirm that the XIOS executable exists, raising a SystemExit
-    exception if it does not.
-
-    :param dict run_desc: Run description dictionary.
-
-    :returns: Absolute path of XIOS executable's directory.
-    :rtype: :py:class:`pathlib.Path`
-
-    :raises: SystemExit
-    """
-    xios_code_path = get_run_desc_value(
-        run_desc, ('paths', 'XIOS'), resolve_path=True
-    )
-    xios_bin_dir = xios_code_path / 'bin'
-    xios_exec = xios_bin_dir / 'xios_server.exe'
-    if not xios_exec.exists():
-        logger.error(
-            '{} not found - did you forget to build it?'.format(xios_exec)
-        )
-        raise SystemExit(2)
-    return xios_bin_dir
+    return fvcom_exec
 
 
 def _make_run_dir(run_desc):
@@ -306,11 +158,12 @@ def _make_run_dir(run_desc):
     :returns: Path of the temporary run directory
     :rtype: :py:class:`pathlib.Path`
     """
-    runs_dir = get_run_desc_value(
+    runs_dir = lib.get_run_desc_value(
         run_desc, ('paths', 'runs directory'), resolve_path=True
     )
     run_dir = runs_dir / datetime.utcnow().strftime('%Y%m%d-%Hh%Mm%S.%fs')
     run_dir.mkdir()
+    (run_dir / 'output').mkdir()
     return run_dir
 
 
@@ -333,381 +186,30 @@ def _remove_run_dir(run_dir):
         pass
 
 
-def _make_namelists(run_set_dir, run_desc, run_dir, fvcom34):
-    """Build the namelist file(s) for the run in run_dir by concatenating
-    the list(s) of namelist section files provided in run_desc.
-
-    If any of the required namelist section files are missing,
-    delete the run directory and raise a SystemExit exception.
-
-    :param run_set_dir: Directory containing the run description file,
-                        from which relative paths for the namelist section
-                        files start.
-    :type run_set_dir: :py:class:`pathlib.Path`
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
-                           the default is to prepare a FVCOM-3.6 run
-
-    :raises: SystemExit
+def _make_namelists(run_set_dir, run_desc, run_dir):
     """
-    if fvcom34:
-        _make_namelist_fvcom34(run_set_dir, run_desc, run_dir)
-    else:
-        _make_namelists_fvcom36(run_set_dir, run_desc, run_dir)
-
-
-def _make_namelist_fvcom34(run_set_dir, run_desc, run_dir):
-    """Build the namelist file for the FVCOM-3.4 run in run_dir by
-    concatenating the list of namelist section files provided in run_desc.
-
-    If any of the required namelist section files are missing,
-    delete the run directory and raise a SystemExit exception.
-
-    :param run_set_dir: Directory containing the run description file,
-                        from which relative paths for the namelist section
-                        files start.
-    :type run_set_dir: :py:class:`pathlib.Path`
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :raises: SystemExit
+    Puts the namelist in the right place
     """
-    namelists = get_run_desc_value(run_desc, ('namelists',), run_dir=run_dir)
-    namelist_filename = 'namelist'
-    with (run_dir / namelist_filename).open('wt') as namelist:
-        for nl in namelists:
-            try:
-                with (run_set_dir / nl).open('rt') as f:
-                    namelist.writelines(f.readlines())
-                    namelist.write(u'\n\n')
-            except IOError as e:
-                logger.error(e)
-                _remove_run_dir(run_dir)
-                raise SystemExit(2)
-        namelist.writelines(EMPTY_NAMELISTS)
-    _set_mpi_decomposition(namelist_filename, run_desc, run_dir)
+    case_name = run_desc['casename']
 
-
-def _make_namelists_fvcom36(run_set_dir, run_desc, run_dir, agrif_n=None):
-    """Build the namelist files for the FVCOM-3.6 run in run_dir by
-    concatenating the lists of namelist section files provided in run_desc.
-
-    If any of the required namelist section files are missing,
-    delete the run directory and raise a SystemExit exception.
-
-    :param run_set_dir: Directory containing the run description file,
-                      from which relative paths for the namelist section
-                      files start.
-    :type run_set_dir: :py:class:`pathlib.Path`
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param int agrif_n: AGRIF sub-grid number.
-
-    :raises: SystemExit
-    """
-
-    ##TODO: Refactor this into a public function that can be used by prepare
-    ## plug-ins in packages like SalishSeaCmd that extend FVCOM-Cmd
-
-    try:
-        fvcom_code_config = run_desc['paths']['FVCOM code config']
-    except KeyError:
-        # Alternate key spelling for backward compatibility
-        fvcom_code_config = run_desc['paths']['FVCOM-code-config']
-    fvcom_config_dir = resolved_path(fvcom_code_config)
-    try:
-        config_name = run_desc['config name']
-    except KeyError:
-        # Alternate key spelling for backward compatibility
-        config_name = run_desc['config_name']
-    keys = ('namelists',)
-    if agrif_n is not None:
-        keys = ('namelists', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n))
-    namelists = get_run_desc_value(run_desc, keys, run_dir=run_dir)
-    for namelist_filename in namelists:
-        if namelist_filename.startswith('AGRIF'):
-            continue
-        namelist_dest = namelist_filename
-        keys = ('namelists', namelist_filename)
-        if agrif_n is not None:
-            namelist_dest = '{agrif_n}_{namelist_filename}'.format(
-                agrif_n=agrif_n, namelist_filename=namelist_filename
-            )
-            keys = (
-                'namelists', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n),
-                namelist_filename
-            )
-        with (run_dir / namelist_dest).open('wt') as namelist:
-            namelist_files = get_run_desc_value(
-                run_desc, keys, run_dir=run_dir
-            )
-            for nl in namelist_files:
-                nl_path = expanded_path(nl)
-                if not nl_path.is_absolute():
-                    nl_path = run_set_dir / nl_path
-                try:
-                    with nl_path.open('rt') as f:
-                        namelist.writelines(f.readlines())
-                        namelist.write(u'\n\n')
-                except IOError as e:
-                    logger.error(e)
-                    _remove_run_dir(run_dir)
-                    raise SystemExit(2)
-        ref_namelist = namelist_filename.replace('_cfg', '_ref')
-        if ref_namelist not in namelists:
-            ref_namelist_source = (
-                fvcom_config_dir / config_name / 'EXP00' / ref_namelist
-            )
-            shutil.copy2(
-                fspath(ref_namelist_source),
-                fspath(run_dir / namelist_dest.replace('_cfg', '_ref'))
-            )
-    if 'namelist_cfg' in namelists:
-        _set_mpi_decomposition('namelist_cfg', run_desc, run_dir)
-    else:
-        logger.error(
-            'No namelist_cfg key found in namelists section of run '
-            'description'
-        )
-        raise SystemExit(2)
-
-
-def _set_mpi_decomposition(namelist_filename, run_desc, run_dir):
-    """Update the &nammpp namelist jpni & jpnj values with the MPI
-    decomposition values from the run description.
-
-    A SystemExit exeception is raise if there is no MPI decomposition
-    specified in the run description.
-
-    :param str namelist_filename: The name of the namelist file.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :raises: SystemExit
-    """
-    try:
-        jpni, jpnj = get_run_desc_value(
-            run_desc, ('MPI decomposition',), fatal=False
-        ).split('x')
-    except KeyError:
-        logger.error(
-            'MPI decomposition value not found in YAML run description file. '
-            'Please add a line like:\n'
-            '  MPI decomposition: 8x18\n'
-            'that says how you want the domain distributed over the '
-            'processors in the i (longitude) and j (latitude) dimensions.'
-        )
-        _remove_run_dir(run_dir)
-        raise SystemExit(2)
-    jpnij = str(get_n_processors(run_desc, run_dir))
-    with (run_dir / namelist_filename).open('rt') as f:
-        lines = f.readlines()
-    for key, new_value in {'jpni': jpni, 'jpnj': jpnj, 'jpnij': jpnij}.items():
-        value, i = get_namelist_value(key, lines)
-        lines[i] = lines[i].replace(value, new_value)
-    with (run_dir / namelist_filename).open('wt') as f:
-        f.writelines(lines)
-
-
-def _copy_run_set_files(
-    run_desc, desc_file, run_set_dir, run_dir, fvcom34, agrif_n=None
-):
-    """Copy the run-set files given into run_dir.
-
-    For all versions of FVCOM the YAML run description file 
-    (from the command-line) is copied.
-    The IO defs file is also copied.
-    The file path/name of the IO defs file is taken from the :kbd:`output`
-    stanza of the YAML run description file.
-    The IO defs file is copied as :file:`iodef.xml` because that is the
-    name that FVCOM-3.4 or XIOS expects.
-
-    For FVCOM-3.4, the :file:`xmlio_server.def` file is also copied.
-
-    For FVCOM-3.6, the domain defs and field defs files used by XIOS
-    are also copied.
-    Those file paths/names of those file are taken from the :kbd:`output`
-    stanza of the YAML run description file.
-    They are copied to :file:`domain_def.xml` and :file:`field_def.xml`,
-    repectively, because those are the file names that XIOS expects.
-    Optionally, the file defs file used by XIOS-2 is also copied.
-    Its file path/name is also taken from the :kbd:`output` stanza.
-    It is copied to :file:`file_def.xml` because that is the file name that
-    XIOS-2 expects.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param desc_file: File path/name of the YAML run description file.
-    :type desc_file: :py:class:`pathlib.Path`
-
-    :param run_set_dir: Directory containing the run description file,
-                        from which relative paths for the namelist section
-                        files start.
-    :type run_set_dir: :py:class:`pathlib.Path`
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param boolean fvcom34: Prepare a FVCOM-3.4 run;
-                           the default is to prepare a FVCOM-3.6 run
-
-    :param int agrif_n: AGRIF sub-grid number.
-    """
-    try:
-        iodefs = get_run_desc_value(
-            run_desc, ('output', 'iodefs'),
-            resolve_path=True,
-            run_dir=run_dir,
-            fatal=False
-        )
-    except KeyError:
-        # Alternate key spelling for backward compatibility
-        iodefs = get_run_desc_value(
-            run_desc, ('output', 'files'), resolve_path=True, run_dir=run_dir
-        )
-    run_set_files = [
-        (iodefs, 'iodef.xml'),
-        (run_set_dir / desc_file.name, desc_file.name),
-    ]
-    if fvcom34:
-        run_set_files.append(
-            (run_set_dir / 'xmlio_server.def', 'xmlio_server.def')
-        )
-    else:
+    keys = ('namelist',)
+    namelist = lib.get_run_desc_value(run_desc, keys, run_dir=run_dir)
+    namelist_dest = run_dir / Path(case_name + '_run.nml')
+    with (namelist_dest).open('wt') as fout:
+        nl_path = expanded_path(namelist)
+        if not nl_path.is_absolute():
+            nl_path = run_set_dir / nl_path
         try:
-            keys = ('output', 'domaindefs')
-            domain_def_filename = 'domain_def.xml'
-            if agrif_n is not None:
-                keys = (
-                    'output', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n),
-                    'domaindefs'
-                )
-                domain_def_filename = '{agrif_n}_domain_def.xml'.format(
-                    agrif_n=agrif_n
-                )
-            domains_def = get_run_desc_value(
-                run_desc,
-                keys,
-                resolve_path=True,
-                run_dir=run_dir,
-                fatal=False,
-            )
-        except KeyError:
-            # Alternate key spelling for backward compatibility
-            keys = ('output', 'domain')
-            if agrif_n is not None:
-                keys = (
-                    'output', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n),
-                    'domain'
-                )
-            domains_def = get_run_desc_value(
-                run_desc, keys, resolve_path=True, run_dir=run_dir
-            )
-        try:
-            fields_def = get_run_desc_value(
-                run_desc, ('output', 'fielddefs'),
-                resolve_path=True,
-                run_dir=run_dir,
-                fatal=False
-            )
-        except KeyError:
-            # Alternate key spelling for backward compatibility
-            fields_def = get_run_desc_value(
-                run_desc, ('output', 'fields'),
-                resolve_path=True,
-                run_dir=run_dir
-            )
-        run_set_files.extend([
-            (domains_def, domain_def_filename),
-            (fields_def, 'field_def.xml'),
-        ])
-        try:
-            keys = ('output', 'filedefs')
-            file_def_filename = 'file_def.xml'
-            if agrif_n is not None:
-                keys = (
-                    'output', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n),
-                    'filedefs'
-                )
-                file_def_filename = '{agrif_n}_file_def.xml'.format(
-                    agrif_n=agrif_n
-                )
-            files_def = get_run_desc_value(
-                run_desc,
-                keys,
-                resolve_path=True,
-                run_dir=run_dir,
-                fatal=False
-            )
-            run_set_files.append((files_def, file_def_filename))
-        except KeyError:
-            # `files` key is optional and only used with XIOS-2
-            pass
-    for source, dest_name in run_set_files:
-        shutil.copy2(fspath(source), fspath(run_dir / dest_name))
-    if not fvcom34:
-        _set_xios_server_mode(run_desc, run_dir)
+            with nl_path.open('rt') as f:
+                fout.writelines(f.readlines())
+                fout.write(u'\n\n')
+        except IOError as e:
+            logger.error(e)
+            _remove_run_dir(run_dir)
+            raise SystemExit(2)
 
 
-def _set_xios_server_mode(run_desc, run_dir):
-    """Update the :file:`iodef.xml` :kbd:`xios` context :kbd:`using_server`
-    variable text with the :kbd:`separate XIOS server` value from the
-    run description.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :raises: SystemExit
-    """
-    try:
-        sep_xios_server = get_run_desc_value(
-            run_desc, ('output', 'separate XIOS server'), fatal=False
-        )
-    except KeyError:
-        logger.error(
-            'separate XIOS server key/value not found in output section '
-            'of YAML run description file. '
-            'Please add lines like:\n'
-            '  separate XIOS server: True\n'
-            '  XIOS servers: 1\n'
-            'that say whether to run the XIOS server(s) attached or detached, '
-            'and how many of them to use.'
-        )
-        _remove_run_dir(run_dir)
-        raise SystemExit(2)
-    tree = xml.etree.ElementTree.parse(fspath(run_dir / 'iodef.xml'))
-    root = tree.getroot()
-    using_server = root.find(
-        'context[@id="xios"]//variable[@id="using_server"]'
-    )
-    using_server.text = 'true' if sep_xios_server else 'false'
-    using_server_line = xml.etree.ElementTree.tostring(using_server).decode()
-    with (run_dir / 'iodef.xml').open('rt') as f:
-        lines = f.readlines()
-    for i, line in enumerate(lines):
-        if 'using_server' in line:
-            lines[i] = using_server_line
-            break
-    with (run_dir / 'iodef.xml').open('wt') as f:
-        f.writelines(lines)
-
-
-def _make_executable_links(fvcom_bin_dir, run_dir, fvcom34, xios_bin_dir):
+def _make_executable_links(fvcom_exec, run_dir):
     """Create symlinks in run_dir to the FVCOM and I/O server executables
     and record the code repository revision(s) used for the run.
 
@@ -717,24 +219,10 @@ def _make_executable_links(fvcom_bin_dir, run_dir, fvcom34, xios_bin_dir):
     :param run_dir: Path of the temporary run directory.
     :type run_dir: :py:class:`pathlib.Path`
 
-    :param boolean fvcom34: Make executable links for a FVCOM-3.4 run
-                           if :py:obj:`True`,
-                           otherwise make links for a FVCOM-3.6 run.
-
-    :param xios_bin_dir: Absolute path of directory containing XIOS executable.
-    :type xios_bin_dir: :py:class:`pathlib.Path`
     """
-    fvcom_exec = fvcom_bin_dir / 'fvcom.exe'
-    (run_dir / 'fvcom.exe').symlink_to(fvcom_exec)
-    iom_server_exec = fvcom_bin_dir / 'server.exe'
-    if fvcom34 and iom_server_exec.exists():
-        (run_dir / 'server.exe').symlink_to(iom_server_exec)
-    if not fvcom34:
-        xios_server_exec = xios_bin_dir / 'xios_server.exe'
-        (run_dir / 'xios_server.exe').symlink_to(xios_server_exec)
+    (run_dir / 'fvcom').symlink_to(fvcom_exec)
 
-
-def _make_grid_links(run_desc, run_dir, agrif_n=None):
+def _make_input_links(run_desc, run_dir):
     """Create symlinks in run_dir to the file names that FVCOM expects
     to the bathymetry and coordinates files given in the run_desc dict.
 
@@ -754,376 +242,12 @@ def _make_grid_links(run_desc, run_dir, agrif_n=None):
     ##TODO: Refactor this into a public function that can be used by prepare
     ## plug-ins in packages like SalishSeaCmd that extend FVCOM-Cmd
 
-    coords_keys = ('grid', 'coordinates')
-    coords_filename = 'coordinates.nc'
-    bathy_keys = ('grid', 'bathymetry')
-    bathy_filename = 'bathy_meter.nc'
-    if agrif_n is not None:
-        coords_keys = (
-            'grid', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n), 'coordinates'
-        )
-        coords_filename = '{agrif_n}_coordinates.nc'.format(agrif_n=agrif_n)
-        bathy_keys = (
-            'grid', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n), 'bathymetry'
-        )
-        bathy_filename = '{agrif_n}_bathy_meter.nc'.format(agrif_n=agrif_n)
-    coords_path = get_run_desc_value(
-        run_desc, coords_keys, expand_path=True, run_dir=run_dir
+    input_path = lib.get_run_desc_value(
+        run_desc, ('paths', 'input'), resolve_path=True, run_dir=run_dir
     )
-    bathy_path = get_run_desc_value(
-        run_desc, bathy_keys, expand_path=True, run_dir=run_dir
-    )
-    if coords_path.is_absolute() and bathy_path.is_absolute():
-        grid_paths = ((coords_path, coords_filename),
-                      (bathy_path, bathy_filename))
-    else:
-        fvcom_forcing_dir = get_run_desc_value(
-            run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
-        )
-        grid_dir = fvcom_forcing_dir / 'grid'
-        grid_paths = ((grid_dir / coords_path, coords_filename),
-                      (grid_dir / bathy_path, bathy_filename))
-    for source, link_name in grid_paths:
-        if not source.exists():
-            logger.error(
-                '{} not found; cannot create symlink - '
-                'please check the forcing path and grid file names '
-                'in your run description file'.format(source)
-            )
-            _remove_run_dir(run_dir)
-            raise SystemExit(2)
-        (run_dir / link_name).symlink_to(source)
 
+    (run_dir / 'input').symlink_to(input_path)
 
-def _make_forcing_links(run_desc, run_dir, fvcom34, nocheck_init):
-    """Create symlinks in run_dir to the forcing directory/file names,
-    and record the FVCOM-forcing repo revision used for the run.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param boolean fvcom34: Make forcing links for a FVCOM-3.4 run
-                           if :py:obj:`True`,
-                           otherwise make links for a FVCOM-3.6 run.
-
-    :param boolean nocheck_init: Suppress initial condition link check
-                                 the default is to check
-
-    :raises: :py:exc:`SystemExit` if the FVCOM-forcing repo path does not
-             exist
-    """
-    if fvcom34:
-        _make_forcing_links_fvcom34(run_desc, run_dir, nocheck_init)
-    else:
-        _make_forcing_links_fvcom36(run_desc, run_dir)
-
-
-def _make_forcing_links_fvcom34(run_desc, run_dir, nocheck_init):
-    """For a FVCOM-3.4 run, create symlinks in run_dir to the forcing
-    directory/file names that the Salish Sea model uses by convention.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param boolean nocheck_init: Suppress initial condition link check;
-                                 the default is to check
-
-    :raises: :py:exc:`SystemExit` if a symlink target does not exist
-    """
-    symlinks = []
-    init_conditions = _resolve_forcing_path(
-        run_desc, ('initial conditions',), run_dir
-    )
-    link_name = (
-        'restart.nc'
-        if 'restart' in fspath(init_conditions) else 'initial_strat'
-    )
-    if not init_conditions.exists() and not nocheck_init:
-        logger.error(
-            '{} not found; cannot create symlink - '
-            'please check the forcing path and initial conditions file names '
-            'in your run description file'.format(init_conditions)
-        )
-        _remove_run_dir(run_dir)
-        raise SystemExit(2)
-    symlinks.append((init_conditions, link_name))
-    atmospheric = _resolve_forcing_path(run_desc, ('atmospheric',), run_dir)
-    open_boundaries = _resolve_forcing_path(
-        run_desc, ('open boundaries',), run_dir
-    )
-    rivers = _resolve_forcing_path(run_desc, ('rivers',), run_dir)
-    forcing_dirs = ((atmospheric, 'FVCOM-atmos'),
-                    (open_boundaries, 'open_boundaries'), (rivers, 'rivers'))
-    for source, link_name in forcing_dirs:
-        if not source.exists():
-            logger.error(
-                '{} not found; cannot create symlink - '
-                'please check the forcing paths and file names '
-                'in your run description file'.format(source)
-            )
-            _remove_run_dir(run_dir)
-            raise SystemExit(2)
-        (run_dir / link_name).symlink_to(source)
-    _check_atmos_files(run_desc, run_dir)
-
-
-def _resolve_forcing_path(run_desc, keys, run_dir):
-    """Calculate a resolved path for a forcing path.
-
-    If the path in the run description is absolute, resolve any symbolic links,
-    etc. in it.
-
-    If the path is relative, append it to the FVCOM-forcing repo path from the
-    run description.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param tuple keys: Key sequence in the :kbd:`forcing` section of the 
-                       run description for which the resolved path calculated.
-
-    :param str run_dir: Path of the temporary run directory.
-
-    :return: Resolved path
-    :rtype: :py:class:`pathlib.Path`
-
-    :raises: :py:exc:`SystemExit` if the FVCOM-forcing repo path does not exist
-    """
-    path = get_run_desc_value(
-        run_desc, (('forcing',) + keys), expand_path=True, fatal=False
-    )
-    if path.is_absolute():
-        return path.resolve()
-    fvcom_forcing_dir = get_run_desc_value(
-        run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
-    )
-    return fvcom_forcing_dir / path
-
-
-def _make_forcing_links_fvcom36(run_desc, run_dir):
-    """For a FVCOM-3.6 run, create symlinks in run_dir to the forcing
-    directory/file names given in the run description forcing section.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :raises: :py:exc:`SystemExit` if a symlink target does not exist
-    """
-    link_checkers = {'atmospheric': _check_atmospheric_forcing_link}
-    link_names = get_run_desc_value(run_desc, ('forcing',), run_dir=run_dir)
-    for link_name in link_names:
-        source = _resolve_forcing_path(
-            run_desc, (link_name, 'link to'), run_dir
-        )
-        if not source.exists():
-            logger.error(
-                '{} not found; cannot create symlink - '
-                'please check the forcing paths and file names '
-                'in your run description file'.format(source)
-            )
-            _remove_run_dir(run_dir)
-            raise SystemExit(2)
-        (run_dir / link_name).symlink_to(source)
-        try:
-            link_checker = get_run_desc_value(
-                run_desc, ('forcing', link_name, 'check link'),
-                run_dir=run_dir,
-                fatal=False
-            )
-            link_checkers[link_checker['type']](
-                run_dir, source, link_checker['namelist filename']
-            )
-        except KeyError:
-            if 'check link' not in link_names[link_name]:
-                # No forcing link checker specified
-                pass
-            else:
-                if link_checker is not None:
-                    logger.error(
-                        'unknown forcing link checker: {}'
-                        .format(link_checker)
-                    )
-                    _remove_run_dir(run_dir)
-                    raise SystemExit(2)
-
-
-def _check_atmospheric_forcing_link(run_dir, link_path, namelist_filename):
-    """Confirm that the atmospheric forcing files necessary for the NEO-3.6 run
-    are present.
-
-    Sections of the namelist file are parsed to determine
-    the necessary files, and the date ranges required for the run.
-    
-    This is the atmospheric forcing link check function used for FVCOM-3.6 runs.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-    
-    :param :py:class:`pathlib.Path` link_path: Path of the atmospheric forcing
-                                               files collection.
-    
-    :param str namelist_filename: File name of the namelist to parse for
-                                  atmospheric file names and date ranges.
-
-    :raises: :py:exc:`SystemExit` if an atmospheric forcing file does not exist
-    """
-    namelist = namelist2dict(fspath(run_dir / namelist_filename))
-    if not namelist['namsbc'][0]['ln_blk_core']:
-        return
-    start_date = arrow.get(str(namelist['namrun'][0]['nn_date0']), 'YYYYMMDD')
-    it000 = namelist['namrun'][0]['nn_it000']
-    itend = namelist['namrun'][0]['nn_itend']
-    dt = namelist['namdom'][0]['rn_rdt']
-    end_date = start_date.replace(seconds=(itend - it000) * dt - 1)
-    qtys = (
-        'sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow'.split()
-    )
-    core_dir = namelist['namsbc_core'][0]['cn_dir']
-    file_info = {
-        'core': {
-            'dir': core_dir,
-            'params': [],
-        },
-    }
-    for qty in qtys:
-        flread_params = namelist['namsbc_core'][0][qty]
-        file_info['core']['params'].append(
-            (flread_params[0], flread_params[5])
-        )
-    if namelist['namsbc'][0]['ln_apr_dyn']:
-        apr_dir = namelist['namsbc_apr'][0]['cn_dir']
-        file_info['apr'] = {
-            'dir': apr_dir,
-            'params': [],
-        }
-        flread_params = namelist['namsbc_apr'][0]['sn_apr']
-        file_info['apr']['params'].append((flread_params[0], flread_params[5]))
-    startm1 = start_date.replace(days=-1)
-    for r in arrow.Arrow.range('day', startm1, end_date):
-        for v in file_info.values():
-            for basename, period in v['params']:
-                if period == 'daily':
-                    file_path = os.path.join(
-                        v['dir'], '{basename}_'
-                        'y{date.year}m{date.month:02d}d{date.day:02d}.nc'
-                        .format(basename=basename, date=r)
-                    )
-                elif period == 'yearly':
-                    file_path = os.path.join(
-                        v['dir'], '{basename}.nc'.format(basename=basename)
-                    )
-                if not (run_dir / file_path).exists():
-                    logger.error(
-                        '{file_path} not found; '
-                        'please confirm that atmospheric forcing files '
-                        'for {startm1} through '
-                        '{end} are in the {dir} collection, '
-                        'and that atmospheric forcing paths in your '
-                        'run description and surface boundary conditions '
-                        'namelist are in agreement.'.format(
-                            file_path=file_path,
-                            startm1=startm1.format('YYYY-MM-DD'),
-                            end=end_date.format('YYYY-MM-DD'),
-                            dir=link_path
-                        )
-                    )
-                    _remove_run_dir(run_dir)
-                    raise SystemExit(2)
-
-
-def _check_atmos_files(run_desc, run_dir):
-    """Confirm that the atmospheric forcing files necessary for the NEO-3.4 run
-    are present. Sections of the namelist file are parsed to determine
-    the necessary files, and the date ranges required for the run.
-
-    This is the atmospheric forcing link check function used for FVCOM-3.4 runs.
-    
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :raises: :py:exc:`SystemExit` if an atmospheric forcing file does not exist
-    """
-    namelist = namelist2dict(fspath(run_dir / 'namelist'))
-    if not namelist['namsbc'][0]['ln_blk_core']:
-        return
-    date0 = arrow.get(str(namelist['namrun'][0]['nn_date0']), 'YYYYMMDD')
-    it000 = namelist['namrun'][0]['nn_it000']
-    itend = namelist['namrun'][0]['nn_itend']
-    dt = namelist['namdom'][0]['rn_rdt']
-    start_date = date0.replace(seconds=it000 * dt - 1)
-    end_date = date0.replace(seconds=itend * dt - 1)
-    qtys = (
-        'sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow'.split()
-    )
-    core_dir = namelist['namsbc_core'][0]['cn_dir']
-    file_info = {
-        'core': {
-            'dir': core_dir,
-            'params': [],
-        },
-    }
-    for qty in qtys:
-        flread_params = namelist['namsbc_core'][0][qty]
-        file_info['core']['params'].append(
-            (flread_params[0], flread_params[5])
-        )
-    if namelist['namsbc'][0]['ln_apr_dyn']:
-        apr_dir = namelist['namsbc_apr'][0]['cn_dir']
-        file_info['apr'] = {
-            'dir': apr_dir,
-            'params': [],
-        }
-        flread_params = namelist['namsbc_apr'][0]['sn_apr']
-        file_info['apr']['params'].append((flread_params[0], flread_params[5]))
-    startm1 = start_date.replace(days=-1)
-    for r in arrow.Arrow.range('day', startm1, end_date):
-        for v in file_info.values():
-            for basename, period in v['params']:
-                if period == 'daily':
-                    file_path = os.path.join(
-                        v['dir'], '{basename}_'
-                        'y{date.year}m{date.month:02d}d{date.day:02d}.nc'
-                        .format(basename=basename, date=r)
-                    )
-                elif period == 'yearly':
-                    file_path = os.path.join(
-                        v['dir'], '{basename}.nc'.format(basename=basename)
-                    )
-                if not (run_dir / file_path).exists():
-                    fvcom_forcing_dir = get_run_desc_value(
-                        run_desc, ('paths', 'forcing'),
-                        resolve_path=True,
-                        run_dir=run_dir
-                    )
-                    atmos_dir = _resolve_forcing_path(
-                        run_desc, ('atmospheric',), run_dir
-                    )
-                    logger.error(
-                        '{file_path} not found; '
-                        'please confirm that atmospheric forcing files '
-                        'for {startm1} through '
-                        '{end} are in the {dir} collection, '
-                        'and that atmospheric forcing paths in your '
-                        'run description and surface boundary conditions '
-                        'namelist are in agreement.'.format(
-                            file_path=file_path,
-                            startm1=startm1.format('YYYY-MM-DD'),
-                            end=end_date.format('YYYY-MM-DD'),
-                            dir=fvcom_forcing_dir / atmos_dir,
-                        )
-                    )
-                    _remove_run_dir(run_dir)
-                    raise SystemExit(2)
 
 
 def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
@@ -1150,7 +274,7 @@ def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
     if agrif_n is not None:
         keys = ('restart', 'AGRIF_{agrif_n}'.format(agrif_n=agrif_n))
     try:
-        link_names = get_run_desc_value(
+        link_names = lib.get_run_desc_value(
             run_desc, keys, run_dir=run_dir, fatal=False
         )
     except KeyError:
@@ -1171,7 +295,7 @@ def _make_restart_links(run_desc, run_dir, nocheck_init, agrif_n=None):
             link_name = '{agrif_n}_{link_name}'.format(
                 agrif_n=agrif_n, link_name=link_name
             )
-        source = get_run_desc_value(run_desc, keys, expand_path=True)
+        source = lib.get_run_desc_value(run_desc, keys, expand_path=True)
         if not source.exists() and not nocheck_init:
             logger.error(
                 '{} not found; cannot create symlink - '
@@ -1198,11 +322,11 @@ def _record_vcs_revisions(run_desc, run_dir):
     if 'vcs revisions' not in run_desc:
         return
     vcs_funcs = {'hg': get_hg_revision}
-    vcs_tools = get_run_desc_value(
+    vcs_tools = lib.get_run_desc_value(
         run_desc, ('vcs revisions',), run_dir=run_dir
     )
     for vcs_tool in vcs_tools:
-        repos = get_run_desc_value(
+        repos = lib.get_run_desc_value(
             run_desc, ('vcs revisions', vcs_tool), run_dir=run_dir
         )
         for repo in repos:
@@ -1325,267 +449,3 @@ def get_hg_revision(repo, run_dir):
             for s in status
         )
     return repo_rev_file_lines
-
-
-def _add_agrif_files(run_desc, desc_file, run_set_dir, run_dir, nocheck_init):
-    """Add file copies and symlinks to temporary run directory for
-    AGRIF runs.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param desc_file: File path/name of the YAML run description file.
-    :type desc_file: :py:class:`pathlib.Path`
-
-    :param run_set_dir: Directory containing the run description file,
-                        from which relative paths for the namelist section
-                        files start.
-    :type run_set_dir: :py:class:`pathlib.Path`
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :param boolean nocheck_init: Suppress restart file existence check;
-                                 the default is to check
-
-    :raises: SystemExit if mismatching number of sub-grids is detected
-    """
-
-    ##TODO: Refactor this into a public function that can be used by prepare
-    ## plug-ins in packages like SalishSeaCmd that extend FVCOM-Cmd
-
-    try:
-        get_run_desc_value(run_desc, ('AGRIF',), fatal=False)
-    except KeyError:
-        # Not an AGRIF run
-        return
-    fixed_grids = get_run_desc_value(
-        run_desc, ('AGRIF', 'fixed grids'), run_dir, resolve_path=True
-    )
-    shutil.copy2(fspath(fixed_grids), fspath(run_dir / 'AGRIF_FixedGrids.in'))
-    # Get number of sub-grids
-    n_sub_grids = 0
-    with (run_dir / 'AGRIF_FixedGrids.in').open('rt') as f:
-        n_sub_grids = len([
-            line for line in f
-            if not line.startswith('#') and len(line.split()) == 8
-        ])
-    run_desc_sections = {
-        # sub-grid coordinates and bathymetry files
-        'grid':
-        functools.partial(_make_grid_links, run_desc, run_dir),
-        # sub-grid restart files
-        'restart':
-        functools.partial(
-            _make_restart_links, run_desc, run_dir, nocheck_init
-        ),
-        # sub-grid namelist files
-        'namelists':
-        functools.partial(
-            _make_namelists_fvcom36, run_set_dir, run_desc, run_dir
-        ),
-        # sub-grid output files
-        'output':
-        functools.partial(
-            _copy_run_set_files,
-            run_desc,
-            desc_file,
-            run_set_dir,
-            run_dir,
-            fvcom34=False
-        ),
-    }
-    for run_desc_section, func in run_desc_sections.items():
-        sub_grids_count = 0
-        section = get_run_desc_value(run_desc, (run_desc_section,))
-        for key in section:
-            if key.startswith('AGRIF'):
-                sub_grids_count += 1
-                agrif_n = int(key.split('_')[1])
-                func(agrif_n=agrif_n)
-        if sub_grids_count != n_sub_grids:
-            logger.error(
-                'Expected {n_sub_grids} AGRIF sub-grids in {section} section, '
-                'but found {sub_grids_count} - '
-                'please check your run description file'.format(
-                    n_sub_grids=n_sub_grids,
-                    section=run_desc_section,
-                    sub_grids_count=sub_grids_count
-                )
-            )
-            _remove_run_dir(run_dir)
-            raise SystemExit(2)
-
-
-def get_n_processors(run_desc, run_dir):
-    """Return the total number of processors required for the run as
-    specified by the MPI decomposition key in the run description.
-
-    :param dict run_desc: Run description dictionary.
-
-    :param run_dir: Path of the temporary run directory.
-    :type run_dir: :py:class:`pathlib.Path`
-
-    :returns: Number of processors required for the run.
-    :rtype: int
-    """
-    jpni, jpnj = map(
-        int, get_run_desc_value(run_desc, ('MPI decomposition',)).split('x')
-    )
-    try:
-        mpi_lpe_mapping = get_run_desc_value(
-            run_desc, ('grid', 'land processor elimination'), fatal=False
-        )
-    except KeyError:
-        # Alternate key spelling for backward compatibility
-        try:
-            mpi_lpe_mapping = get_run_desc_value(
-                run_desc, ('grid', 'Land processor elimination'), fatal=False
-            )
-        except KeyError:
-            logger.warning(
-                'No grid: land processor elimination: key found in run '
-                'description YAML file, so proceeding on the assumption that '
-                'you want to run without land processor elimination'
-            )
-            mpi_lpe_mapping = False
-
-    if not mpi_lpe_mapping:
-        return jpni * jpnj
-
-    try:
-        mpi_lpe_mapping = get_run_desc_value(
-            run_desc, ('grid', 'land processor elimination'),
-            expand_path=True,
-            fatal=False,
-            run_dir=run_dir
-        )
-    except KeyError:
-        # Alternate key spelling for backward compatibility
-        mpi_lpe_mapping = get_run_desc_value(
-            run_desc, ('grid', 'Land processor elimination'),
-            expand_path=True,
-            run_dir=run_dir
-        )
-    if not mpi_lpe_mapping.is_absolute():
-        fvcom_forcing_dir = get_run_desc_value(
-            run_desc, ('paths', 'forcing'), resolve_path=True, run_dir=run_dir
-        )
-        mpi_lpe_mapping = fvcom_forcing_dir / 'grid' / mpi_lpe_mapping
-    n_processors = _lookup_lpe_n_processors(mpi_lpe_mapping, jpni, jpnj)
-    if n_processors is None:
-        msg = (
-            'No land processor elimination choice found for {jpni}x{jpnj} '
-            'MPI decomposition'.format(jpni=jpni, jpnj=jpnj)
-        )
-        logger.error(msg)
-        raise ValueError(msg)
-    return n_processors
-
-
-def _lookup_lpe_n_processors(mpi_lpe_mapping, jpni, jpnj):
-    """Encapsulate file access to facilitate testability of get_n_processors().
-    """
-    with mpi_lpe_mapping.open('rt') as f:
-        for line in f:
-            cjpni, cjpnj, cnw = map(int, line.split(','))
-            if jpni == cjpni and jpnj == cjpnj:
-                return cnw
-
-# All of the namelists that FVCOM-3.4 requires, but empty so that they result
-# in the defaults defined in the FVCOM code being used.
-EMPTY_NAMELISTS = u"""
-&namrun        !  Parameters of the run
-&end
-&nam_diaharm   !  Harmonic analysis of tidal constituents ('key_diaharm')
-&end
-&namzgr        !  Vertical coordinate
-&end
-&namzgr_sco    !  s-Coordinate or hybrid z-s-coordinate
-&end
-&namdom        !  Space and time domain (bathymetry, mesh, timestep)
-&end
-&namtsd        !  Data : Temperature  & Salinity
-&end
-&namsbc        !  Surface Boundary Condition (surface module)
-&end
-&namsbc_ana    !  Analytical surface boundary condition
-&end
-&namsbc_flx    !  Surface boundary condition : flux formulation
-&end
-&namsbc_clio   !  CLIO bulk formulae
-&end
-&namsbc_core   !  CORE bulk formulae
-&end
-&namsbc_mfs    !  MFS bulk formulae
-&end
-&namtra_qsr    !  Penetrative solar radiation
-&end
-&namsbc_rnf    !  Runoffs namelist surface boundary condition
-&end
-&namsbc_apr    !  Atmospheric pressure used as ocean forcing or in bulk
-&end
-&namsbc_ssr    !  Surface boundary condition : sea surface restoring
-&end
-&namsbc_alb    !  Albedo parameters
-&end
-&namlbc        !  Lateral momentum boundary condition
-&end
-&namcla        !  Cross land advection
-&end
-&nam_tide      !  Tide parameters (#ifdef key_tide)
-&end
-&nambdy        !  Unstructured open boundaries ("key_bdy")
-&end
-&nambdy_index  !  Open boundaries - definition ("key_bdy")
-&end
-&nambdy_dta    !  Open boundaries - external data ("key_bdy")
-&end
-&nambdy_tide   !  Tidal forcing at open boundaries
-&end
-&nambfr        !  Bottom friction
-&end
-&nambbc        !  Bottom temperature boundary condition
-&end
-&nambbl        !  Bottom boundary layer scheme
-&end
-&nameos        !  Ocean physical parameters
-&end
-&namtra_adv    !  Advection scheme for tracer
-&end
-&namtra_ldf    !  Lateral diffusion scheme for tracers
-&end
-&namtra_dmp    !  Tracer: T & S newtonian damping
-&end
-&namdyn_adv    !  Formulation of the momentum advection
-&end
-&namdyn_vor    !  Option of physics/algorithm (not control by CPP keys)
-&end
-&namdyn_hpg    !  Hydrostatic pressure gradient option
-&end
-&namdyn_ldf    !  Lateral diffusion on momentum
-&end
-&namzdf        !  Vertical physics
-&end
-&namzdf_gls    !  GLS vertical diffusion ("key_zdfgls")
-&end
-&namsol        !  Elliptic solver / island / free surface
-&end
-&nammpp        !  Massively Parallel Processing ("key_mpp_mpi)
-&end
-&namctl        !  Control prints & Benchmark
-&end
-&namnc4        !  netCDF4 chunking and compression settings ("key_netcdf4")
-&end
-&namptr        !  Poleward Transport Diagnostic
-&end
-&namhsb        !  Heat and salt budgets
-&end
-&namdct        !  Transports through sections
-&end
-&namsbc_wave   !  External fields from wave model
-&end
-&namdyn_nept   !  Neptune effect
-&end           !  (simplified: lateral & vertical diffusions removed)
-&namtrj        !  Handling non-linear trajectory for TAM
-&end           !  (output for direct model, input for TAM)
-"""
