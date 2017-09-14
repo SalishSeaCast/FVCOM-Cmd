@@ -304,8 +304,7 @@ def _build_batch_script(desc_file, results_dir, run_dir):
 
     # mpirun
     script += (
-        u'time mpirun -np {nproc} --report-bindings --bind-to-core --bycore -loadbalance ./fvcom --casename={casename} --logfile=fvcom.log\n'
-#        u'time timeout -s 9 6s mpirun -np {nproc} ./fvcom --casename={casename} --logfile=fvcom.log\n'
+        u'time mpirun -np {nproc} ./fvcom --casename={casename} --logfile=fvcom.log\n'
     ).format(nproc=nproc, casename=run_desc['casename'])
 
     script += (
@@ -320,7 +319,7 @@ def _build_batch_script(desc_file, results_dir, run_dir):
     # Fix permissions
     script += (
         u'chmod go+rx ${RESULTS_DIR}\n'
-        u'chmod g+rw ${RESULTS_DIR}/*\n'
+        u'chmod g+r ${RESULTS_DIR}/*\n'
         u'chmod o+r ${RESULTS_DIR}/*\n'
         u'\n'
     )
