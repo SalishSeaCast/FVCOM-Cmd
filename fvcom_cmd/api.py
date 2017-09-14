@@ -32,7 +32,6 @@ import subprocess
 import cliff.commandmanager
 import yaml
 
-from fvcom_cmd import combine as combine_plugin
 from fvcom_cmd import deflate as deflate_plugin
 from fvcom_cmd import gather as gather_plugin
 from fvcom_cmd import prepare as prepare_plugin
@@ -44,19 +43,6 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(name)s %(levelname)s: %(message)s')
 handler.setFormatter(formatter)
 log.addHandler(handler)
-
-
-def combine(run_desc_file):
-    """Run the FVCOM :program:`rebuild_fvcom` tool for each set of
-    per-processor results files.
-
-    The output of :program:`rebuild_fvcom` for each file set is logged
-    at the INFO level.
-
-    :param run_desc_file: File path/name of the run description YAML file.
-    :type results_dir: :py:class:`pathlib.Path`
-    """
-    return combine_plugin.combine(run_desc_file)
 
 
 def deflate(filepaths, max_concurrent_jobs):
@@ -80,23 +66,6 @@ def deflate(filepaths, max_concurrent_jobs):
         )
 
 
-def find_rebuild_fvcom_script(run_desc):
-    """Calculate absolute path of the rebuild_fvcom script.
-
-    Confirm that the rebuild_fvcom executable exists, raising a SystemExit
-    exception if it does not.
-
-    :param dict run_desc: Run description dictionary.
-
-    :return: Resolved path of :file:`rebuild_fvcom` script.
-    :rtype: :py:class:`pathlib.Path`
-
-    :raises: :py:exc:`SystemExit` if the :file:`rebuild_fvcom` script does not
-             exist.
-    """
-    return combine_plugin.find_rebuild_fvcom_script(run_desc)
-
-
 def gather(results_dir):
     """Move all of the files and directories from the present working directory
     into results_dir.
@@ -112,7 +81,7 @@ def gather(results_dir):
     return gather_plugin.gather(results_dir)
 
 
-def prepare(run_desc_file, fvcom34=False, nocheck_init=False):
+def prepare(run_desc_file, nocheck_init=False):
     """Prepare a FVCOM run.
 
     A UUID named temporary run directory is created and symbolic links
@@ -135,171 +104,10 @@ def prepare(run_desc_file, fvcom34=False, nocheck_init=False):
     :returns: Path of the temporary run directory
     :rtype: :py:class:`pathlib.Path`
     """
-    return prepare_plugin.prepare(run_desc_file, fvcom34, nocheck_init)
+    return prepare_plugin.prepare(run_desc_file, nocheck_init)
 
 
-def run_description(
-    config_name='SalishSea',
-    run_id=None,
-    walltime=None,
-    mpi_decomposition='8x18',
-    FVCOM_code=None,
-    XIOS_code=None,
-    forcing_path=None,
-    runs_dir=None,
-    forcing=None,
-    init_conditions=None,
-    namelists=None,
-    fvcom34=False
-):
-    """Return a FVCOM run description dict template.
-
-    Value may be passed for the keyword arguments to set the value of the
-    corresponding items.
-    Otherwise,
-    the returned run description dict
-    that must be updated by assignment statements to provide those values.
-
-    .. note::
-
-        The value of the :kbd:`['forcing']['atmospheric']` item is set to
-        :file:`/results/forcing/atmospheric/GEM2.5/operational/` which is
-        appropriate for runs on :kbd:`salish`, but needs to be changed for runs
-        on WestGrid.
-
-    :arg str config_name: FVCOM configuration name to use for the run.
-
-    :arg str run_id: Job identifier that appears in the :command:`qstat`
-                     listing.
-
-    :arg str walltime: Wall-clock time requested for the run.
-
-    :arg str mpi_decomposition: MPI decomposition to use for the run.
-
-    :arg str FVCOM_code: Path to the :file:`FVCOM-code/` directory where the
-                        FVCOM executable, etc. for the run are to be found.
-                        If a relative path is used it will start from the
-                        current directory.
-
-    :arg str XIOS_code: Path to the :file:`XIOS/` directory where the
-                        XIOS executable for the run are to be found.
-                        If a relative path is used it will start from the
-                        current directory.
-
-    :arg str forcing_path: Path to the :file:`FVCOM-forcing/` directory
-                           where the netCDF files for the grid coordinates,
-                           bathymetry, initial conditions, open boundary
-                           conditions, etc. are found.
-                           If a relative path is used it will start from
-                           the current directory.
-
-    :arg str runs_dir: Path to the directory where run directories will be
-                       created.
-                       If a relative path is used it will start from the
-                       current directory.
-
-    :arg dict forcing: Forcing link data structure.
-                       The default of :py:obj:`None` produces "sensible
-                       defaults" for FVCOM-3.4,
-                       but :py:obj:`None` for FVCOM-3.6.
-                       See the :ref:`RunDescriptionFileStructure` docs
-                       for the version of FVCOM that you are using for
-                       details of the data structure.
-
-    :arg str init_conditions: Name of sub-directory in :file:`FVCOM-forcing/`
-                              where initial conditions files are to be found,
-                              or the path to and name of a restart file.
-                              If a relative path is used for a restart file
-                              it will start from the  current directory.
-
-    :arg dict namelists: Namelists data structure.
-                         The default of :py:obj:`None` produces "sensible
-                         defaults" for a physics-only run for both FVCOM-3.4,
-                         annd FVCOM-3.6.
-                         See the :ref:`RunDescriptionFileStructure` docs
-                         for the version of FVCOM that you are using for
-                         details of the data structure.
-
-    :arg boolean fvcom34: Return run description dict template a FVCOM-3.4
-                         run;
-                         the default is to return the dict for a
-                         FVCOM-3.6 run.
-    """
-    run_description = {
-        'config_name': config_name,
-        'MPI decomposition': mpi_decomposition,
-        'run_id': run_id,
-        'walltime': walltime,
-        'paths': {
-            'FVCOM-code': FVCOM_code,
-            'forcing': forcing_path,
-            'runs directory': runs_dir,
-        },
-        'grid': {
-            'coordinates': 'coordinates_seagrid_SalishSea.nc',
-            'bathymetry': 'bathy_meter_SalishSea2.nc',
-        },
-        'output': {
-            'files': 'iodef.xml',
-        }
-    }
-    if fvcom34:
-        if forcing is None:
-            run_description['forcing'] = {
-                'atmospheric':
-                '/results/forcing/atmospheric/GEM2.5/operational/',
-                'initial conditions': init_conditions,
-                'open boundaries': 'open_boundaries/',
-                'rivers': 'rivers/',
-            }
-        else:
-            run_description['forcing'] = forcing
-        if namelists is None:
-            run_description['namelists'] = [
-                'namelist.time',
-                'namelist.domain',
-                'namelist.surface',
-                'namelist.lateral',
-                'namelist.bottom',
-                'namelist.tracers',
-                'namelist.dynamics',
-                'namelist.compute',
-            ]
-        else:
-            run_description['namelists'] = namelists
-    else:
-        run_description['paths']['XIOS'] = XIOS_code
-        run_description['forcing'] = forcing
-        if namelists is None:
-            run_description['namelists'] = {
-                'namelist_cfg': [
-                    'namelist.time',
-                    'namelist.domain',
-                    'namelist.surface',
-                    'namelist.lateral',
-                    'namelist.bottom',
-                    'namelist.tracer',
-                    'namelist.dynamics',
-                    'namelist.vertical',
-                    'namelist.compute',
-                ]
-            }
-        else:
-            run_description['namelists'] = namelists
-        run_description['output'] = {
-            'domain': 'domain_def.xml',
-            'fields': None,
-            'separate XIOS server': True,
-            'XIOS servers': 1,
-        }
-        if FVCOM_code is not None:
-            run_description['output']['fields'] = os.path.join(
-                FVCOM_code, 'FVCOMGCM/CONFIG/SHARED/field_def.xml'
-            )
-    return run_description
-
-
-def run_in_subprocess(run_id, run_desc, results_dir, fvcom34=False):
+def run_in_subprocess(run_id, run_desc, results_dir):
     """Execute `fvcom run` in a subprocess.
 
     :arg str run_id: Job identifier that appears in the :command:`qstat`
@@ -320,8 +128,6 @@ def run_in_subprocess(run_id, run_desc, results_dir, fvcom34=False):
     with open(yaml_file, 'wt') as f:
         yaml.dump(run_desc, f, default_flow_style=False)
     cmd = ['salishsea', 'run']
-    if fvcom34:
-        cmd.append('--fvcom3.4')
     cmd.extend([yaml_file, results_dir])
     try:
         output = subprocess.check_output(
@@ -380,76 +186,3 @@ def _run_subcommand(app, app_args, argv):
         else:
             log.error(err)
     return result
-
-
-def sge_common(
-    run_description,
-    email,
-    results_dir
-):
-    """Return the common SGE directives used to run FVCOM in a SGE
-    multiple processor context.
-
-    The string that is returned is intended for inclusion in a bash script
-    that will be given to the SGE queue manager via the :command:`qsub`
-    command.
-
-    :arg dict run_description: Run description data structure.
-
-    :arg str email: Email address to send job begin, end & abort
-                    notifications to.
-
-    :arg results_dir: Directory to store results into.
-    :type results_dir: str or :py:class:`pathlib.Path`
-
-    :returns: SGE directives for run script.
-    :rtype: Unicode str
-    """
-    try:
-        td = datetime.timedelta(seconds=run_description['walltime'])
-    except TypeError:
-        t = datetime.datetime.strptime(
-            run_description['walltime'], '%H:%M:%S'
-        ).time()
-        td = datetime.timedelta(
-            hours=t.hour, minutes=t.minute, seconds=t.second
-        )
-    walltime = td2hms(td)
-    sge_directives = (
-        u'#$ -N {run_id}\n'
-        u'#$ -S /bin/bash\n'
-        u'# email when the job [b]egins and [e]nds, or is [a]borted\n'
-        u'#$ -m bea\n'
-        u'#$ -M {email}\n'
-        u'# stdout and stderr file paths/names\n'
-        u'#$ -o {results_dir}/stdout\n'
-        u'#$ -e {results_dir}/stderr\n'
-        u'# job runtime\n'
-        u'#$ -l h_rt={walltime}\n'
-    ).format(
-        run_id=run_description['run_id'],
-        email=email,
-        results_dir=results_dir,
-        walltime=walltime,
-    )
-    return sge_directives
-
-
-def td2hms(timedelta):
-    """Return a string that is the timedelta value formated as H:M:S
-    with leading zeros on the minutes and seconds values.
-
-    :arg timedelta: Time interval to format.
-    :type timedelta: :py:obj:datetime.timedelta
-
-    :returns: H:M:S string with leading zeros on the minutes and seconds
-              values.
-    :rtype: unicode
-    """
-    seconds = int(timedelta.total_seconds())
-    periods = (('hour', 60 * 60), ('minute', 60), ('second', 1))
-    hms = []
-    for period_name, period_seconds in periods:
-        period_value, seconds = divmod(seconds, period_seconds)
-        hms.append(period_value)
-    return u'{0[0]}:{0[1]:02d}:{0[2]:02d}'.format(hms)
