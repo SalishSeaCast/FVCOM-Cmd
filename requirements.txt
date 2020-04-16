@@ -21,7 +21,7 @@ pytest==3.0.5
 python-dateutil==2.6.0
 python-hglib==2.3
 pytz==2016.10
-PyYAML==3.12
+PyYAML==5.1
 requests==2.20.0
 six==1.10.0
 snowballstemmer==1.2.1
