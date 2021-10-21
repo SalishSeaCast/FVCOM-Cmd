@@ -3,7 +3,7 @@
 alabaster==0.7.9
 arrow==0.10.0
 attrs==16.3.0
-Babel==2.3.4
+Babel==2.9.1
 cliff==2.4.0
 cmd2==0.6.9
 coverage==4.2
