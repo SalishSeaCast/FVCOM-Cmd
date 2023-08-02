@@ -15,7 +15,7 @@ pbr==1.10.0
 pluggy==0.4.0
 prettytable==0.7.2
 py==1.10.0
-Pygments==2.7.4
+Pygments==2.15.0
 pyparsing==2.1.10
 pytest==3.0.5
 python-dateutil==2.6.0
