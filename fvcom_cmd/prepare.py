@@ -37,7 +37,6 @@ from dateutil import tz
 import hglib
 
 from fvcom_cmd import lib, fspath, resolved_path, expanded_path
-from fvcom_cmd.namelist import namelist2dict, get_namelist_value
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -138,7 +137,7 @@ def _get_fvcom_exec(run_desc):
         fvcom_exec = fvcom_path / 'FVCOM_source' / 'fvcom'
     else:
         fvcom_exec = fvcom_path
-    
+
     if not fvcom_exec.exists():
         logger.error(
             '{} not found - did you forget to build it?'.format(fvcom_exec)
@@ -154,7 +153,7 @@ def _make_run_dir(run_desc):
     and its name is a hostname- and time-based UUID.
 
     :param dict run_desc: Run description dictionary.
-    
+
     :returns: Path of the temporary run directory
     :rtype: :py:class:`pathlib.Path`
     """
@@ -364,8 +363,8 @@ def get_hg_revision(repo, run_dir):
     Effectively record the output of :command:`hg parents -v` and
     :param run_dir:
     :command:`hg status -mardC`.
-    
-    Files named :file:`CONFIG/cfg.txt` and 
+
+    Files named :file:`CONFIG/cfg.txt` and
     :file:`TOOLS/COMPILE/full_key_list.txt` are ignored because they change
     frequently but the changes generally of no consequence;
     see https://bitbucket.org/salishsea/fvcom-cmd/issues/18.
