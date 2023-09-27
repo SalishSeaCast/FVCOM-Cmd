@@ -3,7 +3,22 @@
 name: gomss-nowcast-rtd
 
 channels:
-  - defaults
+  - conda-forge
+  - nodefaults
 
 dependencies:
-  - python=3.5
+  - pip
+  - python=3.11
+
+  # readthedocs packages
+  - mock
+  - pillow
+  - sphinx
+  - sphinx_rtd_theme
+
+  - pip:
+    - recommonmark
+    - readthedocs-sphinx-ext
+
+    # Install FVCOM-Cmd package in editable mode
+    - --editable ../
